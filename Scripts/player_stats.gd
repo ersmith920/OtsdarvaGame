@@ -13,8 +13,8 @@ extends Node
 @export var base_crit_chance := 0.05
 @export var base_crit_damage := 1.0
 @export var base_armor := 0.0
-@export var base_move_speed := 5
-@export var base_acceleration := 5
+@export var base_move_speed := 7
+@export var base_acceleration := 7
 @export var base_jump_height := 6.0
 @export var base_jump_strength := 8.0
 @export var base_jet_strength := 36.0

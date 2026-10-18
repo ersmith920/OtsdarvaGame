@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://qgt0542hqw58"]
+
+[ext_resource type="PackedScene" uid="uid://bkqjd4iotsaeb" path="res://models/enemy_lift.glb" id="1_ddviu"]
+[ext_resource type="Script" uid="uid://c5gub376smnb2" path="res://Scripts/enemy.gd" id="1_rywsv"]
+[ext_resource type="AudioStream" uid="uid://cvqqd57owl0b4" path="res://Sounds/metalHit4.wav" id="2_f5bmu"]
+[ext_resource type="AudioStream" uid="uid://u83vxd4un6im" path="res://Sounds/metalHit3.wav" id="3_xxs2k"]
+[ext_resource type="AudioStream" uid="uid://to0gdomnahgq" path="res://Sounds/slimeDeath.wav" id="4_fcmpn"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_jfb0n"]
+size = Vector3(0.9645668, 1.2832397, 1.3669922)
+
+[node name="Forklift" type="CharacterBody3D" unique_id=434573855]
+script = ExtResource("1_rywsv")
+hitSounds = Array[AudioStream]([ExtResource("2_f5bmu"), ExtResource("3_xxs2k")])
+deathSounds = Array[AudioStream]([ExtResource("4_fcmpn")])
+radius = 0.8
+height = 1.2
+can_climb = true
+
+[node name="enemy_lift" parent="." unique_id=1706441662 instance=ExtResource("1_ddviu")]
+transform = Transform3D(-1.4849999, 0, -1.2982281e-07, 0, 1.4849999, 0, 1.2982281e-07, 0, -1.4849999, 0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1247013414]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.032460436, 0.6432312, 0.18349612)
+shape = SubResource("BoxShape3D_jfb0n")
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=1436856332]
+
+[node name="AimPoint" type="Marker3D" parent="." unique_id=2077177894]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)

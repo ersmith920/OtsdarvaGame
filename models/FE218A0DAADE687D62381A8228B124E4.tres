@@ -1,0 +1,10 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://cmfyh5uq128sr"]
+
+[ext_resource type="Texture2D" uid="uid://wp3b2c6vwr38" path="res://models/enemy_tank_FE218A0DAADE687D62381A8228B124E4.png" id="1_m47mt"]
+
+[resource]
+resource_name = "FE218A0DAADE687D62381A8228B124E4"
+cull_mode = 2
+albedo_texture = ExtResource("1_m47mt")
+roughness = 0.69003475
+metadata/_gltf_primary_texture_coord = 0

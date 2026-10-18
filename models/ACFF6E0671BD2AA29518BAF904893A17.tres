@@ -1,0 +1,9 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://diojdvd7ndjtj"]
+
+[ext_resource type="Texture2D" uid="uid://cf72rxjgkfqn3" path="res://models/enemy_tank_ACFF6E0671BD2AA29518BAF904893A17.png" id="1_e8pi5"]
+
+[resource]
+resource_name = "ACFF6E0671BD2AA29518BAF904893A17"
+cull_mode = 2
+albedo_texture = ExtResource("1_e8pi5")
+metadata/_gltf_primary_texture_coord = 0

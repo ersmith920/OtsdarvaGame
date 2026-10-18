@@ -1799,7 +1799,7 @@ environment = SubResource("Environment_0xm2m")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1153499919]
 transform = Transform3D(-0.13550122, -0.8306556, -0.54004705, 0.46984637, -0.53375936, 0.70309687, -0.8722865, -0.15846868, 0.46260545, 0, 15.6, 20.1)
-light_energy = 0.5
+light_energy = 0.677
 shadow_enabled = true
 
 [node name="CharacterBody3D" parent="." unique_id=1765552205 instance=ExtResource("1_0xm2m")]
@@ -2186,5 +2186,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -73.2, -3.2, 25.199999)
 shell_speed = 50.0
 max_fire_range = 60.0
 lead_strength = 0.4
+hit_volume_db = -5.0
 
 [editable path="Buildings"]

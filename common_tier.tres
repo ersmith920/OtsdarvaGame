@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="SpawnTier" format=3 uid="uid://co2d0cuwh5t25"]
 
-[ext_resource type="PackedScene" uid="uid://dcvs1suwt3gxa" path="res://slime.tscn" id="1_u2ttc"]
+[ext_resource type="PackedScene" uid="uid://qgt0542hqw58" path="res://forklift.tscn" id="1_u2ttc"]
 [ext_resource type="Script" uid="uid://coywd10wgyey" path="res://Scripts/spawn_tier.gd" id="1_y1deu"]
 
 [resource]

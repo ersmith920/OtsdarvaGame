@@ -3,11 +3,12 @@
 [ext_resource type="Script" uid="uid://dyjubmcfb06j5" path="res://Scripts/tank_enemy.gd" id="1_6lwfj"]
 [ext_resource type="PackedScene" uid="uid://dmf7xfg25r3pv" path="res://models/enemy_tank.glb" id="2_1ealj"]
 [ext_resource type="PackedScene" uid="uid://d0v817epmsx14" path="res://enemy_projectile.tscn" id="2_lk6ub"]
+[ext_resource type="AudioStream" uid="uid://bjvcxuyiykn06" path="res://Sounds/tankShot.wav" id="3_1d415"]
 [ext_resource type="AudioStream" uid="uid://cf3ddxjwq2340" path="res://Sounds/metalHit1.wav" id="3_i433e"]
-[ext_resource type="AudioStream" uid="uid://to0gdomnahgq" path="res://Sounds/slimeDeath.wav" id="4_mh3tg"]
 [ext_resource type="AudioStream" uid="uid://dx0skfp8ap6nr" path="res://Sounds/metalHit2.wav" id="4_pku7x"]
 [ext_resource type="AudioStream" uid="uid://u83vxd4un6im" path="res://Sounds/metalHit3.wav" id="5_pku7x"]
 [ext_resource type="AudioStream" uid="uid://cvqqd57owl0b4" path="res://Sounds/metalHit4.wav" id="6_1d415"]
+[ext_resource type="AudioStream" uid="uid://drutty7dhha05" path="res://Sounds/tankDeath.wav" id="8_1d415"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_jfb0n"]
 size = Vector3(2.8, 1.7, 5.2000003)
@@ -15,9 +16,13 @@ size = Vector3(2.8, 1.7, 5.2000003)
 [node name="Tank" type="CharacterBody3D" unique_id=1311286460]
 script = ExtResource("1_6lwfj")
 projectile_scene = ExtResource("2_lk6ub")
-maxHealth = 400.0
+shell_speed = 60.0
+max_fire_range = 200.0
+lead_strength = 0.6
+shot_sound = ExtResource("3_1d415")
+maxHealth = 250.0
 hitSounds = Array[AudioStream]([ExtResource("3_i433e"), ExtResource("4_pku7x"), ExtResource("5_pku7x"), ExtResource("6_1d415")])
-deathSounds = Array[AudioStream]([ExtResource("4_mh3tg")])
+deathSounds = Array[AudioStream]([ExtResource("8_1d415")])
 speed = 3.0
 radius = 1.5
 height = 1.8
@@ -26,7 +31,7 @@ height = 1.8
 
 [node name="enemy_tank" parent="Body" unique_id=2038009027 instance=ExtResource("2_1ealj")]
 
-[node name="M1A1_Norm_001" parent="Body/enemy_tank" index="1" unique_id=852209916]
+[node name="M1A1_Norm_001" parent="Body/enemy_tank" index="1" unique_id=1941210369]
 visible = false
 
 [node name="Turret" type="Node3D" parent="." unique_id=1552168319]
@@ -34,11 +39,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 
 [node name="enemy_tank" parent="Turret" unique_id=1961979555 instance=ExtResource("2_1ealj")]
 
-[node name="M1A1_Norm" parent="Turret/enemy_tank" index="0" unique_id=1869085381]
+[node name="M1A1_Norm" parent="Turret/enemy_tank" index="0" unique_id=1725831461]
 transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, -1, 0)
 visible = false
 
-[node name="M1A1_Norm_001" parent="Turret/enemy_tank" index="1" unique_id=852209916]
+[node name="M1A1_Norm_001" parent="Turret/enemy_tank" index="1" unique_id=1941210369]
 transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0.0002452086, 0.40518856, -0.50331986)
 
 [node name="Muzzle" type="Marker3D" parent="Turret" unique_id=1532187641]

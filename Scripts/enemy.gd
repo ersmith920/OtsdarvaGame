@@ -106,6 +106,7 @@ func play_hit_sound() -> void:
 
 	var audio := AudioStreamPlayer3D.new()
 	audio.stream = hitSounds.pick_random()
+	audio.max_db = -5.0
 	audio.volume_db = hit_volume_db
 	audio.bus = ENEMY_SFX_BUS
 	get_tree().current_scene.add_child(audio)
