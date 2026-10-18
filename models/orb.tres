@@ -1,0 +1,7 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://b6grl8gt1yvcw"]
+
+[resource]
+resource_name = "orb"
+cull_mode = 2
+albedo_color = Color(0.9063355, 0.3440695, 0.3550273, 1)
+roughness = 0.5

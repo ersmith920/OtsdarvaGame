@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://2sk751cmwua4"]
+
+[ext_resource type="Script" uid="uid://5h1eu84vtblx" path="res://Scripts/stat_modifier.gd" id="1_1maf6"]
+[ext_resource type="Texture2D" uid="uid://x6ab2i0bmxx0" path="res://Images/Icon_Ricochet.png" id="1_fhm7l"]
+[ext_resource type="PackedScene" uid="uid://cddpcmsoap5hp" path="res://models/item_ricochet.glb" id="1_r11dr"]
+[ext_resource type="Script" uid="uid://btu6or7jc4i8g" path="res://Scripts/item_data.gd" id="2_r11dr"]
+
+[sub_resource type="Resource" id="Resource_kwsqr"]
+script = ExtResource("1_1maf6")
+stat = &"ricochet_chance"
+amount_per_stack = 0.2
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[sub_resource type="Resource" id="Resource_onhrv"]
+script = ExtResource("1_1maf6")
+stat = &"ricochet_bounces"
+amount_per_stack = 1.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[resource]
+script = ExtResource("2_r11dr")
+id = &"item_ricochet"
+display_name = "Splitting Rounds"
+description = "Adds 20% chance to ricochet +1 times to nearby enemies"
+tier = 2
+icon = ExtResource("1_fhm7l")
+model = ExtResource("1_r11dr")
+modifiers = Array[ExtResource("1_1maf6")]([SubResource("Resource_kwsqr"), SubResource("Resource_onhrv")])
+metadata/_custom_type_script = "uid://btu6or7jc4i8g"

@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://1u0phnlkpdwe"]
+
+[ext_resource type="Script" uid="uid://dq3xw3nymdj3c" path="res://Scripts/timer_pylon.gd" id="1_068jk"]
+[ext_resource type="PackedScene" uid="uid://vjrq626prlka" path="res://models/pylon.glb" id="1_w5roc"]
+[ext_resource type="AudioStream" uid="uid://cjypjq1mpt4a3" path="res://Sounds/pylonActivate.wav" id="2_0qepf"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_jfb0n"]
+size = Vector3(0.8, 2.2, 0.8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_nuhd7"]
+size = Vector3(1.4, 3.1000001, 1.4)
+
+[node name="timer_pylon" type="Node3D" unique_id=425731580 node_paths=PackedStringArray("glow_mesh")]
+script = ExtResource("1_068jk")
+glow_mesh = NodePath("StaticBody3D/pylon2/orb")
+interact_sound = ExtResource("2_0qepf")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1021226814]
+collision_layer = 3
+collision_mask = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=825487127]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.9802322e-08, 1.1, -2.9802322e-08)
+shape = SubResource("BoxShape3D_jfb0n")
+
+[node name="pylon2" parent="StaticBody3D" unique_id=1618771418 instance=ExtResource("1_w5roc")]
+transform = Transform3D(0.6157675, 0, 0, 0, 0.6157675, 0, 0, 0, 0.6157675, 0, 0, 0)
+
+[node name="InteractZone" type="Area3D" parent="." unique_id=1463406263]
+collision_layer = 4
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractZone" unique_id=964662119]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9604645e-08, 1.0500001, -5.9604645e-08)
+shape = SubResource("BoxShape3D_nuhd7")
+
+[editable path="StaticBody3D/pylon2"]

@@ -1,0 +1,17 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://cribt24gc685e"]
+
+[ext_resource type="Texture2D" uid="uid://qi0rd48x8dfa" path="res://models/item_devpc_Ucupaint PC Creme Color.jpg" id="1_nmcql"]
+[ext_resource type="Texture2D" uid="uid://drrohm74ioydq" path="res://models/item_devpc_Ucupaint PC Creme Roughness.jpg" id="2_pn7v1"]
+[ext_resource type="Texture2D" uid="uid://bpxykmxpnvy35" path="res://models/item_devpc_Ucupaint PC Creme Normal.jpg" id="3_k2igb"]
+
+[resource]
+resource_name = "PC Cream"
+cull_mode = 2
+albedo_texture = ExtResource("1_nmcql")
+metallic_texture = ExtResource("2_pn7v1")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_pn7v1")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_k2igb")
+metadata/_gltf_primary_texture_coord = 1

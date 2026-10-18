@@ -1,0 +1,77 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://bjv8dg3npfkjp"]
+
+[ext_resource type="Texture2D" uid="uid://crlm52e0dki7" path="res://Images/Icon_Targeting_PC.png" id="1_76gfj"]
+[ext_resource type="Script" uid="uid://5h1eu84vtblx" path="res://Scripts/stat_modifier.gd" id="1_rnjsi"]
+[ext_resource type="Script" uid="uid://btu6or7jc4i8g" path="res://Scripts/item_data.gd" id="2_7dovl"]
+[ext_resource type="PackedScene" uid="uid://b300ld68664xv" path="res://models/item_devpc.glb" id="2_76gfj"]
+
+[sub_resource type="Resource" id="Resource_76gfj"]
+script = ExtResource("1_rnjsi")
+stat = &"move_speed"
+amount_per_stack = 20.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[sub_resource type="Resource" id="Resource_0q2xo"]
+script = ExtResource("1_rnjsi")
+stat = &"acceleration"
+amount_per_stack = 30.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[sub_resource type="Resource" id="Resource_ekr0l"]
+script = ExtResource("1_rnjsi")
+stat = &"battery_capacity"
+amount_per_stack = 60000.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[sub_resource type="Resource" id="Resource_qrv1o"]
+script = ExtResource("1_rnjsi")
+stat = &"battery_recharge_rate"
+amount_per_stack = 120000.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[sub_resource type="Resource" id="Resource_bk2ei"]
+script = ExtResource("1_rnjsi")
+stat = &"jet_strength"
+amount_per_stack = 20.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[sub_resource type="Resource" id="Resource_kiljd"]
+script = ExtResource("1_rnjsi")
+stat = &"lock_fov"
+amount_per_stack = 50.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[sub_resource type="Resource" id="Resource_oqahh"]
+script = ExtResource("1_rnjsi")
+stat = &"lock_strength"
+amount_per_stack = 100.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[sub_resource type="Resource" id="Resource_y5f8x"]
+script = ExtResource("1_rnjsi")
+stat = &"dash_speed"
+amount_per_stack = 30.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[sub_resource type="Resource" id="Resource_nwa3c"]
+script = ExtResource("1_rnjsi")
+stat = &"dash_duration"
+amount_per_stack = 0.5
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[sub_resource type="Resource" id="Resource_apwjn"]
+script = ExtResource("1_rnjsi")
+stat = &"battery_recharge_delay"
+amount_per_stack = -2.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[resource]
+script = ExtResource("2_7dovl")
+id = &"item_dev_pc"
+display_name = "Developers Computer"
+description = "Endless Flight, Huge Lock On, High Mobility"
+tier = 1
+icon = ExtResource("1_76gfj")
+model = ExtResource("2_76gfj")
+modifiers = Array[ExtResource("1_rnjsi")]([SubResource("Resource_76gfj"), SubResource("Resource_0q2xo"), SubResource("Resource_ekr0l"), SubResource("Resource_qrv1o"), SubResource("Resource_bk2ei"), SubResource("Resource_kiljd"), SubResource("Resource_oqahh"), SubResource("Resource_y5f8x"), SubResource("Resource_nwa3c"), SubResource("Resource_apwjn")])
+metadata/_custom_type_script = "uid://btu6or7jc4i8g"

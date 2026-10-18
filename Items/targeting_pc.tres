@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://bj3sdw0qngjj6"]
+
+[ext_resource type="Texture2D" uid="uid://crlm52e0dki7" path="res://Images/Icon_Targeting_PC.png" id="1_02vk2"]
+[ext_resource type="Script" uid="uid://5h1eu84vtblx" path="res://Scripts/stat_modifier.gd" id="1_bhxjw"]
+[ext_resource type="PackedScene" uid="uid://bo66g767vi05i" path="res://models/item_target_comp.glb" id="1_gn7m5"]
+[ext_resource type="Script" uid="uid://btu6or7jc4i8g" path="res://Scripts/item_data.gd" id="2_gn7m5"]
+
+[sub_resource type="Resource" id="Resource_02vk2"]
+script = ExtResource("1_bhxjw")
+stat = &"lock_fov"
+amount_per_stack = 10.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[sub_resource type="Resource" id="Resource_ch5uv"]
+script = ExtResource("1_bhxjw")
+stat = &"lock_strength"
+amount_per_stack = 3.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[resource]
+script = ExtResource("2_gn7m5")
+id = &"item_targeting_pc"
+display_name = "Targeting PC"
+description = "Enhances lock on capabilties greatly"
+tier = 2
+icon = ExtResource("1_02vk2")
+model = ExtResource("1_gn7m5")
+modifiers = Array[ExtResource("1_bhxjw")]([SubResource("Resource_02vk2"), SubResource("Resource_ch5uv")])
+metadata/_custom_type_script = "uid://btu6or7jc4i8g"

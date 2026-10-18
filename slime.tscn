@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://dcvs1suwt3gxa"]
+
+[ext_resource type="PackedScene" uid="uid://dpqqy4gyccdti" path="res://models/slime2.glb" id="1_2d52u"]
+[ext_resource type="Script" uid="uid://c5gub376smnb2" path="res://Scripts/enemy.gd" id="1_5jc4t"]
+[ext_resource type="AudioStream" uid="uid://cv1npxfgt5n7x" path="res://Sounds/HitSoft1.wav" id="2_jayke"]
+[ext_resource type="AudioStream" uid="uid://bu8yt4gwcw2ug" path="res://Sounds/HitSoft2.wav" id="3_2002g"]
+[ext_resource type="AudioStream" uid="uid://chh86bxwrfot7" path="res://Sounds/HitSoft3.wav" id="4_bratd"]
+[ext_resource type="AudioStream" uid="uid://b1lgkgtkneyj8" path="res://Sounds/slimeDeath2.wav" id="5_2002g"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s6liv"]
+albedo_color = Color(0.58431375, 0.18039216, 0, 1)
+emission_enabled = true
+emission = Color(0.44150707, 0, 0.025992868, 1)
+emission_energy_multiplier = 2.4
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_2002g"]
+radius = 0.625
+height = 1.25
+
+[node name="CharacterBody3D" type="CharacterBody3D" unique_id=174578682]
+script = ExtResource("1_5jc4t")
+hitSounds = Array[AudioStream]([ExtResource("2_jayke"), ExtResource("3_2002g"), ExtResource("4_bratd")])
+deathSounds = Array[AudioStream]([ExtResource("5_2002g")])
+speed = 4.0
+radius = 0.625
+height = 1.25
+can_climb = true
+
+[node name="slime2" parent="." unique_id=309771189 instance=ExtResource("1_2d52u")]
+transform = Transform3D(-0.22175999, 0, 1.9386874e-08, 0, 0.22175999, 0, -1.9386874e-08, 0, -0.22175999, 0, 0, 0)
+
+[node name="inner" parent="slime2" index="1" unique_id=904582173]
+surface_material_override/0 = SubResource("StandardMaterial3D_s6liv")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1346059956]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.940697e-08, 0.59374994, 0.07016599)
+shape = SubResource("CapsuleShape3D_2002g")
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=1331370073]
+
+[node name="AimPoint" type="Marker3D" parent="." unique_id=854303248]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+
+[editable path="slime2"]

@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://dqdovhq3j2pa"]
+
+[ext_resource type="Script" uid="uid://pamo78lglyp2" path="res://Scripts/Bullet.gd" id="1_j24xj"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j24xj"]
+albedo_color = Color(0.88498396, 0.81447816, 0.50930357, 1)
+emission_enabled = true
+emission = Color(0.8927339, 0.87347, 0.79547924, 1)
+emission_energy_multiplier = 14.75
+
+[sub_resource type="BoxMesh" id="BoxMesh_4xxr5"]
+material = SubResource("StandardMaterial3D_j24xj")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4xxr5"]
+size = Vector3(1, 1, 6)
+
+[node name="Bullet" type="RigidBody3D" unique_id=289174295]
+transform = Transform3D(0.6996794, 0.714457, 0, -0.714457, 0.6996794, 0, 0, 0, 1, 0, 0, 0)
+mass = 0.1
+gravity_scale = 0.0
+freeze = true
+freeze_mode = 1
+continuous_cd = true
+script = ExtResource("1_j24xj")
+speed = 200.0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1888750652]
+transform = Transform3D(0.043249033, 1.8626451e-09, 0, -1.8626451e-09, 0.043249033, 0, 0, 0, 0.32863635, 0, 0, 0.14)
+mesh = SubResource("BoxMesh_4xxr5")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=873012075]
+transform = Transform3D(0.054347225, 0, 0, 0, 0.054347225, 0, 0, 0, 0.054347225, 0, 0, 0.13586806)
+shape = SubResource("BoxShape3D_4xxr5")

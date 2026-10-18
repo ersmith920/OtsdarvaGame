@@ -1,0 +1,17 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://bf5hnajx8wfbq"]
+
+[ext_resource type="Texture2D" uid="uid://dcmxk07pl3ol0" path="res://models/item_devpc_Ucupaint Mouse Creme Color.jpg" id="1_a1h3c"]
+[ext_resource type="Texture2D" uid="uid://cqqvalq5gs281" path="res://models/item_devpc_Ucupaint Mouse Creme Roughness.jpg" id="2_f3ou5"]
+[ext_resource type="Texture2D" uid="uid://ddboiaorvpo3y" path="res://models/item_devpc_Ucupaint Mouse Creme Normal.jpg" id="3_ed263"]
+
+[resource]
+resource_name = "Mouse Cream"
+cull_mode = 2
+albedo_texture = ExtResource("1_a1h3c")
+metallic_texture = ExtResource("2_f3ou5")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_f3ou5")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_ed263")
+metadata/_gltf_primary_texture_coord = 1

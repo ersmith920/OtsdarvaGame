@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://b0rmhr4htkkc8"]
+
+[ext_resource type="Script" uid="uid://pamo78lglyp2" path="res://Scripts/Bullet.gd" id="1_8fjf0"]
+[ext_resource type="PackedScene" uid="uid://buhyxyyteao2k" path="res://krsw_explosion.tscn" id="2_65oa8"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nmr7f"]
+albedo_color = Color(0.6283368, 0.47525, 1, 1)
+emission_enabled = true
+emission = Color(0.6707871, 0.5012329, 0.99738365, 1)
+emission_energy_multiplier = 10.66
+
+[sub_resource type="BoxMesh" id="BoxMesh_4xxr5"]
+material = SubResource("StandardMaterial3D_nmr7f")
+size = Vector3(1, 1, 0.90000004)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4xxr5"]
+size = Vector3(1, 1, 10.900001)
+
+[node name="KrswLaser" type="RigidBody3D" unique_id=1844785495]
+gravity_scale = 0.0
+continuous_cd = true
+script = ExtResource("1_8fjf0")
+speed = 70.0
+curve_time = 3.0
+explosion_scene = ExtResource("2_65oa8")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1545291320]
+transform = Transform3D(0.063695885, 0, 0, 0, 0.063695885, 0, 0, 0, 2.3056695, 0, 0, 1.055917)
+mesh = SubResource("BoxMesh_4xxr5")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1466381690]
+transform = Transform3D(0.19761527, 0, 0, 0, 0.19761527, 0, 0, 0, 0.19761527, 0, 0, 1.0809224)
+shape = SubResource("BoxShape3D_4xxr5")

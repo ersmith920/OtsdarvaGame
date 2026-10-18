@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SpawnTier" format=3 uid="uid://ds3ti6ev72i8h"]
+
+[ext_resource type="PackedScene" uid="uid://cdgskfmwi0syb" path="res://tank.tscn" id="1_mh51r"]
+[ext_resource type="Script" uid="uid://coywd10wgyey" path="res://Scripts/spawn_tier.gd" id="1_skuar"]
+
+[resource]
+script = ExtResource("1_skuar")
+tier_name = "Elite"
+enemies = Array[PackedScene]([ExtResource("1_mh51r")])
+base_count = 1
+difficulty_step = 4
+extra_per_step = 1
+metadata/_custom_type_script = "uid://coywd10wgyey"

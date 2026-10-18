@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="LootTable" format=3 uid="uid://c7rsmcadkj856"]
+
+[ext_resource type="Script" uid="uid://btu6or7jc4i8g" path="res://Scripts/item_data.gd" id="1_6tnp7"]
+[ext_resource type="Script" uid="uid://d0enngc1shw5l" path="res://Scripts/loot_table.gd" id="2_juvfr"]
+[ext_resource type="Resource" uid="uid://c2bb8860ubmp" path="res://Items/attack_speed.tres" id="2_nv1ol"]
+[ext_resource type="Resource" uid="uid://culbctlf00ovy" path="res://Items/speed_boot.tres" id="3_nv1ol"]
+[ext_resource type="Resource" uid="uid://nn38v1m2jekt" path="res://Items/projectile_plus.tres" id="4_nfmpq"]
+[ext_resource type="Resource" uid="uid://do43jjq1se0fc" path="res://Items/boost_pack.tres" id="5_g785f"]
+[ext_resource type="Resource" uid="uid://cr72pelvoye5e" path="res://Items/battery_cap.tres" id="6_g785f"]
+[ext_resource type="Resource" uid="uid://bj3sdw0qngjj6" path="res://Items/targeting_pc.tres" id="7_davfn"]
+[ext_resource type="Resource" uid="uid://2sk751cmwua4" path="res://Items/ricochet.tres" id="8_paugh"]
+[ext_resource type="Resource" uid="uid://5xo6e4wc4lgk" path="res://Items/smart_lens.tres" id="9_45gt8"]
+
+[resource]
+script = ExtResource("2_juvfr")
+tier_1_chance = 5.0
+tier_3_chance = 25.0
+tier_4_chance = 25.0
+tier_5_chance = 25.0
+items = Array[ExtResource("1_6tnp7")]([ExtResource("2_nv1ol"), ExtResource("3_nv1ol"), ExtResource("4_nfmpq"), ExtResource("5_g785f"), ExtResource("6_g785f"), ExtResource("7_davfn"), ExtResource("8_paugh"), ExtResource("9_45gt8")])
+metadata/_custom_type_script = "uid://d0enngc1shw5l"

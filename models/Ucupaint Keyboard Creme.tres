@@ -1,0 +1,17 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://b2afm2w0a8yc"]
+
+[ext_resource type="Texture2D" uid="uid://d0ck7kqnp6c2c" path="res://models/item_devpc_Ucupaint Keyboard Creme_1.jpg" id="1_pa02t"]
+[ext_resource type="Texture2D" uid="uid://bxf43n0nr8ca5" path="res://models/item_devpc_Ucupaint Keyboard Creme_2.jpg" id="2_1yhlj"]
+[ext_resource type="Texture2D" uid="uid://wi3n2o3syr8g" path="res://models/item_devpc_Ucupaint Keyboard Creme.jpg" id="3_in3eo"]
+
+[resource]
+resource_name = "Ucupaint Keyboard Creme"
+cull_mode = 2
+albedo_texture = ExtResource("1_pa02t")
+metallic_texture = ExtResource("2_1yhlj")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_1yhlj")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_in3eo")
+metadata/_gltf_primary_texture_coord = 3

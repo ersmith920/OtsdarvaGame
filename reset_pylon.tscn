@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://cj6s4hpg7nrsl"]
+
+[ext_resource type="PackedScene" uid="uid://bo6lb2fjgwioh" path="res://pylon_base.tscn" id="1_ga61r"]
+[ext_resource type="Script" uid="uid://bcasmfbxs1yb2" path="res://Scripts/reset_pylon.gd" id="2_0yn2f"]
+[ext_resource type="AudioStream" uid="uid://ebo0j5romtej" path="res://Sounds/ResetPylon.wav" id="3_0yn2f"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kek77"]
+albedo_color = Color(0.577948, 0.7444173, 1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4c57u"]
+albedo_color = Color(0.7038078, 0.7038079, 0.70380765, 1)
+
+[node name="ResetPylon" unique_id=425731580 instance=ExtResource("1_ga61r")]
+script = ExtResource("2_0yn2f")
+flash_time = 0.6
+glow_color = Color(0, 0.57934356, 0.84384936, 1)
+interact_sound = ExtResource("3_0yn2f")
+
+[node name="orb" parent="StaticBody3D/pylon2" parent_id_path=PackedInt32Array(1618771418) index="0" unique_id=538001684]
+surface_material_override/0 = SubResource("StandardMaterial3D_kek77")
+
+[node name="pylon" parent="StaticBody3D/pylon2" parent_id_path=PackedInt32Array(1618771418) index="1" unique_id=1235246425]
+surface_material_override/0 = SubResource("StandardMaterial3D_4c57u")
+
+[editable path="StaticBody3D/pylon2"]

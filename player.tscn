@@ -1,0 +1,158 @@
+[gd_scene format=3 uid="uid://d3uk6nwtlqqeq"]
+
+[ext_resource type="Script" uid="uid://rwfcq6i3c0kn" path="res://Scripts/Player.gd" id="1_1jxqw"]
+[ext_resource type="Script" uid="uid://b78vs3vjbay32" path="res://Scripts/lock_on.gd" id="2_2hs0m"]
+[ext_resource type="AudioStream" uid="uid://gpbjc5rv5h0e" path="res://Sounds/boost2.wav" id="2_q13i1"]
+[ext_resource type="Texture2D" uid="uid://crrqoekgkfnqi" path="res://crosshair.png" id="3_1jxqw"]
+[ext_resource type="AudioStream" uid="uid://hgg3srsigxgc" path="res://Sounds/boost1.wav" id="3_pbfsw"]
+[ext_resource type="AudioStream" uid="uid://ciebeej7hkm7l" path="res://Sounds/boost3.wav" id="4_5tmop"]
+[ext_resource type="Script" uid="uid://f15ybv02mxp4" path="res://Scripts/player_stats.gd" id="4_hqtel"]
+[ext_resource type="Script" uid="uid://dr3ss5ephibla" path="res://Scripts/lock_fov_circle.gd" id="6_1jxqw"]
+[ext_resource type="Script" uid="uid://cvcgnjkdhgfip" path="res://Scripts/enemy_spawner.gd" id="6_ivps1"]
+[ext_resource type="Script" uid="uid://coywd10wgyey" path="res://Scripts/spawn_tier.gd" id="7_7lmhl"]
+[ext_resource type="Script" uid="uid://b6sjxca1nbw56" path="res://Scripts/hud_bars.gd" id="8_dw050"]
+[ext_resource type="Resource" uid="uid://co2d0cuwh5t25" path="res://common_tier.tres" id="8_dx0e4"]
+[ext_resource type="Script" uid="uid://b4meudqmfsp8v" path="res://Scripts/speed_blur.gd" id="9_5tmop"]
+[ext_resource type="Script" uid="uid://ctf7fflgutf4v" path="res://Scripts/tab_menu.gd" id="9_b26j0"]
+[ext_resource type="Resource" uid="uid://ds3ti6ev72i8h" path="res://elite_tier.tres" id="9_jm5j8"]
+[ext_resource type="Script" uid="uid://d047ud5u33nrt" path="res://Scripts/hud_timer.gd" id="10_n7ghd"]
+[ext_resource type="FontFile" uid="uid://krpi7jvgdvw0" path="res://Fonts/KHGummi.otf" id="11_606se"]
+[ext_resource type="Script" uid="uid://dk5pu8x6sivc5" path="res://Scripts/hud_enemy_count.gd" id="11_nvl01"]
+[ext_resource type="Script" uid="uid://bwicqtgru1jdr" path="res://Scripts/item_popup.gd" id="12_ivps1"]
+[ext_resource type="FontFile" uid="uid://cv5pbqnnxnbs6" path="res://Fonts/KHMenu-Bold.otf" id="13_bwjto"]
+[ext_resource type="FontFile" uid="uid://cptqv4eveq6c3" path="res://Fonts/KHMenu.otf" id="14_606se"]
+[ext_resource type="Script" uid="uid://ds4ofaa3bvuko" path="res://Scripts/center_crosshair.gd" id="16_u1c27"]
+[ext_resource type="Script" uid="uid://b2hp52md32ke6" path="res://Scripts/pause_menu.gd" id="17_op7ga"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_jfb0n"]
+
+[sub_resource type="ConvexPolygonShape3D" id="ConvexPolygonShape3D_0xm2m"]
+points = PackedVector3Array(-0.12520654, -0.532801, -0.4805069, 0.022783129, 0.4760704, 0.49888408, 0.16971254, 0.5591441, 0.46417162, 0.23105091, -0.8035912, 0.32045516, 0.40741014, 0.651043, -0.24352328, -0.4827893, 0.59484255, 0.082213186, -0.3628679, -0.68231165, 0.2896967, 0.46904355, -0.65452886, -0.06627126, -0.12744367, 0.8427015, -0.33810276, -0.39343542, -0.6839421, -0.24471663, 0.43825462, 0.62330925, 0.20084947, 0.0841477, 0.977454, 0.11479468, -0.06820232, -0.9764576, -0.12927033, 0.20054972, -0.56312895, -0.4514544, -0.18552664, 0.59545326, -0.4534751, -0.27336287, 0.59226835, 0.40775412, -0.0069364863, -0.47682306, 0.49966025, 0.37582088, -0.5886136, 0.31695515, 0.111579016, 0.5630594, -0.48117727, -0.41725034, 0.5278656, -0.27049688, -0.48454633, -0.59697217, -0.06650971, -0.27974695, 0.90856135, 0.05333608, -0.25019687, -0.8807117, 0.20531891, 0.263647, -0.90277094, -0.1273943, 0.29336792, 0.8715263, -0.15719566, 0.3734115, -0.5263189, -0.32824618, 0.4996626, 0.47664148, -0.0068885577, 0.053105574, 0.8750009, 0.32470253, -0.15454252, -0.5908538, 0.4658794, -0.09727988, -0.7823577, -0.39818847, -0.3876489, -0.49817133, 0.31564978, -0.30067965, -0.58799505, -0.38890144)
+
+[node name="CharacterBody3D" type="CharacterBody3D" unique_id=1765552205]
+script = ExtResource("1_1jxqw")
+dash_sounds = Array[AudioStream]([ExtResource("2_q13i1"), ExtResource("3_pbfsw"), ExtResource("4_5tmop")])
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1234274327]
+mesh = SubResource("CapsuleMesh_jfb0n")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=181529133]
+shape = SubResource("ConvexPolygonShape3D_0xm2m")
+
+[node name="Head" type="Node3D" parent="." unique_id=270372638]
+
+[node name="Camera3D" type="Camera3D" parent="Head" unique_id=1886807875]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.70000005, 0.17048764)
+
+[node name="slot1" type="Node3D" parent="Head/Camera3D" unique_id=339806287]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.3, -0.29999998, -0.6)
+
+[node name="slot2" type="Node3D" parent="Head/Camera3D" unique_id=184927666]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.26941165, -0.29999998, -0.6)
+
+[node name="slot3" type="Node3D" parent="Head/Camera3D" unique_id=1188235730]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.43058833, -0.19999999, -0.6)
+
+[node name="slot4" type="Node3D" parent="Head/Camera3D" unique_id=514795750]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.4117829, -0.19999999, -0.6)
+
+[node name="RayCast3D" type="RayCast3D" parent="Head/Camera3D" unique_id=459774860]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.20000005, -0.19999993)
+target_position = Vector3(0, 0, -2)
+collision_mask = 4
+hit_from_inside = true
+collide_with_areas = true
+collide_with_bodies = false
+
+[node name="LockOn" type="Node3D" parent="Head/Camera3D" unique_id=79919 node_paths=PackedStringArray("crosshair")]
+script = ExtResource("2_2hs0m")
+crosshair = NodePath("../../../HUD/Crosshair")
+
+[node name="EnemySpawner" type="Node3D" parent="." unique_id=2092120457]
+script = ExtResource("6_ivps1")
+radius = 100
+tiers = Array[ExtResource("7_7lmhl")]([ExtResource("8_dx0e4"), ExtResource("9_jm5j8")])
+
+[node name="PlayerStats" type="Node" parent="." unique_id=1563529071]
+script = ExtResource("4_hqtel")
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1338291507]
+
+[node name="SpeedBlur" type="ColorRect" parent="HUD" unique_id=456413831]
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("9_5tmop")
+
+[node name="FovCircle" type="Control" parent="HUD" unique_id=459560476 node_paths=PackedStringArray("lock_on")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_1jxqw")
+lock_on = NodePath("../../Head/Camera3D/LockOn")
+line_width = 1.0
+
+[node name="Crosshair" type="TextureRect" parent="HUD" unique_id=1659879013]
+custom_minimum_size = Vector2(24, 24)
+offset_right = 24.0
+offset_bottom = 24.0
+texture = ExtResource("3_1jxqw")
+expand_mode = 1
+
+[node name="StatBars" type="Control" parent="HUD" unique_id=2088652837]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("8_dw050")
+
+[node name="TabMenu" type="Control" parent="HUD" unique_id=1147392042]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("9_b26j0")
+
+[node name="Timer" type="Label" parent="HUD" unique_id=1142248390]
+offset_right = 40.0
+offset_bottom = 23.0
+script = ExtResource("10_n7ghd")
+font = ExtResource("11_606se")
+
+[node name="EnemyCount" type="Label" parent="HUD" unique_id=1481340875]
+offset_right = 40.0
+offset_bottom = 23.0
+script = ExtResource("11_nvl01")
+font = ExtResource("11_606se")
+
+[node name="ItemPopup" type="Control" parent="HUD" unique_id=1150307713]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("12_ivps1")
+name_font = ExtResource("13_bwjto")
+description_font = ExtResource("14_606se")
+name_font_size = 18
+description_font_size = 14
+box_color = Color(0.05882353, 0.05882353, 0.05882353, 0.5411765)
+
+[node name="CenterCrosshair" type="Control" parent="HUD" unique_id=2034680122]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("16_u1c27")
+opacity = 0.3
+radius = 1.0
+
+[node name="PauseMenu" type="Control" parent="HUD" unique_id=2072073045]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("17_op7ga")
+font = ExtResource("11_606se")

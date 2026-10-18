@@ -1,0 +1,124 @@
+[gd_scene format=3 uid="uid://cqf3elvyoak0p"]
+
+[ext_resource type="Script" uid="uid://05rxsbp5ho1h" path="res://Scripts/Gun.gd" id="1_be66a"]
+[ext_resource type="PackedScene" uid="uid://dqdovhq3j2pa" path="res://Bullet.tscn" id="2_6lrvk"]
+[ext_resource type="AudioStream" uid="uid://ck68qjq121lwc" path="res://Sounds/heavyRifleShot1.wav" id="3_5trlg"]
+[ext_resource type="PackedScene" uid="uid://b2eudvbnntj25" path="res://models/heavyRifle.glb" id="3_my6hx"]
+[ext_resource type="AudioStream" uid="uid://lu01n0b064xw" path="res://Sounds/heavyRifleShot2.wav" id="4_ucb4d"]
+[ext_resource type="AudioStream" uid="uid://uiu2405i0c0v" path="res://Sounds/heavyRifleShot3.wav" id="5_5trlg"]
+[ext_resource type="AudioStream" uid="uid://c5jxa8bdnsqmn" path="res://Sounds/heavyReload.wav" id="6_ucb4d"]
+
+[sub_resource type="Curve" id="Curve_jfb0n"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0]
+point_count = 1
+
+[sub_resource type="Animation" id="Animation_5trlg"]
+length = 0.001
+tracks/0/type = "position_3d"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("ModelAnchor/heavyRifle")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, 0)
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("ModelAnchor/heavyRifle:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, -0.2)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("ModelAnchor/heavyRifle:rotation")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, -1.5707964, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_23egj"]
+resource_name = "reload"
+tracks/0/type = "position_3d"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("ModelAnchor/heavyRifle")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, 0, 0.1, 1, 0, 0, -0.2, 0.23333333, 1, 0, -0.2, -0.2, 0.6666667, 1, 0, -0.2, -0.2, 0.8333333, 1, 0, 0, -0.2, 1, 1, 0, 0, 0)
+tracks/1/type = "method"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(1),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"reload"
+}]
+}
+
+[sub_resource type="Animation" id="Animation_ucb4d"]
+resource_name = "shoot"
+length = 0.5
+tracks/0/type = "position_3d"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("ModelAnchor/heavyRifle")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, -0.2, 0.13333334, 1, 0, 0, 0, 0.5, 1, 0, 0, 0)
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_23egj"]
+_data = {
+&"RESET": SubResource("Animation_5trlg"),
+&"reload": SubResource("Animation_23egj"),
+&"shoot": SubResource("Animation_ucb4d")
+}
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_jfb0n"]
+radius = 1.0
+
+[node name="HeavyRifle" type="Node3D" unique_id=1083341827]
+script = ExtResource("1_be66a")
+projectile = ExtResource("2_6lrvk")
+cone_size = 2.0
+projectile_speed = SubResource("Curve_jfb0n")
+damage = 50.0
+fire_rate = 1.0
+magSize = 10
+gunSounds = Array[AudioStream]([ExtResource("3_5trlg"), ExtResource("4_ucb4d"), ExtResource("5_5trlg")])
+reloadSound = ExtResource("6_ucb4d")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=792462306]
+libraries/ = SubResource("AnimationLibrary_23egj")
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=2122312344]
+
+[node name="ModelAnchor" type="Node3D" parent="." unique_id=331816098]
+
+[node name="heavyRifle" parent="ModelAnchor" unique_id=1095764509 instance=ExtResource("3_my6hx")]
+transform = Transform3D(-4.3711402e-08, 0, -0.99999964, 0, 1.0000001, 0, 1.0000004, 0, -4.3711374e-08, 0, 0, -0.2)
+
+[node name="muzzle" type="Node3D" parent="ModelAnchor" unique_id=1494311604]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09308367, 0.7666297)
+
+[node name="Area3D" type="Area3D" parent="." unique_id=1322567059]
+collision_layer = 4
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=446386530]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("SphereShape3D_jfb0n")

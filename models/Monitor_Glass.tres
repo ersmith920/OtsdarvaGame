@@ -1,0 +1,20 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://cxfcwl5em3gu5"]
+
+[ext_resource type="Texture2D" uid="uid://cguu2gicugysx" path="res://models/item_devpc_Monitor Glass_BaseColor.jpg" id="1_0nhl1"]
+[ext_resource type="Texture2D" uid="uid://c6ymjne5l2kfk" path="res://models/item_devpc_Monitor Glass_Roughness.jpg" id="2_klg0q"]
+[ext_resource type="Texture2D" uid="uid://uel1nl2v4lpd" path="res://models/item_devpc_Monitor Glass_Normal.jpg" id="3_8s765"]
+
+[resource]
+resource_name = "Monitor_Glass"
+cull_mode = 2
+albedo_texture = ExtResource("1_0nhl1")
+metallic_texture = ExtResource("2_klg0q")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_klg0q")
+roughness_texture_channel = 1
+emission_enabled = true
+emission = Color(0, 1, 0, 1)
+emission_energy_multiplier = 3.3
+normal_enabled = true
+normal_texture = ExtResource("3_8s765")
+metadata/_gltf_primary_texture_coord = 0

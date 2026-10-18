@@ -1,0 +1,10 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://dwyfrj2286xme"]
+
+[resource]
+resource_name = "crosshair"
+cull_mode = 2
+albedo_color = Color(0, 0.59462696, 0.9063355, 1)
+roughness = 0.5
+emission_enabled = true
+emission = Color(0.112956084, 0.35298744, 0.5584049, 1)
+emission_energy_multiplier = 9.0

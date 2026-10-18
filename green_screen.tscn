@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://clw5qeb0yq4yc"]
+
+[ext_resource type="PackedScene" uid="uid://cqgugkho6du81" path="res://models/qbjet.glb" id="1_676q7"]
+
+[sub_resource type="Environment" id="Environment_jfb0n"]
+background_mode = 1
+background_color = Color(0, 1, 0, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.1728327, 0.17283267, 0.17283267, 1)
+
+[node name="GreenScreen" type="Node3D" unique_id=1391289746]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=556382372]
+environment = SubResource("Environment_jfb0n")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=817095367]
+transform = Transform3D(0.7944372, -0.22651191, 0.5635263, 0, 0.92785007, 0.37295347, -0.60734636, -0.2962881, 0.7371186, 0.28005123, 0.21770796, 0.4279294)
+projection = 1
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=2147297589]
+transform = Transform3D(0.87277955, -0.37183216, 0.3162225, -0.10038531, 0.49726176, 0.8617735, -0.47768056, -0.78388244, 0.39667344, -0.2, 0.3, 0.4)
+shadow_enabled = true
+
+[node name="qbjet" parent="." unique_id=909044156 instance=ExtResource("1_676q7")]
+transform = Transform3D(0.93969274, -0.34202015, 0, 0.32139382, 0.8830223, -0.34202015, 0.116977766, 0.3213938, 0.9396926, 0.1, 0, 0)

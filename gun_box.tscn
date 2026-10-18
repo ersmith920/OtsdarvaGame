@@ -1,0 +1,208 @@
+[gd_scene format=3 uid="uid://bbk5ykihr3h6m"]
+
+[ext_resource type="Script" uid="uid://bs0ps7h51x4bu" path="res://Scripts/gunBox.gd" id="1_vc7op"]
+[ext_resource type="PackedScene" uid="uid://cqf3elvyoak0p" path="res://heavyRifle.tscn" id="2_x0xgw"]
+[ext_resource type="PackedScene" uid="uid://e7n1s0aa2mhd" path="res://hammerGun.tscn" id="3_1y5t7"]
+[ext_resource type="PackedScene" uid="uid://c5rt0tyrkomum" path="res://models/chest.glb" id="4_1y5t7"]
+[ext_resource type="PackedScene" uid="uid://bojefmceio81n" path="res://Rifle.tscn" id="4_kwsqr"]
+[ext_resource type="PackedScene" uid="uid://b0kb1vpk6sb2" path="res://Krsw.tscn" id="5_onhrv"]
+[ext_resource type="AudioStream" uid="uid://cfw35bxb18rbi" path="res://Sounds/jokeOpen.wav" id="6_h1q43"]
+[ext_resource type="AudioStream" uid="uid://biwftidvbum5v" path="res://Sounds/HeavyRumble1.wav" id="6_t8bfw"]
+[ext_resource type="AudioStream" uid="uid://dr4rew5co6gr6" path="res://Sounds/HeavyRumble2.wav" id="7_ebbj1"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_jfb0n"]
+size = Vector3(1, 0.91789556, 1.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ucb4d"]
+albedo_color = Color(0.427493, 0.42749307, 0.42749307, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kwsqr"]
+albedo_color = Color(0.2159017, 0.21590173, 0.2159017, 1)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_jfb0n"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1y5t7"]
+albedo_color = Color(0.82503104, 0.3659168, 0, 1)
+emission_enabled = true
+emission = Color(0.9999997, 0.14734003, 0.14160672, 1)
+emission_energy_multiplier = 9.41
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_nuhd7"]
+radius = 1.2
+
+[sub_resource type="Animation" id="Animation_1y5t7"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("StaticBody3D/chest/lid:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("StaticBody3D/chest/lid:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, 0)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("StaticBody3D/chest/crate:rotation")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, 0)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("StaticBody3D/chest/crate:position")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_kwsqr"]
+resource_name = "open"
+length = 2.0
+step = 0.05
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("StaticBody3D/chest/lid:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.07000001, 0.1, 0.2, 0.3, 0.37559798, 0.4, 0.6, 1.1, 1.2, 1.25, 1.35),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0.11644033, 0.2, 0), Vector3(0.13450006, 0.74531096, 0), Vector3(-0.23172054, 0.9909774, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("StaticBody3D/chest/lid:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.060000002, 0.1, 0.2, 0.3, 0.37559798, 0.4, 0.6, 1.1, 1.2, 1.25, 1.35),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0.05082555, 0, 0), Vector3(-0.0062304633, 0.0019037818, 0.072377995), Vector3(-0.077852555, 0, 0), Vector3(0, 0, 0), Vector3(0.055519555, 0, 0), Vector3(0.05018451, 0.001702101, 0.03391812), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0.34906584), Vector3(0, 0, 1.3092475), Vector3(0, 0, 2.0226054)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("StaticBody3D/chest/crate:rotation")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.07000001, 0.1, 0.2, 0.3, 0.37559798, 0.4, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0.05082555, 0, 0), Vector3(-0.0010356943, 0.0022804246, 0.07237663), Vector3(-0.077852555, 0, 0), Vector3(0, 0, 0), Vector3(0.05551956, 0, 0), Vector3(0.050184518, 0.001702101, 0.033918116), Vector3(0, 0, 0)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("StaticBody3D/chest/crate:position")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.060000002, 0.1, 0.2, 0.3, 0.37559798, 0.4, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0)]
+}
+tracks/4/type = "method"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath(".")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.37930658, 1.1, 1.35),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"values": [{
+"args": [0],
+"method": &"play_rumble"
+}, {
+"args": [1],
+"method": &"play_rumble"
+}, {
+"args": [],
+"method": &"play_open"
+}, {
+"args": [],
+"method": &"spawn_reward"
+}]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_onhrv"]
+_data = {
+&"RESET": SubResource("Animation_1y5t7"),
+&"open": SubResource("Animation_kwsqr")
+}
+
+[node name="gunBox" type="Node3D" unique_id=1802771475]
+script = ExtResource("1_vc7op")
+guns = Array[PackedScene]([ExtResource("2_x0xgw"), ExtResource("3_1y5t7"), ExtResource("4_kwsqr"), ExtResource("5_onhrv")])
+rumble_sounds = Array[AudioStream]([ExtResource("6_t8bfw"), ExtResource("7_ebbj1")])
+open_sound = ExtResource("6_h1q43")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=55574681]
+collision_layer = 3
+collision_mask = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=445616540]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.016076684, 5.9604645e-08)
+shape = SubResource("BoxShape3D_jfb0n")
+
+[node name="chest" parent="StaticBody3D" unique_id=1201964843 instance=ExtResource("4_1y5t7")]
+
+[node name="crate" parent="StaticBody3D/chest" index="0" unique_id=1222836455]
+transform = Transform3D(1, 0, 0, 0, 1.0000001, 0, 0, 0, 0.99999994, 0, 0, 0)
+surface_material_override/0 = SubResource("StandardMaterial3D_ucb4d")
+
+[node name="lid" parent="StaticBody3D/chest" index="1" unique_id=1969208242]
+transform = Transform3D(0.9999995, 0, 0, 0, 0.9999996, 0, 0, 0, 1.0000001, 0, 0, 0)
+surface_material_override/0 = SubResource("StandardMaterial3D_kwsqr")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D/chest" unique_id=1082319152]
+transform = Transform3D(0.39089578, 0, 0, 0, 1, 0, 0, 0, 0.6516015, 0.0018007159, 0.35265315, -1.4901161e-08)
+mesh = SubResource("PlaneMesh_jfb0n")
+surface_material_override/0 = SubResource("StandardMaterial3D_1y5t7")
+
+[node name="interactZone" type="Area3D" parent="." unique_id=1728405586]
+collision_layer = 4
+collision_mask = 4
+
+[node name="zone" type="CollisionShape3D" parent="interactZone" unique_id=2132888049]
+shape = SubResource("SphereShape3D_nuhd7")
+
+[node name="Marker3D" type="Marker3D" parent="." unique_id=453187095]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1262147526]
+libraries/ = SubResource("AnimationLibrary_onhrv")
+
+[editable path="StaticBody3D/chest"]

@@ -1,0 +1,7 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://bb1bklr0ryjc3"]
+
+[resource]
+resource_name = "box"
+cull_mode = 2
+albedo_color = Color(0.9303748, 0.91841733, 0.7866217, 1)
+roughness = 0.5

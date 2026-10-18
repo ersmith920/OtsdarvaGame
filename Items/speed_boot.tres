@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://culbctlf00ovy"]
+
+[ext_resource type="PackedScene" uid="uid://gpd64dw1aeco" path="res://models/itemSpeedBoot.glb" id="1_61fnd"]
+[ext_resource type="Texture2D" uid="uid://dlfqteqot6t16" path="res://Images/Icon_Speed_Boot.png" id="1_bai1u"]
+[ext_resource type="Script" uid="uid://5h1eu84vtblx" path="res://Scripts/stat_modifier.gd" id="1_gmupw"]
+[ext_resource type="Script" uid="uid://btu6or7jc4i8g" path="res://Scripts/item_data.gd" id="2_61fnd"]
+
+[sub_resource type="Resource" id="Resource_y3krv"]
+script = ExtResource("1_gmupw")
+stat = &"move_speed"
+type = 1
+amount_per_stack = 0.1
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[sub_resource type="Resource" id="Resource_a82gc"]
+script = ExtResource("1_gmupw")
+stat = &"acceleration"
+type = 1
+amount_per_stack = 0.1
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[resource]
+script = ExtResource("2_61fnd")
+id = &"item_speed_boot"
+display_name = "Jet Boot"
+description = "Increases max speed and acceleration by 10%"
+tier = 3
+icon = ExtResource("1_bai1u")
+model = ExtResource("1_61fnd")
+modifiers = Array[ExtResource("1_gmupw")]([SubResource("Resource_y3krv"), SubResource("Resource_a82gc")])
+metadata/_custom_type_script = "uid://btu6or7jc4i8g"
