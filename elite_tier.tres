@@ -10,4 +10,5 @@ enemies = Array[PackedScene]([ExtResource("1_mh51r")])
 base_count = 1
 difficulty_step = 4
 extra_per_step = 1
+min_spawn_distance = 20.0
 metadata/_custom_type_script = "uid://coywd10wgyey"

@@ -21,6 +21,9 @@ const MIN_ATTACK_SPEED := 0.01
 @export var muzzle_flash : PackedScene
 @export var gunSounds : Array[AudioStream]
 @export var reloadSound : AudioStream
+## Volume offset for shots and reloads, in dB. Negative = quieter.
+@export var shot_volume_db := -20
+@export var reload_volume_db := 0.0
 
 @export_group("World Pickup")
 ## Gap between the floor and the BOTTOM of the model while it lies on the ground.
@@ -178,6 +181,7 @@ func _start_reload() -> void:
 	animator.stop()
 	animator.play("reload")
 	audio_stream_player_3d.stream = reloadSound
+	audio_stream_player_3d.volume_db = reload_volume_db
 	audio_stream_player_3d.play()
 
 
@@ -195,6 +199,8 @@ func _play_shot_effects(attack_speed: float) -> void:
 	# One-shot audio player so rapid shots don't cut each other off.
 	var audio := AudioStreamPlayer3D.new()
 	audio.stream = gunSounds.pick_random()
+	audio.volume_db = shot_volume_db
+	audio.max_db = -1
 	add_child(audio)
 	audio.play()
 	audio.finished.connect(audio.queue_free)

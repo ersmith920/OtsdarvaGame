@@ -133,6 +133,7 @@ func _update_firing(target: Vector3, player: Player, aligned: bool) -> void:
 	var cooldown_up := _winding_up or now >= _next_shot_ms
 	var can_fire := cooldown_up and aligned \
 			and global_position.distance_to(player.global_position) <= max_fire_range \
+			and _has_clear_shot(turret.global_position, muzzle.global_position) \
 			and _has_clear_shot(muzzle.global_position, target)
 
 	if _winding_up:

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://clw5qeb0yq4yc"]
 
-[ext_resource type="PackedScene" uid="uid://cqgugkho6du81" path="res://models/qbjet.glb" id="1_676q7"]
+[ext_resource type="PackedScene" uid="uid://qg73d2jusx3c" path="res://models/item_pizza.glb" id="1_676q7"]
 
 [sub_resource type="Environment" id="Environment_jfb0n"]
 background_mode = 1
@@ -21,5 +21,5 @@ projection = 1
 transform = Transform3D(0.87277955, -0.37183216, 0.3162225, -0.10038531, 0.49726176, 0.8617735, -0.47768056, -0.78388244, 0.39667344, -0.2, 0.3, 0.4)
 shadow_enabled = true
 
-[node name="qbjet" parent="." unique_id=909044156 instance=ExtResource("1_676q7")]
-transform = Transform3D(0.93969274, -0.34202015, 0, 0.32139382, 0.8830223, -0.34202015, 0.116977766, 0.3213938, 0.9396926, 0.1, 0, 0)
+[node name="item_pizza" parent="." unique_id=1343826054 instance=ExtResource("1_676q7")]
+transform = Transform3D(-0.971987, -0.036214866, 0.23222815, -0.14351751, 0.8739158, -0.46440715, -0.18612938, -0.48472634, -0.8546322, 0, 0, 0)

@@ -56,6 +56,7 @@
 [ext_resource type="Texture2D" uid="uid://c7sguu8tgwy74" path="res://temp/Buildings_Shops_27.png" id="53_1vm84"]
 [ext_resource type="Texture2D" uid="uid://bdlqa20g7cj52" path="res://temp/Buildings_building_11.jpg" id="54_wu3dr"]
 [ext_resource type="Texture2D" uid="uid://biip3nhaunm3x" path="res://temp/Buildings_BrickSmallPainted.jpg" id="55_cyx1q"]
+[ext_resource type="PackedScene" uid="uid://bt10k1iah6j80" path="res://models/container.glb" id="58_uit24"]
 [ext_resource type="PackedScene" uid="uid://cdgskfmwi0syb" path="res://tank.tscn" id="58_vke2r"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_j3pel"]
@@ -2187,5 +2188,8 @@ shell_speed = 50.0
 max_fire_range = 60.0
 lead_strength = 0.4
 hit_volume_db = -5.0
+
+[node name="container" parent="." unique_id=445615757 instance=ExtResource("58_uit24")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24.5, -2.6000001, -9.400001)
 
 [editable path="Buildings"]

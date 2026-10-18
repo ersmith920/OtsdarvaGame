@@ -23,6 +23,8 @@
 [ext_resource type="FontFile" uid="uid://cptqv4eveq6c3" path="res://Fonts/KHMenu.otf" id="14_606se"]
 [ext_resource type="Script" uid="uid://ds4ofaa3bvuko" path="res://Scripts/center_crosshair.gd" id="16_u1c27"]
 [ext_resource type="Script" uid="uid://b2hp52md32ke6" path="res://Scripts/pause_menu.gd" id="17_op7ga"]
+[ext_resource type="Script" uid="uid://cda6b0fycr7s5" path="res://Scripts/hit_sound.gd" id="24_jm5j8"]
+[ext_resource type="AudioStream" uid="uid://ji1lfawrb06k" path="res://Sounds/hitSound3D.wav" id="25_jm5j8"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_jfb0n"]
 
@@ -45,16 +47,16 @@ shape = SubResource("ConvexPolygonShape3D_0xm2m")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.70000005, 0.17048764)
 
 [node name="slot1" type="Node3D" parent="Head/Camera3D" unique_id=339806287]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.3, -0.29999998, -0.6)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.3, -0.36158928, -0.47027552)
 
 [node name="slot2" type="Node3D" parent="Head/Camera3D" unique_id=184927666]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.26941165, -0.29999998, -0.6)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.26941165, -0.36158928, -0.47027552)
 
 [node name="slot3" type="Node3D" parent="Head/Camera3D" unique_id=1188235730]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.43058833, -0.19999999, -0.6)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.43058833, -0.2615893, -0.47027552)
 
 [node name="slot4" type="Node3D" parent="Head/Camera3D" unique_id=514795750]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.4117829, -0.19999999, -0.6)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.4117829, -0.2615893, -0.47027552)
 
 [node name="RayCast3D" type="RayCast3D" parent="Head/Camera3D" unique_id=459774860]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.20000005, -0.19999993)
@@ -70,7 +72,6 @@ crosshair = NodePath("../../../HUD/Crosshair")
 
 [node name="EnemySpawner" type="Node3D" parent="." unique_id=2092120457]
 script = ExtResource("6_ivps1")
-radius = 100
 tiers = Array[ExtResource("7_7lmhl")]([ExtResource("8_dx0e4"), ExtResource("9_jm5j8")])
 
 [node name="PlayerStats" type="Node" parent="." unique_id=1563529071]
@@ -156,3 +157,10 @@ offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("17_op7ga")
 font = ExtResource("11_606se")
+
+[node name="HitSound" type="Node" parent="." unique_id=640338861]
+script = ExtResource("24_jm5j8")
+sounds = Array[AudioStream]([ExtResource("25_jm5j8")])
+volume_db = -2.0
+max_volume_db = 0.0
+max_voices = 25

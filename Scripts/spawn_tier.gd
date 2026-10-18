@@ -15,6 +15,11 @@ extends Resource
 ## How many enemies get added each time that many increases happen.
 @export var extra_per_step := 0
 
+@export_group("Spawn Distance")
+## Enemies of this tier spawn between these two distances from the spawner (horizontal, meters).
+@export_range(0.0, 500.0, 0.5, "suffix:m") var min_spawn_distance := 15.0
+@export_range(0.0, 500.0, 0.5, "suffix:m") var max_spawn_distance := 100.0
+
 
 func get_count(difficulty: int) -> int:
 	var steps := floori(float(difficulty - 1) / float(difficulty_step))

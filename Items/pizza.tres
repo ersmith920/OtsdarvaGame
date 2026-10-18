@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://crvji4uejpneu"]
+
+[ext_resource type="Script" uid="uid://5h1eu84vtblx" path="res://Scripts/stat_modifier.gd" id="1_hjc00"]
+[ext_resource type="PackedScene" uid="uid://qg73d2jusx3c" path="res://models/item_pizza.glb" id="1_molie"]
+[ext_resource type="Texture2D" uid="uid://b8vk1t8mjw0r4" path="res://Images/icon_pizza.png" id="1_x0sy1"]
+[ext_resource type="Script" uid="uid://btu6or7jc4i8g" path="res://Scripts/item_data.gd" id="2_molie"]
+
+[sub_resource type="Resource" id="Resource_x0sy1"]
+script = ExtResource("1_hjc00")
+stat = &"max_health"
+amount_per_stack = 25.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[resource]
+script = ExtResource("2_molie")
+id = &"item_pizza"
+display_name = "Pepperoni Pizza"
+description = "Increase max health by +25"
+icon = ExtResource("1_x0sy1")
+model = ExtResource("1_molie")
+modifiers = Array[ExtResource("1_hjc00")]([SubResource("Resource_x0sy1")])
+metadata/_custom_type_script = "uid://btu6or7jc4i8g"

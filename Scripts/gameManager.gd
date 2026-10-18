@@ -9,6 +9,7 @@ var enemy_hp_per_difficulty := 0.15
 signal item_picked_up(item: ItemData)
 var mouse_sensitivity := 0.008
 var master_volume := 1.0
+signal enemy_damaged(amount: float, is_crit: bool)
 
 func get_enemy_health_multiplier() -> float:
 	return 1.0 + enemy_hp_per_difficulty * (difficulty - 1)

@@ -8,4 +8,5 @@ script = ExtResource("1_y1deu")
 enemies = Array[PackedScene]([ExtResource("1_u2ttc")])
 base_count = 4
 extra_per_step = 2
+max_spawn_distance = 40.0
 metadata/_custom_type_script = "uid://coywd10wgyey"

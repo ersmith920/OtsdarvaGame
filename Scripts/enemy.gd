@@ -123,6 +123,7 @@ static func _release_hit_sound(audio: AudioStreamPlayer3D) -> void:
 func take_damage(damage: float, is_crit: bool = false) -> void:
 	if dead:
 		return
+	GameManager.enemy_damaged.emit(damage, is_crit)
 	health -= damage
 	if health <= 0.0:
 		_die()

@@ -2,14 +2,11 @@ extends Node3D
 class_name EnemySpawner
 
 @export var spawnRate = 15
-@export var radius = 20
 ## Each tier spawns its own enemies every wave, sized by its own rules.
 @export var tiers : Array[SpawnTier]
 
 @export_group("Placement")
 # ...unchanged...
-## Enemies won't spawn closer than this (horizontally) to the spawner.
-@export var min_distance := 15.0
 ## Rays start this far above the spawner and point down.
 @export var ray_height := 60.0
 ## How far below the spawner the ray keeps looking.
@@ -67,7 +64,7 @@ func _spawn_tier(tier: SpawnTier, total: int) -> int:
 		var scene_to_spawn := tier.pick()
 		if scene_to_spawn == null:
 			break   # tier has no enemies assigned
-		var point = _find_spawn_point()
+		var point = _find_spawn_point(tier)
 		if point == null:
 			continue   # no valid spot found this time; skip this enemy
 		var enemy : Node3D = scene_to_spawn.instantiate()
@@ -79,12 +76,15 @@ func _spawn_tier(tier: SpawnTier, total: int) -> int:
 	
 
 # Returns a Vector3 on the floor, or null if every attempt was rejected.
-func _find_spawn_point() -> Variant:
+func _find_spawn_point(tier: SpawnTier) -> Variant:
 	var space := get_world_3d().direct_space_state
+	var near := minf(tier.min_spawn_distance, tier.max_spawn_distance)
+	var far := maxf(tier.min_spawn_distance, tier.max_spawn_distance)
 	for attempt in max_attempts:
-		var offset := Vector2(randf_range(-radius, radius), randf_range(-radius, radius))
-		if offset.length() < min_distance:
-			continue
+		# Random point in a ring around the spawner. Squaring keeps the spread even
+		# across the ring's area, so far distances aren't under-represented.
+		var dist := sqrt(randf_range(near * near, far * far))
+		var offset := Vector2.from_angle(randf() * TAU) * dist
 
 		var from := Vector3(global_position.x + offset.x, global_position.y + ray_height, global_position.z + offset.y)
 		var to := from + Vector3.DOWN * (ray_height + ray_depth)
@@ -99,7 +99,6 @@ func _find_spawn_point() -> Variant:
 
 		return hit.position + Vector3.UP * 0.1   # tiny lift so the body isn't born in the floor
 	return null
-
 
 # Ray that ignores characters (player and other enemies).
 func _raycast(space: PhysicsDirectSpaceState3D, from: Vector3, to: Vector3) -> Dictionary:
