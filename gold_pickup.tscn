@@ -14,7 +14,7 @@
 script = ExtResource("1_7wu7l")
 bounce_sounds = Array[AudioStream]([ExtResource("2_38sp0"), ExtResource("3_cjkck"), ExtResource("4_etw55")])
 bounce_volume_db = 12.0
-pickup_sounds = Array[AudioStream]([ExtResource("6_q1au6"), ExtResource("7_y1lnt"), ExtResource("8_v048i")])
+pickup_sounds = Array[AudioStream]([ExtResource("7_y1lnt"), ExtResource("8_v048i"), ExtResource("6_q1au6")])
 pitch_variance = 0.093
 sprite_textures = Array[Texture2D]([ExtResource("5_cjkck"), ExtResource("6_etw55")])
 glow_strength = 2.0
