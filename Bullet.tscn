@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dqdovhq3j2pa"]
 
 [ext_resource type="Script" uid="uid://pamo78lglyp2" path="res://Scripts/Bullet.gd" id="1_j24xj"]
-[ext_resource type="PackedScene" uid="uid://cfhlino6cj3jf" path="res://hit_light.tscn" id="2_4s4u5"]
+[ext_resource type="PackedScene" uid="uid://2ubn8tk7t83w" path="res://hit_heavy.tscn" id="2_4s4u5"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j24xj"]
 albedo_color = Color(0.88498396, 0.81447816, 0.50930357, 1)

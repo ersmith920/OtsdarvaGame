@@ -6,12 +6,15 @@
 [ext_resource type="AudioStream" uid="uid://bn4pk571ps56s" path="res://Sounds/coinBounce3.wav" id="4_etw55"]
 [ext_resource type="Texture2D" uid="uid://dqk4frhs5i3y8" path="res://Images/gold1.png" id="5_cjkck"]
 [ext_resource type="Texture2D" uid="uid://c4ouwq3a62pco" path="res://Images/gold2.png" id="6_etw55"]
+[ext_resource type="AudioStream" uid="uid://ddbq5m2r5khk4" path="res://Sounds/gold_pickup2.wav" id="6_q1au6"]
+[ext_resource type="AudioStream" uid="uid://pqo8vu3l3u6a" path="res://Sounds/gold_pickup3.wav" id="7_y1lnt"]
+[ext_resource type="AudioStream" uid="uid://dorl1fq8olg64" path="res://Sounds/gold_pickup4.wav" id="8_v048i"]
 
 [node name="GoldPickup" type="Node3D" unique_id=358668783]
 script = ExtResource("1_7wu7l")
 bounce_sounds = Array[AudioStream]([ExtResource("2_38sp0"), ExtResource("3_cjkck"), ExtResource("4_etw55")])
 bounce_volume_db = 12.0
-pickup_sounds = Array[AudioStream]([ExtResource("2_38sp0"), ExtResource("3_cjkck"), ExtResource("4_etw55")])
+pickup_sounds = Array[AudioStream]([ExtResource("6_q1au6"), ExtResource("7_y1lnt"), ExtResource("8_v048i")])
 pitch_variance = 0.093
 sprite_textures = Array[Texture2D]([ExtResource("5_cjkck"), ExtResource("6_etw55")])
 glow_strength = 2.0

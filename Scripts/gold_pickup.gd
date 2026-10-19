@@ -119,7 +119,6 @@ func _ready() -> void:
 	_sprite.mesh = _quad
 	_sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_sprite)
-	add_child(_sprite)
 	_refresh_look()
 	_time = randf() * TAU   # so a pile of coins doesn't bob in sync
 

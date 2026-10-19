@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://2ubn8tk7t83w"]
+
+[ext_resource type="Texture2D" uid="uid://bd1s1cdhv8b65" path="res://Images/particles/alpha/trace_07_a.png" id="1_5x3gl"]
+
+[sub_resource type="Curve" id="Curve_uwnk3"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -2.184233, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_ptnw6"]
+curve = SubResource("Curve_uwnk3")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_jfb0n"]
+particle_flag_align_y = true
+direction = Vector3(0, 0, 1)
+spread = 17.659
+initial_velocity_min = 16.02
+initial_velocity_max = 19.02
+gravity = Vector3(0, -3, 0)
+scale_max = 4.0
+scale_curve = SubResource("CurveTexture_ptnw6")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xhvk1"]
+transparency = 1
+disable_ambient_light = true
+disable_fog = true
+disable_specular_occlusion = true
+vertex_color_use_as_albedo = true
+albedo_color = Color(0.7930725, 0.79627997, 0.40351817, 1)
+albedo_texture = ExtResource("1_5x3gl")
+emission_enabled = true
+emission = Color(0.9682782, 0.9682718, 0.6947851, 1)
+emission_energy_multiplier = 5.6
+
+[sub_resource type="QuadMesh" id="QuadMesh_nuhd7"]
+material = SubResource("StandardMaterial3D_xhvk1")
+size = Vector2(0.1, 0.3)
+
+[node name="HeavyHit" type="GPUParticles3D" unique_id=1975242262]
+emitting = false
+amount = 5
+lifetime = 0.23
+one_shot = true
+explosiveness = 1.0
+visibility_aabb = AABB(-0.6031944, -0.47548532, -0.1, 0.70319444, 0.81461006, 2.4821682)
+transform_align = 4
+transform_align_axis = 1
+process_material = SubResource("ParticleProcessMaterial_jfb0n")
+draw_pass_1 = SubResource("QuadMesh_nuhd7")
