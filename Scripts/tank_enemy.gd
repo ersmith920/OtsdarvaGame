@@ -37,6 +37,12 @@ class_name TankEnemy
 @export_group("Audio")
 @export var charge_sound: AudioStream
 @export var shot_sound: AudioStream
+## Volume offset for the tank's sounds, in dB. Negative = quieter.
+@export var sound_volume_db := 0.0
+## The loudest a sound can ever get, no matter how close you are.
+@export var sound_max_db := -6.0
+## How far the sound carries before it starts fading (meters). Bigger = audible further away.
+@export var sound_unit_size := 20.0
 
 @onready var body: Node3D = $Body
 @onready var turret: Node3D = $Turret
@@ -198,6 +204,9 @@ func _play_one_shot(stream: AudioStream) -> void:
 		return
 	var audio := AudioStreamPlayer3D.new()
 	audio.stream = stream
+	audio.volume_db = sound_volume_db
+	audio.max_db = sound_max_db
+	audio.unit_size = sound_unit_size
 	audio.bus = ENEMY_SFX_BUS
 	add_child(audio)
 	audio.play()

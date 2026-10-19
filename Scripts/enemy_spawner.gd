@@ -68,6 +68,8 @@ func _spawn_tier(tier: SpawnTier, total: int) -> int:
 		if point == null:
 			continue   # no valid spot found this time; skip this enemy
 		var enemy : Node3D = scene_to_spawn.instantiate()
+		if enemy is Enemy:
+			(enemy as Enemy).gold_value = tier.get_gold(GameManager.difficulty)
 		get_tree().root.add_child(enemy)
 		enemy.global_position = point
 		enemy.reset_physics_interpolation()

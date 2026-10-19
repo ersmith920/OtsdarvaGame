@@ -21,6 +21,10 @@ var recharge_delay_left := 0.0
 const DASH_COST := 20.0              # charge spent per dash
 const JET_DRAIN_PER_SECOND := 20.0
 
+# Gold
+var gold := 0
+var _gold_remainder := 0.0   # fractions left over from the multiplier, so none is lost to rounding
+
 # Jetpack state
 var can_jet := false     # true once jump has been released in the air
 var is_jetting := false
@@ -77,6 +81,16 @@ func pick_up(item: ItemData) -> void:
 	inventory[item] = inventory.get(item, 0) + 1
 	_apply_item(item)
 	GameManager.item_picked_up.emit(item)
+
+## Adds gold, scaled by the gold_multiplier stat.
+func add_gold(amount: float) -> void:
+	_gold_remainder += amount * stats_node.get_value(&"gold_multiplier")
+	var whole := floori(_gold_remainder)
+	if whole <= 0:
+		return
+	_gold_remainder -= whole
+	gold += whole
+	GameManager.gold_changed.emit(gold)
 
 #Item Application
 func _apply_item(item: ItemData) -> void:

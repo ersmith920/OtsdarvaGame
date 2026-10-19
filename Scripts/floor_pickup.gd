@@ -37,6 +37,8 @@ func _physics_process(delta: float) -> void:
 
 	if hit.normal.y >= min_floor_normal_y:
 		global_position = hit.position   # floor: stop dead right here
+		if _on_floor_impact(_velocity):   # a subclass can bounce instead of landing
+			return
 		_velocity = Vector3.ZERO
 		_landed = true
 	else:
@@ -72,3 +74,8 @@ func _enter_tree() -> void:
 ## False for anything that shouldn't be swept away, like a gun the player is holding.
 func can_be_cleared() -> bool:
 	return true
+
+## Called when a launched pickup hits the floor. Return true if it keeps moving (it bounced
+## and set _velocity itself), or false to land and stop dead like normal.
+func _on_floor_impact(_impact_velocity: Vector3) -> bool:
+	return false

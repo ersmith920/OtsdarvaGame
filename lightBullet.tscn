@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bmxplp025lbog"]
 
 [ext_resource type="Script" uid="uid://pamo78lglyp2" path="res://Scripts/Bullet.gd" id="1_pi0b0"]
+[ext_resource type="PackedScene" uid="uid://cfhlino6cj3jf" path="res://hit_light.tscn" id="2_bu6jx"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_jfb0n"]
 size = Vector3(1, 1, 1.5)
@@ -20,6 +21,7 @@ freeze_mode = 1
 continuous_cd = true
 script = ExtResource("1_pi0b0")
 speed = 100.0
+hit_effect = ExtResource("2_bu6jx")
 metadata/_custom_type_script = "uid://pamo78lglyp2"
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1710646413]

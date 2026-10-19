@@ -16,6 +16,9 @@ class_name Bullet
 var source : Gun
 var elapsed_time : float = 0
 
+const MAX_HIT_EFFECTS := 40   # a fast gun on a crowd can hit hundreds of times a second
+static var _active_hit_effects := 0
+
 const MAX_LOS_CHECKS := 4
 var _ricochet_rolled := false
 var _ricochets_left := 0
@@ -57,14 +60,16 @@ func _physics_process(delta: float) -> void:
 		return
 
 	global_position = result.position
-	hit(result.collider)
+	hit(result.collider, result.normal)
 
 
-func hit(collider : Object) -> void:
+func hit(collider : Object, normal : Vector3 = Vector3.ZERO) -> void:
+	_spawn_hit_effect(normal)
+
 	if collider is Enemy:
 		var roll : Dictionary = source.roll_damage()
 		collider.take_damage(roll.damage, roll.crit)
-
+	# ...rest of the function unchanged
 	if explosion_scene != null:
 		_explode()
 
@@ -163,3 +168,34 @@ func _aim_point_of(enemy: Node3D) -> Vector3:
 	if enemy is Enemy:
 		return (enemy as Enemy).get_aim_position()
 	return enemy.global_position
+
+func _spawn_hit_effect(normal : Vector3) -> void:
+	if hit_effect == null or _active_hit_effects >= MAX_HIT_EFFECTS:
+		return
+	# Sparks fly out along the surface normal. If the ray started inside a shape the
+	# normal is zero, so fall back to straight back toward the shooter.
+	var dir := normal if normal.length_squared() > 0.001 else -global_basis.z
+	dir = dir.normalized()
+
+	var fx := hit_effect.instantiate() as Node3D
+	get_tree().current_scene.add_child(fx)
+	fx.global_position = global_position
+	var up := Vector3.UP if absf(dir.y) < 0.99 else Vector3.RIGHT   # avoids look_at errors
+	fx.look_at(fx.global_position + dir, up, true)   # true = the effect's +Z points along dir
+	fx.reset_physics_interpolation()
+
+	_active_hit_effects += 1
+	var particles := fx as GPUParticles3D
+	if particles != null:
+		particles.one_shot = true
+		particles.restart()
+		particles.finished.connect(Bullet._release_hit_effect.bind(fx))
+	else:
+		# Effect scene isn't a bare GPUParticles3D: just clean it up after a couple of seconds.
+		get_tree().create_timer(2.0).timeout.connect(Bullet._release_hit_effect.bind(fx))
+
+
+static func _release_hit_effect(fx : Node) -> void:
+	_active_hit_effects -= 1
+	if is_instance_valid(fx):
+		fx.queue_free()

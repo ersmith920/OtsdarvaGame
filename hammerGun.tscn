@@ -125,7 +125,7 @@ libraries/ = SubResource("AnimationLibrary_unwdk")
 [node name="hammerGun" parent="ModelAnchor" unique_id=1273256927 instance=ExtResource("1_576ct")]
 
 [node name="muzzle" type="Node3D" parent="ModelAnchor" unique_id=298304160]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.022393068, 0.48196065)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.022800157, 0.5455035)
 
 [node name="Area3D" type="Area3D" parent="." unique_id=697200476]
 collision_layer = 4

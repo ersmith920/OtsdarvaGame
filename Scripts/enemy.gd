@@ -32,6 +32,17 @@ class_name Enemy
 ## Extra reach beyond touching the player's edge.
 @export var attack_reach := 0.3
 
+@export_group("Hit Flash")
+## How long the red flash lasts, in seconds. 0 turns it off for this enemy.
+@export var flash_time := 0.08
+
+@export_group("Drops")
+## Set by the spawner from the enemy's tier. Hand-placed enemies use whatever is set here.
+@export var gold_value := 0
+## The most pieces a drop can break into. Bigger drops use bigger coins; past this
+## limit the small coins get fatter instead of more numerous.
+@export var gold_coins := 6
+
 @export_group("Audio")
 ## Volume offset for this enemy's hit sounds, in dB. Negative = quieter.
 @export var hit_volume_db := 0.0
@@ -41,6 +52,16 @@ const MAX_DEATH_SOUNDS := 8
 const HIT_SOUND_MIN_GAP_MS := 30
 const LAYER_ENEMY := 16        # physics layer 5
 const MAX_HIT_SOUNDS := 16
+const GOLD_SCENE := preload("res://gold_pickup.tscn")
+
+const FLASH_COLOR := Color(1.0, 0.1, 0.1, 0.25)   # alpha = how strong the red is
+
+static var _flash_material: StandardMaterial3D
+
+var _meshes : Array[MeshInstance3D] = []
+var _meshes_found := false
+var _flashing := false
+var _flash_until_ms := 0
 
 static var _active_death_sounds := 0
 static var _last_hit_sound_ms := 0
@@ -128,6 +149,7 @@ func take_damage(damage: float, is_crit: bool = false) -> void:
 	if health <= 0.0:
 		_die()
 		return
+	_flash()
 
 	var now := Time.get_ticks_msec()
 	if now - _last_hit_sound_ms >= HIT_SOUND_MIN_GAP_MS:
@@ -141,6 +163,7 @@ func _die() -> void:
 	collision_layer = 0
 	EnemyManager.unregister(self)
 	play_death_sound()
+	_drop_gold()
 	queue_free()
 
 
@@ -164,3 +187,60 @@ func try_contact_attack(hit_player: Player) -> void:
 
 func get_aim_position() -> Vector3:
 	return _aim_node.global_position if _aim_node != null else global_position
+
+func _drop_gold() -> void:
+	if gold_value <= 0 or gold_coins <= 0:
+		return
+	var origin := get_aim_position()
+	var each := float(gold_value) / gold_coins
+	var parent := get_tree().current_scene
+	for i in gold_coins:
+		var coin: GoldPickup = GOLD_SCENE.instantiate()
+		coin.value = each
+		parent.add_child(coin)
+		coin.global_position = origin
+		coin.burst()
+		coin.reset_physics_interpolation()
+
+func _flash() -> void:
+	if flash_time <= 0.0:
+		return
+	if not _meshes_found:
+		_find_meshes()
+	_flash_until_ms = Time.get_ticks_msec() + int(flash_time * 1000.0)
+	if _flashing:
+		return   # already red: the running timer will see the new deadline and extend itself
+	_flashing = true
+	var mat := _get_flash_material()
+	for mesh in _meshes:
+		mesh.material_overlay = mat
+	get_tree().create_timer(flash_time).timeout.connect(_end_flash)
+
+
+func _end_flash() -> void:
+	var remaining := _flash_until_ms - Time.get_ticks_msec()
+	if remaining > 0:   # hit again during the flash: keep it going
+		get_tree().create_timer(remaining / 1000.0).timeout.connect(_end_flash)
+		return
+	_flashing = false
+	for mesh in _meshes:
+		if is_instance_valid(mesh):
+			mesh.material_overlay = null
+
+
+# Looked up once, the first time this enemy is hit.
+func _find_meshes() -> void:
+	_meshes_found = true
+	for node in find_children("*", "MeshInstance3D", true, false):
+		_meshes.append(node as MeshInstance3D)
+
+
+# One shared material for every enemy, so flashing never allocates anything.
+static func _get_flash_material() -> StandardMaterial3D:
+	if _flash_material == null:
+		var mat := StandardMaterial3D.new()
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.albedo_color = FLASH_COLOR
+		_flash_material = mat
+	return _flash_material

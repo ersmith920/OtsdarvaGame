@@ -409,7 +409,7 @@ func _fit_to_hud() -> void:
 	var hud := get_parent()
 
 	var top := size.y * EDGE_MARGIN
-	for node_name in ["Timer", "EnemyCount"]:
+	for node_name in ["Timer", "EnemyCount", "Gold"]:
 		var label := hud.get_node_or_null(node_name) as Control
 		if label != null:
 			top = maxf(top, label.get_global_rect().end.y + HUD_CLEARANCE)

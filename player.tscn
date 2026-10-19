@@ -23,6 +23,7 @@
 [ext_resource type="FontFile" uid="uid://cptqv4eveq6c3" path="res://Fonts/KHMenu.otf" id="14_606se"]
 [ext_resource type="Script" uid="uid://ds4ofaa3bvuko" path="res://Scripts/center_crosshair.gd" id="16_u1c27"]
 [ext_resource type="Script" uid="uid://b2hp52md32ke6" path="res://Scripts/pause_menu.gd" id="17_op7ga"]
+[ext_resource type="Script" uid="uid://v3injh7wqsn6" path="res://Scripts/hud_gold.gd" id="24_7hik5"]
 [ext_resource type="Script" uid="uid://cda6b0fycr7s5" path="res://Scripts/hit_sound.gd" id="24_jm5j8"]
 [ext_resource type="AudioStream" uid="uid://ji1lfawrb06k" path="res://Sounds/hitSound3D.wav" id="25_jm5j8"]
 
@@ -156,6 +157,12 @@ anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("17_op7ga")
+font = ExtResource("11_606se")
+
+[node name="Gold" type="Label" parent="HUD" unique_id=48988924]
+offset_right = 40.0
+offset_bottom = 15.0
+script = ExtResource("24_7hik5")
 font = ExtResource("11_606se")
 
 [node name="HitSound" type="Node" parent="." unique_id=640338861]

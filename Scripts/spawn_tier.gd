@@ -20,6 +20,11 @@ extends Resource
 @export_range(0.0, 500.0, 0.5, "suffix:m") var min_spawn_distance := 15.0
 @export_range(0.0, 500.0, 0.5, "suffix:m") var max_spawn_distance := 100.0
 
+@export_group("Gold Drop")
+## Gold each enemy of this tier drops at difficulty 1.
+@export var gold_per_enemy := 5
+## Extra gold per difficulty above 1, as a fraction of the base (0.15 = +15% per difficulty).
+@export var gold_difficulty_scaling := 0.15
 
 func get_count(difficulty: int) -> int:
 	var steps := floori(float(difficulty - 1) / float(difficulty_step))
@@ -28,3 +33,7 @@ func get_count(difficulty: int) -> int:
 
 func pick() -> PackedScene:
 	return enemies.pick_random() if not enemies.is_empty() else null
+	
+func get_gold(difficulty: int) -> int:
+	var mult := 1.0 + gold_difficulty_scaling * float(difficulty - 1)
+	return maxi(roundi(gold_per_enemy * mult), 0)

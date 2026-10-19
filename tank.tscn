@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://dyjubmcfb06j5" path="res://Scripts/tank_enemy.gd" id="1_6lwfj"]
 [ext_resource type="PackedScene" uid="uid://dmf7xfg25r3pv" path="res://models/enemy_tank.glb" id="2_1ealj"]
 [ext_resource type="PackedScene" uid="uid://d0v817epmsx14" path="res://enemy_projectile.tscn" id="2_lk6ub"]
-[ext_resource type="AudioStream" uid="uid://bjvcxuyiykn06" path="res://Sounds/tankShot.wav" id="3_1d415"]
+[ext_resource type="AudioStream" uid="uid://luypddyaw5n0" path="res://Sounds/tankShot2.wav" id="3_1d415"]
 [ext_resource type="AudioStream" uid="uid://cf3ddxjwq2340" path="res://Sounds/metalHit1.wav" id="3_i433e"]
 [ext_resource type="AudioStream" uid="uid://dx0skfp8ap6nr" path="res://Sounds/metalHit2.wav" id="4_pku7x"]
 [ext_resource type="AudioStream" uid="uid://u83vxd4un6im" path="res://Sounds/metalHit3.wav" id="5_pku7x"]
@@ -28,7 +28,7 @@ deathSounds = Array[AudioStream]([ExtResource("8_1d415")])
 speed = 3.0
 radius = 2.8
 height = 1.8
-hit_volume_db = -2.0
+hit_volume_db = -6.0
 
 [node name="Body" type="Node3D" parent="." unique_id=229190783]
 

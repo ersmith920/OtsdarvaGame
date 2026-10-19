@@ -25,6 +25,8 @@ extends Node
 @export var base_battery_recharge_delay := 2    #seconds until charging commences after using charge
 @export var base_lock_fov := 2.0       # degrees from screen center a target can be locked from
 @export var base_lock_strength := 2.0   # how fast the crosshair moves onto targets
+@export var base_pickup_range := 4.0       # meters; gold (and later xp) inside this gets pulled in
+@export var base_gold_multiplier := 1.0
 
 var stats: Dictionary = {}
 
@@ -53,6 +55,8 @@ func _ready() -> void:
 		&"battery_recharge_delay": Stat.new(base_battery_recharge_delay),
 		&"lock_fov": Stat.new(base_lock_fov),
 		&"lock_strength": Stat.new(base_lock_strength),
+		&"pickup_range": Stat.new(base_pickup_range),
+		&"gold_multiplier": Stat.new(base_gold_multiplier),
 	}
 
 func get_stat(stat_name: StringName) -> Stat:
