@@ -6,8 +6,11 @@
 [resource]
 script = ExtResource("1_y1deu")
 enemies = Array[PackedScene]([ExtResource("1_u2ttc")])
-base_count = 4
-extra_per_step = 2
-max_spawn_distance = 40.0
+base_count = 2
+extra_per_step = 1
+health_per_difficulty = 0.05
+min_spawn_distance = 12.0
+max_spawn_distance = 30.0
 gold_per_enemy = 7
+gold_difficulty_scaling = 0.05
 metadata/_custom_type_script = "uid://coywd10wgyey"

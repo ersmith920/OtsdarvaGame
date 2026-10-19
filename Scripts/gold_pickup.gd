@@ -1,5 +1,6 @@
 # A gold coin. Bursts out of a dead enemy in an arc, lands, then hovers and bobs.
-# Once the player gets within pickup_range it latches on and accelerates into them.
+# Once the player gets within pickup_range it latches on and swirls into them like a vortex,
+# moving with the player the whole way (or flies straight in, with swirl turned off).
 # Coins come in three looks (small / large / huge) chosen by their value, and piles of
 # landed coins merge into one when too many are lying around.
 extends FloorPickup
@@ -75,7 +76,24 @@ var value := 1.0:
 ## Color of the boost. A light gold keeps the coin warm instead of white-hot.
 @export var glow_tint := Color(1.0, 0.9, 0.6)
 
-@export_group("Collection")
+@export_group("Swirl Collection")
+## On: coins spiral into the player like a vortex. Off: the old straight-line pull below.
+@export var swirl := true
+## Seconds a coin takes to spiral in from the edge of the pickup range.
+@export var swirl_time := 1
+## Full turns around the player before the coin reaches them.
+@export var swirl_turns := 1.5
+## Spin direction. Every coin spins the same way, which is what makes it read as one vortex.
+@export_enum("Counter-clockwise:1", "Clockwise:-1") var swirl_direction := 1
+## How long the coin stays wide before collapsing inward. 1 = shrinks steadily,
+## higher = traces the edge of the pickup range longer, then snaps in at the end.
+@export_range(0.5, 5.0, 0.05) var swirl_tightening := 2.0
+## How the spin speeds up. 1 = constant spin, higher = starts lazy and whips around at the end.
+@export_range(0.5, 5.0, 0.05) var swirl_spin_up := 1.5
+## Coins that were already closer than the range edge swirl for a shorter time, down to this fraction.
+@export_range(0.1, 1.0, 0.05) var swirl_min_time_fraction := 0.4
+
+@export_group("Straight Pull (swirl off)")
 ## Within this distance of the player's center, the coin is collected.
 @export var collect_distance := 0.9
 @export var pull_start_speed := 4.0
@@ -110,9 +128,20 @@ var _pull_speed := 0.0
 var _merged := false   # absorbed into another coin; waiting to be freed
 var _variant := 0   # this coin's random pick; stays fixed so merging doesn't change its look
 
+# Swirl state, all relative to the player so the coin moves with them.
+var _swirl_t := 0.0          # 0 -> 1 over the swirl
+var _swirl_duration := 0.5
+var _start_radius := 0.0
+var _start_angle := 0.0
+var _start_height := 0.0
+
+
 func _ready() -> void:
 	_variant = randi()
 	add_to_group(GROUP)
+	# Run after the player each physics tick, so coins use the player's position from
+	# this tick rather than the last one and stay locked to them at high speed.
+	process_physics_priority = 100
 	if _quad == null:
 		_quad = QuadMesh.new()   # 1 m x 1 m; each coin is scaled to size
 	_sprite = MeshInstance3D.new()
@@ -147,6 +176,8 @@ func _refresh_look() -> void:
 	_sprite.scale = Vector3(world_size * tex.get_width() / longest,
 			world_size * tex.get_height() / longest, 1.0)
 	_float_y = float_height * scale_mult
+
+
 ## Pops the coin out in a random direction. Call after it's in the tree and positioned.
 func burst() -> void:
 	launch_up_speed = randf_range(burst_up_speed.x, burst_up_speed.y)
@@ -156,7 +187,11 @@ func burst() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	_sprite.position.y = _float_y + sin(_time * bob_speed) * bob_height
+	if _attracted and swirl:
+		# No bobbing mid-swirl; the hover offset shrinks away as the coin closes in.
+		_sprite.position.y = _float_y * (1.0 - _swirl_t)
+	else:
+		_sprite.position.y = _float_y + sin(_time * bob_speed) * bob_height
 
 
 func _physics_process(delta: float) -> void:
@@ -169,26 +204,64 @@ func _physics_process(delta: float) -> void:
 	if player == null:
 		return
 
-	var to_player := player.global_position - global_position
-	var dist_sq := to_player.length_squared()
-
 	# Latches on: once pulled, it keeps coming even if the player steps away.
 	if not _attracted:
 		var pickup_range := player.stats_node.get_value(&"pickup_range")
-		if dist_sq > pickup_range * pickup_range:
+		if (player.global_position - global_position).length_squared() > pickup_range * pickup_range:
 			_try_merge()
 			return
-		_attracted = true
-		_pull_speed = pull_start_speed
+		_start_attraction(player, pickup_range)
 
+	if swirl:
+		_swirl_step(player, delta)
+	else:
+		_pull_step(player, delta)
+
+
+func _start_attraction(player: Player, pickup_range: float) -> void:
+	_attracted = true
+	_pull_speed = pull_start_speed
+
+	# Freeze where the coin sits relative to the player, in polar form around them.
+	var offset := global_position - player.global_position
+	var flat := Vector2(offset.x, offset.z)
+	_start_radius = flat.length()
+	_start_angle = flat.angle()
+	_start_height = offset.y
+	_swirl_t = 0.0
+	var fraction := clampf(_start_radius / maxf(pickup_range, 0.01), swirl_min_time_fraction, 1.0)
+	_swirl_duration = maxf(swirl_time * fraction, 0.01)
+
+
+# Spirals in around the player. The position is rebuilt from the player's position every
+# tick, so the whole vortex travels with them no matter how fast they move.
+func _swirl_step(player: Player, delta: float) -> void:
+	_swirl_t = minf(_swirl_t + delta / _swirl_duration, 1.0)
+	if _swirl_t >= 1.0:
+		_collect(player)
+		return
+	var shrink := 1.0 - pow(_swirl_t, swirl_tightening)
+	var angle := _start_angle + float(swirl_direction) * swirl_turns * TAU * pow(_swirl_t, swirl_spin_up)
+	var radius := _start_radius * shrink
+	global_position = player.global_position + Vector3(cos(angle) * radius, _start_height * shrink, sin(angle) * radius)
+
+
+# The original straight-line pull, used when swirl is off.
+func _pull_step(player: Player, delta: float) -> void:
+	var to_player := player.global_position - global_position
 	_pull_speed = move_toward(_pull_speed, pull_max_speed, pull_acceleration * delta)
 	var step := _pull_speed * delta
-	if dist_sq <= maxf(step * step, collect_distance * collect_distance):
-		player.add_gold(value)
-		_play_pickup_sound()
-		queue_free()
+	if to_player.length_squared() <= maxf(step * step, collect_distance * collect_distance):
+		_collect(player)
 		return
 	global_position += to_player.normalized() * step
+
+
+func _collect(player: Player) -> void:
+	player.add_gold(value)
+	_play_pickup_sound()
+	_merged = true   # stop processing until freed
+	queue_free()
 
 
 # Fuses landed coins that share a grid cell. Throttled, and only runs while there are too many.

@@ -11,8 +11,10 @@ size = Vector3(0.9645668, 1.2832397, 1.3669922)
 
 [node name="Forklift" type="CharacterBody3D" unique_id=434573855]
 script = ExtResource("1_rywsv")
+maxHealth = 50.0
 hitSounds = Array[AudioStream]([ExtResource("2_f5bmu"), ExtResource("3_xxs2k")])
 deathSounds = Array[AudioStream]([ExtResource("4_rywsv")])
+speed = 4.0
 radius = 0.8
 height = 1.2
 can_climb = true

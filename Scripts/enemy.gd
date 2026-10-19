@@ -70,6 +70,10 @@ static var _active_hit_sounds := 0
 var dead := false
 var _next_attack_ms : int = 0
 
+## Set by the spawner from the enemy's SpawnTier before it enters the tree.
+## Below 0 means hand-placed: GameManager's global health scaling is used instead.
+var health_multiplier := -1.0
+
 # Owned by EnemyManager.
 var pos := Vector3.ZERO
 var wish_dir := Vector3.ZERO
@@ -87,7 +91,8 @@ func _ready() -> void:
 	collision_mask = 0   # never moves through physics; bullets and rays still hit it
 	audio_stream_player_3d.bus = ENEMY_SFX_BUS
 	add_to_group("lock_target")
-	maxHealth *= GameManager.get_enemy_health_multiplier()
+	var mult := health_multiplier if health_multiplier >= 0.0 else GameManager.get_enemy_health_multiplier()
+	maxHealth *= mult
 	health = maxHealth
 	EnemyManager.register(self)
 

@@ -1,12 +1,14 @@
 extends Node3D
 class_name EnemySpawner
 
+## Seconds between waves.
 @export var spawnRate = 15
-## Each tier spawns its own enemies every wave, sized by its own rules.
+## Seconds of game time for each difficulty increase.
+@export var difficulty_interval := 60.0
+## Each tier spawns its own enemies on the waves it's set to, sized by its own rules.
 @export var tiers : Array[SpawnTier]
 
 @export_group("Placement")
-# ...unchanged...
 ## Rays start this far above the spawner and point down.
 @export var ray_height := 60.0
 ## How far below the spawner the ray keeps looking.
@@ -17,9 +19,13 @@ class_name EnemySpawner
 @export_range(0.0, 1.0) var min_floor_normal_y := 0.7
 
 var elapsedTime = 0.0
+## How many waves have spawned so far. The next wave is wave_number + 1.
+var wave_number := 0
 
 
 func _process(delta: float) -> void:
+	# Pushed every frame so changing it in the inspector while the game runs takes effect.
+	GameManager.difficulty_interval = difficulty_interval
 	if GameManager.timer_paused:
 		return
 	if elapsedTime >= spawnRate:
@@ -28,16 +34,19 @@ func _process(delta: float) -> void:
 	elapsedTime += delta
 
 
-## One full wave: every tier spawns its own count for the current difficulty.
+## One full wave: every tier scheduled for this wave spawns its count for the current difficulty.
 func spawn_wave() -> void:
+	wave_number += 1
 	var summary := PackedStringArray()
 	for tier in tiers:
-		if tier == null:
+		if tier == null or not tier.spawns_on_wave(wave_number):
 			continue
 		var total := tier.get_count(GameManager.difficulty)
 		var spawned := _spawn_tier(tier, total)
 		summary.append("%s %d/%d" % [tier.tier_name, spawned, total])
-	print("Wave (difficulty ", GameManager.difficulty, "): ", ", ".join(summary))
+	if summary.is_empty():
+		summary.append("no tiers this wave")
+	print("Wave ", wave_number, " (difficulty ", GameManager.difficulty, "): ", ", ".join(summary))
 
 
 ## Used by the Tab menu button: spawns an exact amount from the first tier (Common).
@@ -47,6 +56,7 @@ func spawn_enemies(amount: int = -1) -> void:
 		spawn_wave()
 	elif not tiers.is_empty() and tiers[0] != null:
 		_spawn_tier(tiers[0], amount)
+
 
 ## Spawns an exact amount from the tier with this name (used by the Tab menu debug buttons).
 func spawn_from_tier(tier_name: String, amount: int) -> int:
@@ -58,8 +68,11 @@ func spawn_from_tier(tier_name: String, amount: int) -> int:
 	push_warning("EnemySpawner: no tier named '%s'" % tier_name)
 	return 0
 
+
 func _spawn_tier(tier: SpawnTier, total: int) -> int:
 	var spawned := 0
+	var gold := tier.get_gold(GameManager.difficulty)
+	var health_mult := tier.get_health_multiplier(GameManager.difficulty)
 	for i in total:
 		var scene_to_spawn := tier.pick()
 		if scene_to_spawn == null:
@@ -69,13 +82,15 @@ func _spawn_tier(tier: SpawnTier, total: int) -> int:
 			continue   # no valid spot found this time; skip this enemy
 		var enemy : Node3D = scene_to_spawn.instantiate()
 		if enemy is Enemy:
-			(enemy as Enemy).gold_value = tier.get_gold(GameManager.difficulty)
+			# Set before add_child so the enemy's _ready sees them.
+			(enemy as Enemy).gold_value = gold
+			(enemy as Enemy).health_multiplier = health_mult
 		get_tree().root.add_child(enemy)
 		enemy.global_position = point
 		enemy.reset_physics_interpolation()
 		spawned += 1
 	return spawned
-	
+
 
 # Returns a Vector3 on the floor, or null if every attempt was rejected.
 func _find_spawn_point(tier: SpawnTier) -> Variant:
@@ -101,6 +116,7 @@ func _find_spawn_point(tier: SpawnTier) -> Variant:
 
 		return hit.position + Vector3.UP * 0.1   # tiny lift so the body isn't born in the floor
 	return null
+
 
 # Ray that ignores characters (player and other enemies).
 func _raycast(space: PhysicsDirectSpaceState3D, from: Vector3, to: Vector3) -> Dictionary:

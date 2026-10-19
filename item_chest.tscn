@@ -3,33 +3,20 @@
 [ext_resource type="Script" uid="uid://dumb60gvu202w" path="res://Scripts/item_chest.gd" id="1_3ywnj"]
 [ext_resource type="Resource" uid="uid://c7rsmcadkj856" path="res://Items/loot_table.tres" id="2_pnyd8"]
 [ext_resource type="PackedScene" uid="uid://dgj880ehnwkqv" path="res://item_pickup.tscn" id="3_ii50u"]
-[ext_resource type="AudioStream" uid="uid://b440pqjrg0puw" path="res://Sounds/rattle1.wav" id="4_3qf6s"]
-[ext_resource type="PackedScene" uid="uid://c5rt0tyrkomum" path="res://models/chest.glb" id="4_cu8bm"]
-[ext_resource type="AudioStream" uid="uid://f6be3syqrp8x" path="res://Sounds/rattle2.wav" id="5_cu8bm"]
-[ext_resource type="AudioStream" uid="uid://qhj2xxfm8k50" path="res://Sounds/chestOpen.wav" id="6_cu8bm"]
+[ext_resource type="AudioStream" uid="uid://dr4rew5co6gr6" path="res://Sounds/HeavyRumble2.wav" id="4_3qf6s"]
+[ext_resource type="AudioStream" uid="uid://cfw35bxb18rbi" path="res://Sounds/jokeOpen.wav" id="5_cu8bm"]
+[ext_resource type="PackedScene" uid="uid://bt10k1iah6j80" path="res://models/container.glb" id="8_ixbkj"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_jfb0n"]
-size = Vector3(1, 0.91789556, 1.6)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ucb4d"]
-albedo_color = Color(0.6100735, 0.85276926, 1, 1)
-metallic = 0.99
-metallic_specular = 1.0
-roughness = 0.55
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kwsqr"]
-albedo_color = Color(0.7688533, 0.7685584, 0.7466429, 1)
-metallic = 1.0
-metallic_specular = 1.0
-roughness = 0.3
+size = Vector3(0.9100342, 0.9198853, 1.8233398)
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_jfb0n"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1y5t7"]
 albedo_color = Color(1, 1, 0.7764706, 1)
 emission_enabled = true
-emission = Color(0.85490197, 0.85490197, 0.69411767, 1)
-emission_energy_multiplier = 9.41
+emission = Color(1, 1, 1, 1)
+emission_energy_multiplier = 4.0
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_nuhd7"]
 radius = 1.2
@@ -39,31 +26,31 @@ length = 0.001
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("StaticBody3D/chest/lid:position")
+tracks/0/path = NodePath("StaticBody3D/container/containerLid:position")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [Vector3(0, 0, 0)]
+"values": [Vector3(0.046927776, 0.60266644, -2.220446e-16)]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath("StaticBody3D/chest/lid:rotation")
+tracks/1/path = NodePath("StaticBody3D/container/containerLid:rotation")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [Vector3(0, 0, 0)]
+"values": [Vector3(0, 8.1979465e-15, 0)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
 tracks/2/enabled = true
-tracks/2/path = NodePath("StaticBody3D/chest/crate:rotation")
+tracks/2/path = NodePath("StaticBody3D/container/Container Blue:position")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
@@ -75,7 +62,7 @@ tracks/2/keys = {
 tracks/3/type = "value"
 tracks/3/imported = false
 tracks/3/enabled = true
-tracks/3/path = NodePath("StaticBody3D/chest/crate:position")
+tracks/3/path = NodePath("StaticBody3D/container/Container Blue:rotation")
 tracks/3/interp = 1
 tracks/3/loop_wrap = true
 tracks/3/keys = {
@@ -89,76 +76,73 @@ tracks/3/keys = {
 resource_name = "open"
 length = 2.0
 step = 0.05
-tracks/0/type = "value"
+tracks/0/type = "method"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath("StaticBody3D/chest/lid:position")
+tracks/0/path = NodePath(".")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.1, 0.3, 0.4, 1.1, 1.2, 1.25, 1.35),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
-"update": 0,
-"values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0.11644033, 0.2, 0), Vector3(0.13450006, 0.74531096, 0), Vector3(-0.23172054, 0.9909774, 0)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("StaticBody3D/chest/lid:rotation")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.089999996, 0.3, 0.4, 1.1, 1.2, 1.25, 1.35),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1),
-"update": 0,
-"values": [Vector3(0, 0, 0), Vector3(0.05082555, 0, 0), Vector3(-0.077852555, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0.34906584), Vector3(0, 0, 1.3092475), Vector3(0, 0, 2.0226054)]
-}
-tracks/2/type = "value"
-tracks/2/imported = false
-tracks/2/enabled = true
-tracks/2/path = NodePath("StaticBody3D/chest/crate:rotation")
-tracks/2/interp = 1
-tracks/2/loop_wrap = true
-tracks/2/keys = {
-"times": PackedFloat32Array(0, 0.1, 0.3, 0.4),
-"transitions": PackedFloat32Array(1, 1, 1, 1),
-"update": 0,
-"values": [Vector3(0, 0, 0), Vector3(0.05082555, 0, 0), Vector3(-0.077852555, 0, 0), Vector3(0, 0, 0)]
-}
-tracks/3/type = "value"
-tracks/3/imported = false
-tracks/3/enabled = true
-tracks/3/path = NodePath("StaticBody3D/chest/crate:position")
-tracks/3/interp = 1
-tracks/3/loop_wrap = true
-tracks/3/keys = {
-"times": PackedFloat32Array(0, 0.089999996, 0.3, 0.4),
-"transitions": PackedFloat32Array(1, 1, 1, 1),
-"update": 0,
-"values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0)]
-}
-tracks/4/type = "method"
-tracks/4/imported = false
-tracks/4/enabled = true
-tracks/4/path = NodePath(".")
-tracks/4/interp = 1
-tracks/4/loop_wrap = true
-tracks/4/keys = {
-"times": PackedFloat32Array(0, 0.3, 1.1, 1.35),
-"transitions": PackedFloat32Array(1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.7, 0.9),
+"transitions": PackedFloat32Array(1, 1, 1),
 "values": [{
 "args": [0],
 "method": &"play_rumble"
 }, {
-"args": [1],
-"method": &"play_rumble"
-}, {
 "args": [],
-"method": &"play_open"
+"method": &"launch_lid"
 }, {
 "args": [],
 "method": &"spawn_reward"
 }]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("StaticBody3D/container/containerLid:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.049999997, 0.1, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0.046927776, 0.60266644, -2.220446e-16), Vector3(0.050640274, 0.601933, 0.015401856), Vector3(0.043507017, 0.60256046, 0.012122155), Vector3(0.046927776, 0.60266644, -2.220446e-16)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("StaticBody3D/container/containerLid:rotation")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.049999997, 0.1, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 8.1979465e-15, 0), Vector3(0.056818683, -0.0006241931, -0.010991174), Vector3(0.044718094, 0.0005743676, 0.010113042), Vector3(0, 8.1979465e-15, 0)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("StaticBody3D/container/Container Blue:position")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.049999997, 0.1, 0.19821094),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(-0.0037125018, 0.00073331594, -0.015401856), Vector3(0.0034207518, 0.0001058951, -0.012122155), Vector3(0, 0, 0)]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("StaticBody3D/container/Container Blue:rotation")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.049999997, 0.1, 0.19821094),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0.056818664, -0.000624193, -0.010991176), Vector3(0.044718064, 0.00057436706, 0.010113039), Vector3(0, 0, 0)]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_onhrv"]
@@ -167,32 +151,36 @@ _data = {
 &"open": SubResource("Animation_kwsqr")
 }
 
-[node name="itemBox" type="Node3D" unique_id=1802771475]
+[node name="itemBox" type="Node3D" unique_id=1802771475 node_paths=PackedStringArray("lid_mesh")]
 script = ExtResource("1_3ywnj")
 loot_table = ExtResource("2_pnyd8")
 pickup_scene = ExtResource("3_ii50u")
-rumble_sounds = Array[AudioStream]([ExtResource("4_3qf6s"), ExtResource("5_cu8bm")])
-open_sound = ExtResource("6_cu8bm")
+rumble_sounds = Array[AudioStream]([ExtResource("4_3qf6s")])
+open_sound = ExtResource("5_cu8bm")
+lid_launch_sound = ExtResource("5_cu8bm")
+rumble_volume_db = -6.0
+lid_mesh = NodePath("StaticBody3D/container/containerLid")
+lid_up_speed = 12.0
 
 [node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=55574681]
 collision_layer = 3
 collision_mask = 3
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=445616540]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.016076684, 5.9604645e-08)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0049438477, 0.017071545, 0.035595715)
 shape = SubResource("BoxShape3D_jfb0n")
 
-[node name="chest" parent="StaticBody3D" unique_id=1201964843 instance=ExtResource("4_cu8bm")]
+[node name="container" parent="StaticBody3D" unique_id=445615757 instance=ExtResource("8_ixbkj")]
+transform = Transform3D(-3.4969112e-08, 0, -1, 0, 0.9, 0, 0.8, 0, -4.371139e-08, 0, -0.06258738, 0)
 
-[node name="crate" parent="StaticBody3D/chest" index="0" unique_id=1222836455]
-surface_material_override/0 = SubResource("StandardMaterial3D_ucb4d")
+[node name="Container Blue" parent="StaticBody3D/container" index="0" unique_id=66777522]
+transform = Transform3D(0.8548238, 0, 0, 0, 1.0149804, 0, 0, 0, 0.95595163, 0, 0, 0)
 
-[node name="lid" parent="StaticBody3D/chest" index="1" unique_id=1969208242]
-transform = Transform3D(0.9999996, 0, 0, 0, 0.9999996, 0, 0, 0, 1, 0, 0, 0)
-surface_material_override/0 = SubResource("StandardMaterial3D_kwsqr")
+[node name="containerLid" parent="StaticBody3D/container" index="1" unique_id=930517466]
+transform = Transform3D(0.86673266, 0, 8.254862e-15, 0, 1.0445083, 0, -7.105428e-15, 0, 1.0069426, 0.046927776, 0.60266644, -2.220446e-16)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D/chest" unique_id=1082319152]
-transform = Transform3D(0.39089578, 0, 0, 0, 1, 0, 0, 0, 0.6516015, 0, 0.35265315, 0)
+[node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D/container" unique_id=1082319152]
+transform = Transform3D(-2.3081734e-08, 0, 1.1506807, 0, 1.1111112, 0, -0.42243814, 0, -4.023829e-08, 0.051421598, 0.5724895, -1.7981678e-09)
 mesh = SubResource("PlaneMesh_jfb0n")
 surface_material_override/0 = SubResource("StandardMaterial3D_1y5t7")
 
@@ -209,4 +197,4 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1262147526]
 libraries/ = SubResource("AnimationLibrary_onhrv")
 
-[editable path="StaticBody3D/chest"]
+[editable path="StaticBody3D/container"]
