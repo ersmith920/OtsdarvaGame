@@ -97,10 +97,12 @@ static var _bounce_voices := 0
 static var _last_bounce_sound_ms := 0
 static var _pickup_voices := 0
 static var _last_pickup_sound_ms := 0
+static var _quad: QuadMesh
+static var _materials := {}   # texture -> shared material, so coins with the same art share one
 
 var _bounces := 0
 
-var _sprite: Sprite3D
+var _sprite: MeshInstance3D
 var _float_y := 0.35
 var _time := 0.0
 var _attracted := false
@@ -111,11 +113,12 @@ var _variant := 0   # this coin's random pick; stays fixed so merging doesn't ch
 func _ready() -> void:
 	_variant = randi()
 	add_to_group(GROUP)
-	_sprite = Sprite3D.new()
-	_sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_sprite.shaded = false
-	_sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_OPAQUE_PREPASS
+	if _quad == null:
+		_quad = QuadMesh.new()   # 1 m x 1 m; each coin is scaled to size
+	_sprite = MeshInstance3D.new()
+	_sprite.mesh = _quad
 	_sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(_sprite)
 	add_child(_sprite)
 	_refresh_look()
 	_time = randf() * TAU   # so a pile of coins doesn't bob in sync
@@ -138,17 +141,13 @@ func _refresh_look() -> void:
 	if not has_art:
 		tex = _get_placeholder()
 
-	_sprite.texture = tex
-	_sprite.pixel_size = sprite_size * scale_mult / maxf(float(maxi(tex.get_width(), tex.get_height())), 1.0)
-	_sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST if (pixel_art and has_art) \
-			else BaseMaterial3D.TEXTURE_FILTER_LINEAR
+	_sprite.material_override = _get_material(tex, pixel_art and has_art)
+	# The quad is 1 m x 1 m, so scale it to make the longest side sprite_size x the coin's scale.
+	var longest := float(maxi(tex.get_width(), tex.get_height()))
+	var world_size := sprite_size * scale_mult
+	_sprite.scale = Vector3(world_size * tex.get_width() / longest,
+			world_size * tex.get_height() / longest, 1.0)
 	_float_y = float_height * scale_mult
-	if glow_strength > 1.0:
-		var boosted := glow_tint * glow_strength
-		_sprite.modulate = Color(boosted.r, boosted.g, boosted.b, 1.0)
-	else:
-		_sprite.modulate = Color.WHITE
-
 ## Pops the coin out in a random direction. Call after it's in the tree and positioned.
 func burst() -> void:
 	launch_up_speed = randf_range(burst_up_speed.x, burst_up_speed.y)
@@ -341,3 +340,20 @@ func _pick_texture(list : Array[Texture2D]) -> Texture2D:
 static func _release_pickup_voice(audio: AudioStreamPlayer) -> void:
 	_pickup_voices -= 1
 	audio.queue_free()
+
+func _get_material(tex : Texture2D, crisp : bool) -> StandardMaterial3D:
+	var mat : StandardMaterial3D = _materials.get(tex)
+	if mat == null:
+		mat = StandardMaterial3D.new()
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_DEPTH_PRE_PASS
+		mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+		mat.billboard_keep_scale = true   # so the node's scale still sizes the coin
+		mat.albedo_texture = tex
+		mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST if crisp \
+				else BaseMaterial3D.TEXTURE_FILTER_LINEAR
+		if glow_strength > 1.0:
+			var boosted := glow_tint * glow_strength
+			mat.albedo_color = Color(boosted.r, boosted.g, boosted.b, 1.0)   # above 1 = blooms
+		_materials[tex] = mat
+	return mat
