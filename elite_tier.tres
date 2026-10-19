@@ -7,12 +7,11 @@
 script = ExtResource("1_skuar")
 tier_name = "Elite"
 enemies = Array[PackedScene]([ExtResource("1_mh51r")])
-wave_interval = 2
-first_wave = 2
+wave_interval = 3
 difficulty_step = 4
 extra_per_step = 1
 health_per_difficulty = 0.05
 min_spawn_distance = 20.0
-gold_per_enemy = 25
+gold_per_enemy = 50
 gold_difficulty_scaling = 0.05
 metadata/_custom_type_script = "uid://coywd10wgyey"

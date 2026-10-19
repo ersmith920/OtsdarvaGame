@@ -112,7 +112,7 @@ projectile = ExtResource("2_kwwa3")
 cone_size = 4.0
 projectile_speed = SubResource("Curve_4xxr5")
 damage = 20.0
-fire_rate = 0.3
+fire_rate = 0.2
 magSize = 25
 gunSounds = Array[AudioStream]([ExtResource("3_uafdv"), ExtResource("4_kgi37"), ExtResource("5_fxwdq")])
 

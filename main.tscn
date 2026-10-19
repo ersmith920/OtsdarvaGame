@@ -57,6 +57,7 @@
 [ext_resource type="Texture2D" uid="uid://bdlqa20g7cj52" path="res://temp/Buildings_building_11.jpg" id="54_wu3dr"]
 [ext_resource type="Texture2D" uid="uid://biip3nhaunm3x" path="res://temp/Buildings_BrickSmallPainted.jpg" id="55_cyx1q"]
 [ext_resource type="PackedScene" uid="uid://bt10k1iah6j80" path="res://models/container.glb" id="58_uit24"]
+[ext_resource type="Script" uid="uid://jobdhj44kgue" path="res://Scripts/interactable_spawner.gd" id="58_vke2r"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_j3pel"]
 panorama = ExtResource("1_efxa6")
@@ -2183,5 +2184,11 @@ mesh = ExtResource("16_2cqfq")
 
 [node name="container" parent="." unique_id=445615757 instance=ExtResource("58_uit24")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24.5, -2.6000001, -9.400001)
+
+[node name="InteractableSpawner" type="Node3D" parent="." unique_id=876657920]
+script = ExtResource("58_vke2r")
+chest_scene = ExtResource("5_lquwl")
+chest_count = 25
+area_size = Vector3(200, 60, 200)
 
 [editable path="Buildings"]

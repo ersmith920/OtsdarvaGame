@@ -47,6 +47,7 @@ shape = SubResource("ConvexPolygonShape3D_0xm2m")
 
 [node name="Camera3D" type="Camera3D" parent="Head" unique_id=1886807875]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.70000005, 0.17048764)
+fov = 90.0
 
 [node name="slot1" type="Node3D" parent="Head/Camera3D" unique_id=339806287]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.3, -0.36158928, -0.47027552)
@@ -62,7 +63,7 @@ transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.4
 
 [node name="RayCast3D" type="RayCast3D" parent="Head/Camera3D" unique_id=459774860]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.20000005, -0.19999993)
-target_position = Vector3(0, 0, -2)
+target_position = Vector3(0, 0, -4)
 collision_mask = 4
 hit_from_inside = true
 collide_with_areas = true

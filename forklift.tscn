@@ -18,6 +18,7 @@ speed = 4.0
 radius = 0.8
 height = 1.2
 can_climb = true
+attack_reach = 0.1
 hit_volume_db = -6.0
 
 [node name="enemy_lift" parent="." unique_id=1706441662 instance=ExtResource("1_ddviu")]
