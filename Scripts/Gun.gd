@@ -2,6 +2,7 @@ extends FloorPickup
 class_name Gun
 
 const MIN_ATTACK_SPEED := 0.01
+const MIN_RELOAD_SPEED := 0.01
 
 @export_group("Projectile")
 @export var projectile : PackedScene
@@ -37,6 +38,10 @@ const MIN_ATTACK_SPEED := 0.01
 ## Seconds between shots when the player's attack speed is 1.0.
 @export var fire_rate : float = 0.05
 @export var magSize : int = 1
+## Seconds a full reload takes at 100% reload speed. The reload animation is stretched or
+## squeezed to fit, and the mag refills when it ends. The player's reload_speed stat divides
+## this (2.0 = twice as fast).
+@export var reload_time : float = 1.0
 
 @export_group("Effects")
 @export var muzzle_flash : PackedScene
@@ -64,6 +69,7 @@ const MIN_ATTACK_SPEED := 0.01
 
 var next_use : int = 0  # Time.get_ticks_msec() value when we can fire again
 var reloading : bool = false
+var _reload_id := 0   # bumped every reload, so stale reload timers are ignored
 
 var _held := false
 var _time := 0.0
@@ -117,6 +123,11 @@ func _get_stat(stat_name: StringName) -> float:
 ## Player's final attack speed, floored so it's always safe to divide by.
 func get_attack_speed() -> float:
 	return maxf(_get_stat(&"attack_speed"), MIN_ATTACK_SPEED)
+
+
+## Seconds this gun's reload actually takes, after the player's reload_speed stat.
+func get_reload_duration() -> float:
+	return maxf(reload_time, 0.0) / maxf(_get_stat(&"reload_speed"), MIN_RELOAD_SPEED)
 
 
 ## Damage of one projectile: this gun's base damage scaled by the player's damage stat.
@@ -216,17 +227,36 @@ func _start_reload() -> void:
 	if reloading:
 		return
 	reloading = true
+	_reload_id += 1
+	var duration := get_reload_duration()
+
+	# Play the whole reload animation over exactly `duration` seconds.
 	animator.stop()
-	animator.play("reload")
+	if animator.has_animation(&"reload") and duration > 0.0:
+		var anim_length := animator.get_animation(&"reload").length
+		animator.play(&"reload", -1, anim_length / duration)
 	audio_stream_player_3d.stream = reloadSound
 	audio_stream_player_3d.volume_db = reload_volume_db
 	audio_stream_player_3d.play()
 
+	if duration <= 0.0:
+		_finish_reload(_reload_id)
+	else:
+		get_tree().create_timer(duration, false).timeout.connect(_finish_reload.bind(_reload_id))
 
-# Called by the reload animation (or anything else) when the reload finishes.
-func reload() -> void:
+
+# Refills the mag. The id makes a timer from an older reload do nothing.
+func _finish_reload(id: int) -> void:
+	if id != _reload_id or not reloading:
+		return
 	shotsLeft = magSize
 	reloading = false
+
+
+# The reload animations still call this from a method track. The mag now refills on
+# reload_time instead, so this does nothing (left in so those tracks don't error).
+func reload() -> void:
+	pass
 
 
 func _play_shot_effects(attack_speed: float) -> void:

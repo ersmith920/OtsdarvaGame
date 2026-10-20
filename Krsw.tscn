@@ -6,10 +6,6 @@
 [ext_resource type="AudioStream" uid="uid://bmpwsk35p6u4r" path="res://Sounds/krswShot1.wav" id="3_a2rmm"]
 [ext_resource type="AudioStream" uid="uid://bid2qh5smsabg" path="res://Sounds/krswShot2.wav" id="4_cvu0p"]
 
-[sub_resource type="Curve" id="Curve_8fjf0"]
-_data = [Vector2(0, 1), 0.0, 0.19876964, 0, 0]
-point_count = 1
-
 [sub_resource type="Animation" id="Animation_oyedp"]
 length = 0.001
 tracks/0/type = "value"
@@ -39,6 +35,8 @@ tracks/1/keys = {
 
 [sub_resource type="Animation" id="Animation_a2rmm"]
 resource_name = "reload"
+length = 4.0
+step = 0.01
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
@@ -46,10 +44,10 @@ tracks/0/path = NodePath(".:position")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.29, 0.49, 0.76666665, 1),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.20436694, 0.253171, 0.3233268, 0.6866749, 3.6200964, 3.77, 3.88, 3.9171057, 4),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 0,
-"values": [Vector3(0, 0, 0.0042673647), Vector3(0, 0, -0.09573264), Vector3(0, 0, -0.09573264), Vector3(0, 0, -0.09573264), Vector3(0, 0, 0.0042673647)]
+"values": [Vector3(0, 0, 0.0042673647), Vector3(0, 0, 0.0042673647), Vector3(0, 0, 0.0042673647), Vector3(0, 0, -0.07410425), Vector3(0, -0.18266454, -0.32243094), Vector3(0, -0.18266454, -0.32243094), Vector3(0, -0.0627014, -0.21812347), Vector3(0, 0, -0.07410425), Vector3(0, 0, 0.0042673647), Vector3(0, 0, 0.0042673647)]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -58,10 +56,10 @@ tracks/1/path = NodePath(".:rotation")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.29, 0.49, 0.76666665, 1),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"times": PackedFloat32Array(0, 0.20436694, 0.253171, 0.3233268, 0.6866749, 3.6200964, 3.77, 3.88, 3.9171057, 4),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 0,
-"values": [Vector3(0, -1.5707964, 0), Vector3(6.154891e-09, -1.5707964, 0.14127699), Vector3(6.154891e-09, -1.5707964, 0.14127699), Vector3(0, -1.5707964, 0), Vector3(0, -1.5707964, 0)]
+"values": [Vector3(0, -1.5707964, 0), Vector3(1.0242351e-08, -1.5707964, 0.23651665), Vector3(1.2438904e-08, -1.5707964, 0.2870978), Vector3(1.7508572e-08, -1.5707964, 0.4053407), Vector3(1.7508574e-08, -1.5707964, 0.40534064), Vector3(1.7508574e-08, -1.5707964, 0.40534064), Vector3(1.7508572e-08, -1.5707964, 0.40534067), Vector3(1.7508572e-08, -1.5707964, 0.4053407), Vector3(1.2438904e-08, -1.5707964, 0.2870978), Vector3(0, -1.5707964, 0)]
 }
 tracks/2/type = "method"
 tracks/2/imported = false
@@ -70,12 +68,9 @@ tracks/2/path = NodePath("../..")
 tracks/2/interp = 1
 tracks/2/loop_wrap = true
 tracks/2/keys = {
-"times": PackedFloat32Array(0.9),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [],
-"method": &"reload"
-}]
+"times": PackedFloat32Array(),
+"transitions": PackedFloat32Array(),
+"values": []
 }
 
 [sub_resource type="Animation" id="Animation_kbjrl"]
@@ -120,12 +115,13 @@ radius = 0.90000004
 [node name="Krsw" type="Node3D" unique_id=1043922465]
 script = ExtResource("1_gtmjj")
 projectile = ExtResource("2_oyedp")
-projectile_speed = SubResource("Curve_8fjf0")
+projectile_speed = 70.0
 damage = 400.0
 explosion_enabled = true
 explosion_damage = 200.0
 explosion_radius = 5.0
-fire_rate = 3.0
+fire_rate = 1.0
+reload_time = 4.0
 gunSounds = Array[AudioStream]([ExtResource("3_a2rmm"), ExtResource("4_cvu0p")])
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=927139864]
@@ -137,7 +133,7 @@ libraries/ = SubResource("AnimationLibrary_3v2ph")
 [node name="ModelAnchor" type="Node3D" parent="." unique_id=1960523250]
 
 [node name="krswa" parent="ModelAnchor" unique_id=1820578880 instance=ExtResource("1_uwnbu")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0, 0, 0.0042673647)
+transform = Transform3D(-4.371138e-08, 0, -1, 0, 0.9999998, 0, 0.9999998, 0, -4.371139e-08, 0, 0, 0.0042673647)
 
 [node name="muzzle" type="Node3D" parent="ModelAnchor" unique_id=1724360489]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.0001284033, 0.68385553)

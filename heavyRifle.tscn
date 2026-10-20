@@ -97,6 +97,7 @@ explosion_enabled = true
 explosion_damage = 30.0
 explosion_radius = 0.6
 fire_rate = 1.0
+reload_time = 1.0
 magSize = 10
 gunSounds = Array[AudioStream]([ExtResource("3_5trlg"), ExtResource("4_ucb4d"), ExtResource("5_5trlg")])
 reloadSound = ExtResource("6_ucb4d")

@@ -109,6 +109,7 @@ cone_size = 20.0
 projectile_speed = 25.0
 damage = 3.0
 fire_rate = 0.06
+reload_time = 0.4
 magSize = 60
 gunSounds = Array[AudioStream]([ExtResource("3_s6liv"), ExtResource("4_2375b")])
 

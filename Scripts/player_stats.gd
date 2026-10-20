@@ -9,6 +9,7 @@ extends Node
 @export var base_ricochet_chance := 0.0     # 0.15 = 15% chance per bullet
 @export var base_ricochet_bounces := 0.0    # extra enemies a ricocheting bullet can chain to
 @export var base_attack_speed := 1.0
+@export var base_reload_speed := 1.0        # 1.0 = 100% (normal); 2.0 = reloads take half as long
 @export var base_accuracy := 1.0
 @export var base_crit_chance := 0.05
 @export var base_crit_damage := 1.0
@@ -39,6 +40,7 @@ func _ready() -> void:
 		&"ricochet_chance": Stat.new(base_ricochet_chance),
 		&"ricochet_bounces": Stat.new(base_ricochet_bounces),
 		&"attack_speed": Stat.new(base_attack_speed),
+		&"reload_speed": Stat.new(base_reload_speed),
 		&"accuracy": Stat.new(base_accuracy),
 		&"crit_chance": Stat.new(base_crit_chance),
 		&"crit_damage": Stat.new(base_crit_damage),
