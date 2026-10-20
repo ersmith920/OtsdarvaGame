@@ -105,12 +105,12 @@ radius = 0.7
 script = ExtResource("2_iajnq")
 projectile = ExtResource("2_7t316")
 projectile_count = 2
-cone_size = 20.0
+cone_size = 30.0
 projectile_speed = 25.0
 damage = 3.0
 fire_rate = 0.06
-reload_time = 0.4
 magSize = 60
+reload_time = 0.4
 gunSounds = Array[AudioStream]([ExtResource("3_s6liv"), ExtResource("4_2375b")])
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1271482598]

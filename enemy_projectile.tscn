@@ -5,9 +5,10 @@
 [sub_resource type="BoxMesh" id="BoxMesh_jfb0n"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nuhd7"]
+albedo_color = Color(1, 0.5336122, 0.5339597, 1)
 emission_enabled = true
 emission = Color(0.733002, 2.7554854e-06, 6.738305e-07, 1)
-emission_energy_multiplier = 12.38
+emission_energy_multiplier = 16.0
 
 [node name="EnemyProjectile" type="Node3D" unique_id=1078264222]
 script = ExtResource("1_ff34o")
