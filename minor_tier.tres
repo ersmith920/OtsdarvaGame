@@ -14,6 +14,5 @@ max_spawn_distance = 30.0
 enemies_per_clump = 5
 clump_radius = 5.0
 max_clumps = 8
-gold_per_enemy = 6
 gold_difficulty_scaling = 0.05
 metadata/_custom_type_script = "uid://coywd10wgyey"

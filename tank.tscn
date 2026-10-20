@@ -26,12 +26,13 @@ windup_time = 0.8
 max_fire_range = 60.0
 lead_strength = 0.8
 shot_sound = ExtResource("3_1d415")
-maxHealth = 250.0
+maxHealth = 500.0
 hitSounds = Array[AudioStream]([ExtResource("3_i433e"), ExtResource("4_pku7x"), ExtResource("5_pku7x"), ExtResource("6_1d415")])
 deathSounds = Array[AudioStream]([ExtResource("8_1d415")])
 speed = 3.0
 radius = 2.8
 height = 1.8
+attack_reach = 0.05
 hit_volume_db = -6.0
 
 [node name="Body" type="Node3D" parent="." unique_id=229190783]
