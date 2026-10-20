@@ -328,7 +328,7 @@ func _apply_player_velocity(proj: Bullet) -> void:
 	var speed := maxf(projectile_speed + boost, 0.1)
 
 	# Distance to the aim point along the shot (fallback if it's behind us or missing).
-	var aim_point := GameManager.player.lock_on.get_aim_point()
+	var aim_point := GameManager.player.get_gun_aim_point(self)
 	var dist := (aim_point - proj.global_position).dot(dir)
 	if dist < 1.0:
 		dist = 30.0
@@ -349,7 +349,7 @@ func _aim_projectile(proj: Node3D) -> void:
 	proj.global_position = muzzle.global_position + lag
 	proj.global_rotation = muzzle.global_rotation  # fallback
 
-	var aim_point := player.lock_on.get_aim_point()
+	var aim_point := player.get_gun_aim_point(self)
 	var dir := aim_point - proj.global_position
 	if dir.length_squared() < 0.01:
 		return
