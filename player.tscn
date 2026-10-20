@@ -49,16 +49,18 @@ shape = SubResource("ConvexPolygonShape3D_0xm2m")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.70000005, 0.17048764)
 fov = 90.0
 
-[node name="slot1" type="Node3D" parent="Head/Camera3D" unique_id=339806287]
+[node name="GunMounts" type="Node3D" parent="Head/Camera3D" unique_id=702913845]
+
+[node name="slot1" type="Node3D" parent="Head/Camera3D/GunMounts" unique_id=339806287]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.3, -0.36158928, -0.47027552)
 
-[node name="slot2" type="Node3D" parent="Head/Camera3D" unique_id=184927666]
+[node name="slot2" type="Node3D" parent="Head/Camera3D/GunMounts" unique_id=184927666]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.26941165, -0.36158928, -0.47027552)
 
-[node name="slot3" type="Node3D" parent="Head/Camera3D" unique_id=1188235730]
+[node name="slot3" type="Node3D" parent="Head/Camera3D/GunMounts" unique_id=1188235730]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.43058833, -0.2615893, -0.47027552)
 
-[node name="slot4" type="Node3D" parent="Head/Camera3D" unique_id=514795750]
+[node name="slot4" type="Node3D" parent="Head/Camera3D/GunMounts" unique_id=514795750]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.4117829, -0.2615893, -0.47027552)
 
 [node name="RayCast3D" type="RayCast3D" parent="Head/Camera3D" unique_id=459774860]
