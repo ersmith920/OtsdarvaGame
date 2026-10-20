@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://dcaftbof8gtdq"]
+
+[ext_resource type="Script" uid="uid://btu6or7jc4i8g" path="res://Scripts/item_data.gd" id="1_item"]
+[ext_resource type="Script" uid="uid://cx80xxtsc4d7l" path="res://Scripts/effects/burn_on_hit.gd" id="2_burn"]
+[ext_resource type="Texture2D" uid="uid://bh741v4a0jxn5" path="res://Images/Icon_Incendiary.png" id="3_icon"]
+[ext_resource type="Script" uid="uid://5h1eu84vtblx" path="res://Scripts/stat_modifier.gd" id="3_nosde"]
+[ext_resource type="PackedScene" uid="uid://bykrv20vg03q4" path="res://models/bullet.glb" id="4_model"]
+[ext_resource type="Script" uid="uid://brcb8mgr2pcvv" path="res://Scripts/on_hit_effect.gd" id="5_base"]
+
+[sub_resource type="Resource" id="Resource_burn"]
+script = ExtResource("2_burn")
+id = &"burn"
+
+[resource]
+script = ExtResource("1_item")
+id = &"item_incendiary_rounds"
+display_name = "Incendiary Rounds"
+description = "10% chance on hit to burn the enemy for 3 (+3 per stack) damage every 0.25s for 3s"
+tier = 3
+icon = ExtResource("3_icon")
+model = ExtResource("4_model")
+on_hit_effects = Array[ExtResource("5_base")]([SubResource("Resource_burn")])

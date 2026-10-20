@@ -9,6 +9,8 @@
 
 [sub_resource type="Resource" id="Resource_chain"]
 script = ExtResource("2_chain")
+child_proc_coefficient = 0.3
+bolt_color = Color(7.70092e-07, 0.57540405, 0.9253555, 1)
 id = &"chain_lightning"
 chance = 0.15
 
