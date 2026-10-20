@@ -68,6 +68,37 @@ func knock_back(e: Enemy, push: Vector3, up: float) -> void:
 		e.vy = maxf(e.vy, up * keep)
 
 
+## Closest living, fully spawned enemy to `from` within max_range (3D distance), skipping
+## any in `skip` (a Dictionary used as a set). Uses the movement grid, so it's cheap even
+## in big crowds: it searches outward ring by ring and stops once nothing closer is possible.
+func find_nearest(from: Vector3, max_range: float, skip: Dictionary = {}) -> Enemy:
+	var best: Enemy = null
+	var best_d := max_range * max_range
+	var cx := floori(from.x / CELL_SIZE)
+	var cz := floori(from.z / CELL_SIZE)
+	var max_ring := ceili(max_range / CELL_SIZE)
+	for ring in max_ring + 1:
+		# Anything in this ring is at least (ring - 1) cells away horizontally.
+		var ring_min := maxf(float(ring - 1) * CELL_SIZE, 0.0)
+		if best != null and ring_min * ring_min > best_d:
+			break
+		for gx in range(cx - ring, cx + ring + 1):
+			for gz in range(cz - ring, cz + ring + 1):
+				if absi(gx - cx) != ring and absi(gz - cz) != ring:
+					continue   # inside an earlier ring
+				var cell = _grid.get(gx * CELL_STRIDE + gz)
+				if cell == null:
+					continue
+				for e: Enemy in cell:
+					if e.dead or e.spawning or skip.has(e) or not is_instance_valid(e):
+						continue
+					var d := from.distance_squared_to(e.pos + Vector3(0.0, e.height * 0.5, 0.0))
+					if d < best_d:
+						best_d = d
+						best = e
+	return best
+
+
 func _physics_process(delta: float) -> void:
 	var player := GameManager.player
 	if player == null or enemies.is_empty():

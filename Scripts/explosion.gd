@@ -44,8 +44,10 @@ static func detonate(space: PhysicsDirectSpaceState3D, at: Vector3, radius: floa
 			continue   # an enemy with several shapes only gets hit once
 		seen[enemy] = true
 
-		enemy.take_damage(roll.damage, roll.crit)
-		if enemy.dead:
+		var hit := HitInfo.make(enemy, roll.damage, roll.crit, src, src.explosion_proc_coefficient,
+				HitInfo.Kind.EXPLOSION, enemy.get_aim_position())
+		HitSystem.deal_hit(hit)
+		if hit.killed or enemy.dead:
 			continue
 
 		if has_knockback:
@@ -55,10 +57,3 @@ static func detonate(space: PhysicsDirectSpaceState3D, at: Vector3, radius: floa
 			var dir := away / dist if dist > 0.01 else Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU)
 			var falloff := lerpf(1.0, EDGE_KNOCKBACK, clampf(dist / radius, 0.0, 1.0))
 			EnemyManager.knock_back(enemy, dir * push * falloff, pop * falloff)
-
-		_apply_effects(enemy, src)
-
-
-## Hook for future on-hit effects (burn, slow, arm effects...). Called once per damaged enemy.
-static func _apply_effects(_enemy: Enemy, _src: Gun) -> void:
-	pass

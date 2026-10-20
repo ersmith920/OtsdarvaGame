@@ -119,7 +119,6 @@ projectile_speed = 70.0
 damage = 400.0
 explosion_enabled = true
 explosion_damage = 200.0
-explosion_radius = 5.0
 fire_rate = 1.0
 reload_time = 4.0
 gunSounds = Array[AudioStream]([ExtResource("3_a2rmm"), ExtResource("4_cvu0p")])

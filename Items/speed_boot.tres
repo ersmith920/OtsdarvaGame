@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://dlfqteqot6t16" path="res://Images/Icon_Speed_Boot.png" id="1_bai1u"]
 [ext_resource type="Script" uid="uid://5h1eu84vtblx" path="res://Scripts/stat_modifier.gd" id="1_gmupw"]
 [ext_resource type="Script" uid="uid://btu6or7jc4i8g" path="res://Scripts/item_data.gd" id="2_61fnd"]
+[ext_resource type="Script" uid="uid://brcb8mgr2pcvv" path="res://Scripts/on_hit_effect.gd" id="4_s7op1"]
 
 [sub_resource type="Resource" id="Resource_y3krv"]
 script = ExtResource("1_gmupw")

@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://df36kk5qu1sr3" path="res://Images/Icon_Smart_Lens.png" id="1_r0768"]
 [ext_resource type="Script" uid="uid://5h1eu84vtblx" path="res://Scripts/stat_modifier.gd" id="1_tfkol"]
 [ext_resource type="Script" uid="uid://btu6or7jc4i8g" path="res://Scripts/item_data.gd" id="2_jwwks"]
+[ext_resource type="Script" uid="uid://brcb8mgr2pcvv" path="res://Scripts/on_hit_effect.gd" id="4_017l0"]
 
 [sub_resource type="Resource" id="Resource_r0768"]
 script = ExtResource("1_tfkol")

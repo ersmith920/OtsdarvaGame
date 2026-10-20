@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://5h1eu84vtblx" path="res://Scripts/stat_modifier.gd" id="1_bhxjw"]
 [ext_resource type="PackedScene" uid="uid://bo66g767vi05i" path="res://models/item_target_comp.glb" id="1_gn7m5"]
 [ext_resource type="Script" uid="uid://btu6or7jc4i8g" path="res://Scripts/item_data.gd" id="2_gn7m5"]
+[ext_resource type="Script" uid="uid://brcb8mgr2pcvv" path="res://Scripts/on_hit_effect.gd" id="4_ch5uv"]
 
 [sub_resource type="Resource" id="Resource_02vk2"]
 script = ExtResource("1_bhxjw")

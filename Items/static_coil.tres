@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ItemData" format=3 uid="uid://bg7q4x8gbh07p"]
+
+[ext_resource type="Script" uid="uid://btu6or7jc4i8g" path="res://Scripts/item_data.gd" id="1_item"]
+[ext_resource type="Script" uid="uid://c2y2h7gig681u" path="res://Scripts/effects/chain_lightning_on_hit.gd" id="2_chain"]
+[ext_resource type="Script" uid="uid://5h1eu84vtblx" path="res://Scripts/stat_modifier.gd" id="3_16bbh"]
+[ext_resource type="Texture2D" uid="uid://um2qbt5t6kn8" path="res://Images/Icon_Static_Coil.png" id="3_icon"]
+[ext_resource type="PackedScene" uid="uid://bykrv20vg03q4" path="res://models/bullet.glb" id="4_model"]
+[ext_resource type="Script" uid="uid://brcb8mgr2pcvv" path="res://Scripts/on_hit_effect.gd" id="5_base"]
+
+[sub_resource type="Resource" id="Resource_chain"]
+script = ExtResource("2_chain")
+id = &"chain_lightning"
+chance = 0.15
+
+[resource]
+script = ExtResource("1_item")
+id = &"item_static_coil"
+display_name = "Static Coil"
+description = "15% chance on hit to fire lightning that jumps to 3 (+2 per stack) nearby enemies for 60% of the hit's damage"
+tier = 2
+icon = ExtResource("3_icon")
+model = ExtResource("4_model")
+on_hit_effects = Array[ExtResource("5_base")]([SubResource("Resource_chain")])

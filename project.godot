@@ -23,6 +23,9 @@ buses/default_bus_layout="uid://b82cfviwqgu40"
 
 GameManager="*uid://b1pvbmw3evmfx"
 EnemyManager="*uid://l6h3ap6uuwvn"
+DamageNumbers="*res://Scripts/damage_numbers.gd"
+StatusEffects="*res://Scripts/status_effects.gd"
+HitSystem="*res://Scripts/hit_system.gd"
 
 [display]
 

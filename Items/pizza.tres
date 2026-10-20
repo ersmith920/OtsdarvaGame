@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://qg73d2jusx3c" path="res://models/item_pizza.glb" id="1_molie"]
 [ext_resource type="Texture2D" uid="uid://b8vk1t8mjw0r4" path="res://Images/icon_pizza.png" id="1_x0sy1"]
 [ext_resource type="Script" uid="uid://btu6or7jc4i8g" path="res://Scripts/item_data.gd" id="2_molie"]
+[ext_resource type="Script" uid="uid://brcb8mgr2pcvv" path="res://Scripts/on_hit_effect.gd" id="4_2wdfl"]
 
 [sub_resource type="Resource" id="Resource_x0sy1"]
 script = ExtResource("1_hjc00")

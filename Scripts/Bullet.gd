@@ -36,6 +36,7 @@ static var _sphere_materials := {}   # Color -> StandardMaterial3D, one per colo
 const MAX_LOS_CHECKS := 4
 var _ricochet_rolled := false
 var _ricochets_left := 0
+var _bounces := 0   # ricochets done so far (hits after one proc at a reduced rate)
 var _hit_enemies : Array = []   # enemies this bullet has already hit
 
 # The bullet is a plain Node3D: it has no body in the physics server at all.
@@ -92,7 +93,10 @@ func hit(collider : Object, normal : Vector3 = Vector3.ZERO) -> void:
 
 	if collider is Enemy:
 		var roll : Dictionary = source.roll_damage()
-		collider.take_damage(roll.damage, roll.crit)
+		var ricocheted := _bounces > 0
+		var proc := source.proc_coefficient * (source.ricochet_proc_multiplier if ricocheted else 1.0)
+		var kind := HitInfo.Kind.RICOCHET if ricocheted else HitInfo.Kind.DIRECT
+		HitSystem.deal_hit(HitInfo.make(collider, roll.damage, roll.crit, source, proc, kind, global_position))
 	if source.explosion_enabled:
 		_explode()
 
@@ -200,6 +204,7 @@ func _try_ricochet(from_enemy : Enemy) -> bool:
 		return false
 
 	_ricochets_left -= 1
+	_bounces += 1
 	var point := _aim_point_of(target)
 	var dir := point - global_position
 	if dir.length_squared() < 0.01:

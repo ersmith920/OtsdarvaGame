@@ -9,6 +9,8 @@ extends Resource
 @export var icon: Texture2D
 @export var model: PackedScene   # shown on the floor pickup
 @export var modifiers: Array[StatModifier]
+## Effects that can trigger when the player hits an enemy (burn, chain lightning...).
+@export var on_hit_effects: Array[OnHitEffect]
 
 func get_tier_color() -> Color:
 	return TierColors.get_color(tier)

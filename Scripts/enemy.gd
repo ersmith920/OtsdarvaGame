@@ -226,20 +226,23 @@ static func _release_hit_sound(audio: AudioStreamPlayer3D) -> void:
 	audio.queue_free()
 
 
-func take_damage(damage: float, is_crit: bool = false) -> void:
+## Applies damage. Returns true if this hit killed the enemy.
+## Use HitSystem.deal_hit() instead of calling this directly, so on-hit effects run.
+func take_damage(damage: float, is_crit: bool = false) -> bool:
 	if dead or spawning:
-		return
+		return false
 	GameManager.enemy_damaged.emit(damage, is_crit)
 	health -= damage
 	if health <= 0.0:
 		_die()
-		return
+		return true
 	_flash()
 
 	var now := Time.get_ticks_msec()
 	if now - _last_hit_sound_ms >= HIT_SOUND_MIN_GAP_MS:
 		_last_hit_sound_ms = now
 		play_hit_sound()
+	return false
 
 
 func _die() -> void:

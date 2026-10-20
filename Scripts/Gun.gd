@@ -24,6 +24,11 @@ const MIN_RELOAD_SPEED := 0.01
 ## Seconds for that sideways movement to fade out. Short = snaps onto the aim line quickly,
 ## long = sweeps wider before settling.
 @export_range(0.02, 1.0, 0.01) var strafe_settle_time := 0.15
+## Scales the chance of on-hit item effects for this gun's hits (1.0 = full chance).
+## Lower it on fast, spammy guns so they don't trigger items constantly.
+@export_range(0.0, 2.0, 0.05) var proc_coefficient := 1.0
+## Hits after a ricochet use proc_coefficient times this (0.5 = half the chance).
+@export_range(0.0, 1.0, 0.05) var ricochet_proc_multiplier := 0.5
 @export var pierce_count : int = 0
 @export var damage : float = 0
 @export var aiming : bool = true
@@ -41,6 +46,8 @@ const MIN_RELOAD_SPEED := 0.01
 @export var explosion_knockback := 0.0
 ## Upward pop (m/s) at the center of the blast. 0 = none.
 @export var explosion_knockback_up := 0.0
+## Proc coefficient for each enemy caught in the blast (each one rolls on-hit effects separately).
+@export_range(0.0, 2.0, 0.05) var explosion_proc_coefficient := 1.0
 
 @export_group("Firing")
 ## Seconds between shots when the player's attack speed is 1.0.
