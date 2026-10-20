@@ -3,6 +3,9 @@
 [ext_resource type="PackedScene" uid="uid://cnxs84otgurq7" path="res://models/rifleJoined.glb" id="1_7n1sn"]
 [ext_resource type="Script" uid="uid://05rxsbp5ho1h" path="res://Scripts/Gun.gd" id="1_788d7"]
 [ext_resource type="PackedScene" uid="uid://dqdovhq3j2pa" path="res://Bullet.tscn" id="2_kwwa3"]
+[ext_resource type="AudioStream" uid="uid://cc107jcak8owm" path="res://Sounds/rifleShot1.wav" id="3_uafdv"]
+[ext_resource type="AudioStream" uid="uid://da8vtstavw7a6" path="res://Sounds/rifleShot2.wav" id="4_kgi37"]
+[ext_resource type="AudioStream" uid="uid://ovuaesy2fjno" path="res://Sounds/rifleShot3.wav" id="5_fxwdq"]
 
 [sub_resource type="Animation" id="Animation_788d7"]
 length = 0.001
@@ -102,6 +105,14 @@ radius = 0.7
 [node name="Rifle" type="Node3D" unique_id=1859962622]
 script = ExtResource("1_788d7")
 projectile = ExtResource("2_kwwa3")
+projectile_speed = 50.0
+damage = 20.0
+explosion_enabled = true
+explosion_damage = 6.0
+explosion_radius = 0.1
+fire_rate = 0.2
+magSize = 30
+gunSounds = Array[AudioStream]([ExtResource("3_uafdv"), ExtResource("4_kgi37"), ExtResource("5_fxwdq")])
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=269908020]
 libraries/ = SubResource("AnimationLibrary_x7oje")

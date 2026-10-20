@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://b2eudvbnntj25" path="res://models/heavyRifle.glb" id="3_my6hx"]
 [ext_resource type="AudioStream" uid="uid://lu01n0b064xw" path="res://Sounds/heavyRifleShot2.wav" id="4_ucb4d"]
 [ext_resource type="AudioStream" uid="uid://uiu2405i0c0v" path="res://Sounds/heavyRifleShot3.wav" id="5_5trlg"]
+[ext_resource type="AudioStream" uid="uid://c5jxa8bdnsqmn" path="res://Sounds/heavyReload.wav" id="6_ucb4d"]
 
 [sub_resource type="Animation" id="Animation_5trlg"]
 length = 0.001
@@ -90,6 +91,7 @@ radius = 1.0
 script = ExtResource("1_be66a")
 projectile = ExtResource("2_6lrvk")
 cone_size = 0.5
+projectile_speed = 60.0
 damage = 50.0
 explosion_enabled = true
 explosion_damage = 30.0
@@ -97,6 +99,7 @@ explosion_radius = 0.6
 fire_rate = 1.0
 magSize = 10
 gunSounds = Array[AudioStream]([ExtResource("3_5trlg"), ExtResource("4_ucb4d"), ExtResource("5_5trlg")])
+reloadSound = ExtResource("6_ucb4d")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=792462306]
 libraries/ = SubResource("AnimationLibrary_23egj")

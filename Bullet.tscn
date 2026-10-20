@@ -15,9 +15,8 @@ material = SubResource("StandardMaterial3D_j24xj")
 [node name="Bullet" type="Node3D" unique_id=1310620337]
 transform = Transform3D(0.6996794, 0.714457, 0, -0.714457, 0.6996794, 0, 0, 0, 1, 0, 0, 0)
 script = ExtResource("1_j24xj")
-speed = 200.0
 hit_effect = ExtResource("2_4s4u5")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1888750652]
-transform = Transform3D(0.043249033, 1.8626451e-09, 0, -1.8626451e-09, 0.043249033, 0, 0, 0, 0.32863635, 0, 0, 0.14)
+transform = Transform3D(0.07352336, 3.7252903e-09, 0, -3.7252903e-09, 0.07352336, 0, 0, 0, 0.5586818, 0, 0, 0.14)
 mesh = SubResource("BoxMesh_4xxr5")
