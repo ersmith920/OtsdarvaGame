@@ -54,16 +54,16 @@ fov = 90.0
 [node name="Lower" type="Node3D" parent="Head/Camera3D/GunMounts" unique_id=702913846]
 
 [node name="slot1" type="Node3D" parent="Head/Camera3D/GunMounts/Lower" unique_id=339806287]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.28807586, -0.49641073, -0.45094365)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.28807586, -0.4732066, -0.53448385)
 
 [node name="slot2" type="Node3D" parent="Head/Camera3D/GunMounts/Lower" unique_id=1366042860]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.288, -0.4967284, -0.45111448)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.288, -0.47352427, -0.5346547)
 
 [node name="slot3" type="Node3D" parent="Head/Camera3D/GunMounts/Lower" unique_id=1454409542]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.4036535, -0.41958717, -0.32474437)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.4593022, -0.39638305, -0.31748298)
 
-[node name="slot4" type="Node3D" parent="Head/Camera3D/GunMounts/Lower" unique_id=1192733552]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.404, -0.4197284, -0.325)
+[node name="slot4" type="Node3D" parent="Head/Camera3D/GunMounts/Lower" unique_id=1352996140]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.459, -0.396, -0.317)
 
 [node name="Upper" type="Node3D" parent="Head/Camera3D/GunMounts" unique_id=702913847]
 
