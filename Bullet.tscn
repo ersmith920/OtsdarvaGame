@@ -16,6 +16,7 @@ material = SubResource("StandardMaterial3D_j24xj")
 transform = Transform3D(0.6996794, 0.714457, 0, -0.714457, 0.6996794, 0, 0, 0, 1, 0, 0, 0)
 script = ExtResource("1_j24xj")
 hit_effect = ExtResource("2_4s4u5")
+explosion_lifetime = 0.16
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1888750652]
 transform = Transform3D(0.07352336, 3.7252903e-09, 0, -3.7252903e-09, 0.07352336, 0, 0, 0, 0.5586818, 0, 0, 0.14)

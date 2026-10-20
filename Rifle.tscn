@@ -105,11 +105,12 @@ radius = 0.7
 [node name="Rifle" type="Node3D" unique_id=1859962622]
 script = ExtResource("1_788d7")
 projectile = ExtResource("2_kwwa3")
+cone_size = 5.0
 projectile_speed = 50.0
 damage = 20.0
 explosion_enabled = true
 explosion_damage = 6.0
-explosion_radius = 0.1
+explosion_radius = 0.2
 fire_rate = 0.2
 magSize = 30
 gunSounds = Array[AudioStream]([ExtResource("3_uafdv"), ExtResource("4_kgi37"), ExtResource("5_fxwdq")])
