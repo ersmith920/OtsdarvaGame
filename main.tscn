@@ -56,7 +56,6 @@
 [ext_resource type="Texture2D" uid="uid://c7sguu8tgwy74" path="res://temp/Buildings_Shops_27.png" id="53_1vm84"]
 [ext_resource type="Texture2D" uid="uid://bdlqa20g7cj52" path="res://temp/Buildings_building_11.jpg" id="54_wu3dr"]
 [ext_resource type="Texture2D" uid="uid://biip3nhaunm3x" path="res://temp/Buildings_BrickSmallPainted.jpg" id="55_cyx1q"]
-[ext_resource type="PackedScene" uid="uid://bt10k1iah6j80" path="res://models/container.glb" id="58_uit24"]
 [ext_resource type="Script" uid="uid://jobdhj44kgue" path="res://Scripts/interactable_spawner.gd" id="58_vke2r"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_j3pel"]
@@ -1848,16 +1847,6 @@ mesh = SubResource("BoxMesh_vdxkd")
 transform = Transform3D(1, 0, 0, 0, 1.0000004, 0, 0, 0, 1, 0, 0, 0)
 shape = SubResource("BoxShape3D_4xxr5")
 
-[node name="MeshInstance3D7" type="MeshInstance3D" parent="." unique_id=1935692069]
-transform = Transform3D(-4.5255084e-07, 0, 16.806198, 0, 12.536282, 0, -10.353156, 0, -7.3462223e-07, -26.733368, -6.9202065, 11.85375)
-mesh = SubResource("BoxMesh_vdxkd")
-
-[node name="StaticBody3D" type="StaticBody3D" parent="MeshInstance3D7" unique_id=104751228]
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="MeshInstance3D7/StaticBody3D" unique_id=1018191520]
-transform = Transform3D(1, 0, 0, 0, 1.0000004, 0, 0, 0, 1, 0, 0, 0)
-shape = SubResource("BoxShape3D_4xxr5")
-
 [node name="MeshInstance3D6" type="MeshInstance3D" parent="." unique_id=918430630]
 transform = Transform3D(4.636077, 0, 0, 0, 18.46071, 0, 0, 0, 5.2399545, -31.550692, 2.9265857, -5.0283074)
 mesh = SubResource("BoxMesh_7ekgg")
@@ -1883,83 +1872,83 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26.7, -3.2, 0.5)
 item = ExtResource("4_lquwl")
 
 [node name="itemBox19" parent="." unique_id=1207876015 instance=ExtResource("5_lquwl")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -20.771149, -0.20000005, 15.310825)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.412815, -2.7310998, -12.680843)
 
 [node name="itemBox20" parent="." unique_id=868951258 instance=ExtResource("5_lquwl")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -22.67115, -0.20000005, 15.710825)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.0128155, -2.7310998, -10.780842)
 
 [node name="itemBox21" parent="." unique_id=482654377 instance=ExtResource("5_lquwl")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -24.67115, -0.20000005, 15.310825)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.412815, -2.7310998, -8.780842)
 
 [node name="itemBox22" parent="." unique_id=1589378448 instance=ExtResource("5_lquwl")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -26.57115, -0.20000005, 15.610825)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.112816, -2.7310998, -6.880842)
 
 [node name="itemBox23" parent="." unique_id=94627803 instance=ExtResource("5_lquwl")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -28.57115, -0.20000005, 15.510824)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.212816, -2.7310998, -4.880842)
 
 [node name="itemBox24" parent="." unique_id=955445999 instance=ExtResource("5_lquwl")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -30.47115, -0.20000005, 15.710825)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.0128155, -2.7310998, -2.9808424)
 
 [node name="itemBox25" parent="." unique_id=1525564709 instance=ExtResource("5_lquwl")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -32.47115, -0.20000005, 15.610825)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.1128154, -2.7310998, -0.98084235)
 
 [node name="gunBox7" parent="." unique_id=825318234 instance=ExtResource("3_h2yge")]
-transform = Transform3D(-0.98480785, 0, -0.17364827, 0, 1, 0, 0.17364827, 0, -0.98480785, -19.47115, -0.20000005, 9.210825)
+transform = Transform3D(0.1736483, 0, -0.9848078, 0, 1, 0, 0.9848078, 0, 0.1736483, -12.512815, -2.7310998, -13.980843)
 
 [node name="gunBox8" parent="." unique_id=503614872 instance=ExtResource("3_h2yge")]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -19.57115, -0.20000005, 12.610825)
+transform = Transform3D(1.3113416e-07, 0, -1, 0, 1, 0, 1, 0, 1.3113416e-07, -9.112816, -2.7310998, -13.880842)
 
 [node name="gunBox9" parent="." unique_id=960158665 instance=ExtResource("3_h2yge")]
-transform = Transform3D(0.76604444, 0, 0.64278775, 0, 1, 0, -0.64278775, 0, 0.76604444, -34.071148, -0.20000005, 13.410826)
+transform = Transform3D(-0.64278775, 0, 0.76604444, 0, 1, 0, -0.76604444, 0, -0.64278775, -8.312815, -2.7310998, 0.6191561)
 
 [node name="gunBox10" parent="." unique_id=113344889 instance=ExtResource("3_h2yge")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -34.47115, -0.20000005, 10.510824)
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -11.212816, -2.7310998, 1.0191576)
 
 [node name="ItemPickup2" parent="." unique_id=1666701328 instance=ExtResource("3_1bvp3")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.47115, -3.2, 7.7108235)
+transform = Transform3D(0.8528284, 0, -0.5221912, 0, 1, 0, 0.5221912, 0, 0.8528284, -21.951317, -3.2, 16.40555)
 item = ExtResource("6_7mycd")
 
 [node name="ItemPickup3" parent="." unique_id=152260960 instance=ExtResource("3_1bvp3")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.47115, -3.2, 10.610825)
+transform = Transform3D(0.8528284, 0, -0.5221912, 0, 1, 0, 0.5221912, 0, 0.8528284, -23.465673, -3.2, 18.878754)
 item = ExtResource("6_7mycd")
 
 [node name="ItemPickup4" parent="." unique_id=2050884833 instance=ExtResource("3_1bvp3")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.47115, -3.2, 13.110825)
+transform = Transform3D(0.8528284, 0, -0.5221912, 0, 1, 0, 0.5221912, 0, 0.8528284, -24.77115, -3.2, 21.010824)
 item = ExtResource("6_7mycd")
 
 [node name="ItemPickup5" parent="." unique_id=65888044 instance=ExtResource("3_1bvp3")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.47115, -3.2, 15.710825)
+transform = Transform3D(0.8528284, 0, -0.5221912, 0, 1, 0, 0.5221912, 0, 0.8528284, -26.128847, -3.2, 23.228178)
 item = ExtResource("6_7mycd")
 
 [node name="ItemPickup6" parent="." unique_id=612098133 instance=ExtResource("3_1bvp3")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.47115, -3.2, 18.410824)
+transform = Transform3D(0.8528284, 0, -0.5221912, 0, 1, 0, 0.5221912, 0, 0.8528284, -27.538763, -3.2, 25.530813)
 item = ExtResource("6_7mycd")
 
 [node name="ItemPickup7" parent="." unique_id=1981876876 instance=ExtResource("3_1bvp3")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.2423, -3.1, 6.7216473)
+transform = Transform3D(0.84054095, 0, -0.5417481, 0, 1, 0, 0.5417481, 0, 0.84054095, -29.816856, -3.1, 11.582726)
 item = ExtResource("10_dg77c")
 
 [node name="ItemPickup8" parent="." unique_id=1430039182 instance=ExtResource("3_1bvp3")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.2423, -3.1, 9.621649)
+transform = Transform3D(0.84054095, 0, -0.5417481, 0, 1, 0, 0.5417481, 0, 0.84054095, -31.387928, -3.1, 14.020296)
 item = ExtResource("10_dg77c")
 
 [node name="ItemPickup9" parent="." unique_id=16637446 instance=ExtResource("3_1bvp3")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.2423, -3.1, 12.121649)
+transform = Transform3D(0.84054095, 0, -0.5417481, 0, 1, 0, 0.5417481, 0, 0.84054095, -32.7423, -3.1, 16.121649)
 item = ExtResource("10_dg77c")
 
 [node name="ItemPickup10" parent="." unique_id=1403061262 instance=ExtResource("3_1bvp3")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.2423, -3.1, 14.721651)
+transform = Transform3D(0.84054095, 0, -0.5417481, 0, 1, 0, 0.5417481, 0, 0.84054095, -34.150845, -3.1, 18.307055)
 item = ExtResource("10_dg77c")
 
 [node name="ItemPickup11" parent="." unique_id=1510748641 instance=ExtResource("3_1bvp3")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.2423, -3.1, 17.421648)
+transform = Transform3D(0.84054095, 0, -0.5417481, 0, 1, 0, 0.5417481, 0, 0.84054095, -35.613564, -3.1, 20.576515)
 item = ExtResource("10_dg77c")
 
 [node name="timer_pylon" parent="." unique_id=425731580 instance=ExtResource("7_272bh")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28.3, -3.2, -5.1)
 
 [node name="ResetPylon" parent="." unique_id=921388520 instance=ExtResource("8_5vw27")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -26.47115, -0.60000056, 10.310825)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -11.412815, -3.1311004, -6.9808426)
 
 [node name="gunBox" parent="." unique_id=1802771475 instance=ExtResource("3_h2yge")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28.4, -2.7, -2.7)
@@ -1978,7 +1967,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -31.500004, 12.3, -5.0999994)
 item = ExtResource("13_ycdy4")
 
 [node name="Buildings" parent="." unique_id=632477655 instance=ExtResource("14_w48qg")]
-transform = Transform3D(-1.14206316e-08, 0, 0.2612736, 0, 0.2612736, 0, -0.2612736, 0, -1.14206316e-08, -60.100006, -3.2, 14.9)
+transform = Transform3D(-0.22000301, 0, 0.14093465, 0, 0.26127356, 0, -0.14093465, 0, -0.22000301, -24.68199, -3.2, 33.899998)
 
 [node name="Building_03" parent="Buildings" index="0" unique_id=765701959]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 15.387707, 9.419302, 4.959366)
@@ -2181,9 +2170,6 @@ shape = SubResource("BoxShape3D_dre7n")
 [node name="Car6" type="MeshInstance3D" parent="." unique_id=434013481]
 transform = Transform3D(0.29999998, 0, -8.881784e-16, 0, 0.29999998, 0, 8.881784e-16, 0, 0.29999998, -43.4, -3.2, 10.700001)
 mesh = ExtResource("16_2cqfq")
-
-[node name="container" parent="." unique_id=445615757 instance=ExtResource("58_uit24")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24.5, -2.6000001, -9.400001)
 
 [node name="InteractableSpawner" type="Node3D" parent="." unique_id=876657920]
 script = ExtResource("58_vke2r")

@@ -42,8 +42,31 @@ var _hit_enemies : Array = []   # enemies this bullet has already hit
 # All hit detection is done with the raycast below, so moving it every frame is free
 # as far as physics is concerned.
 
+var _dir := Vector3.ZERO         # travel direction (set by launch)
+var _speed_bonus := 0.0          # forward speed inherited from the player
+var _lateral := Vector3.ZERO     # sideways speed inherited from the player, fades out
+var _settle_time := 0.15
+
+
+## Called by the Gun right after spawning. See Gun._apply_player_velocity.
+func launch(dir: Vector3, speed_bonus: float, lateral: Vector3, settle_time: float) -> void:
+	_dir = dir.normalized()
+	_speed_bonus = speed_bonus
+	_lateral = lateral
+	_settle_time = maxf(settle_time, 0.01)
+	var up := Vector3.UP if absf(_dir.y) < 0.99 else Vector3.RIGHT   # avoids look_at errors
+	look_at(global_position + _dir, up, true)
+
+
 func _physics_process(delta: float) -> void:
-	var motion := global_basis.z * delta * source.get_projectile_speed(elapsed_time)
+	if _dir == Vector3.ZERO:
+		_dir = global_basis.z   # spawned without launch(): fly straight ahead
+	var speed := source.get_projectile_speed(elapsed_time) + _speed_bonus
+	var motion := (_dir * speed + _lateral) * delta
+	if _lateral != Vector3.ZERO:
+		_lateral *= exp(-delta / _settle_time)
+		if _lateral.length_squared() < 0.0001:
+			_lateral = Vector3.ZERO
 	elapsed_time += delta
 
 	if elapsed_time > delete_after:
@@ -184,6 +207,8 @@ func _try_ricochet(from_enemy : Enemy) -> bool:
 	# Avoid look_at errors when aiming straight up or down.
 	var up := Vector3.UP if absf(dir.normalized().y) < 0.99 else Vector3.RIGHT
 	look_at(point, up, true)
+	_dir = global_basis.z        # fly straight at the new target
+	_lateral = Vector3.ZERO
 	return true
 
 

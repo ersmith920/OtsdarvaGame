@@ -16,6 +16,14 @@ const MIN_RELOAD_SPEED := 0.01
 @export var speed_curve : Curve
 ## Seconds the Speed Curve takes to play out. After that it holds its last value.
 @export var speed_curve_time : float = 1.0
+## How much of the player's movement a projectile keeps when fired (0 = none, 1 = all).
+## Forward movement is added to its speed, so you can't outrun your own shots.
+## Sideways movement makes it leave the barrel moving with you, then settle back onto
+## the aim line, so it still lands where you aimed.
+@export_range(0.0, 1.0, 0.05) var inherit_velocity := 1.0
+## Seconds for that sideways movement to fade out. Short = snaps onto the aim line quickly,
+## long = sweeps wider before settling.
+@export_range(0.02, 1.0, 0.01) var strafe_settle_time := 0.15
 @export var pierce_count : int = 0
 @export var damage : float = 0
 @export var aiming : bool = true
@@ -297,14 +305,52 @@ func _spawn_projectile() -> void:
 		var offset := Vector3(cos(angle), sin(angle), 0.0)
 		proj.global_rotation += offset * randf_range(0.0, get_cone())
 
+	_apply_player_velocity(proj)
 	proj.reset_physics_interpolation()
 
+
+# Gives the projectile some of the player's movement (see inherit_velocity).
+#  - Forward part: added to the projectile's speed.
+#  - Sideways part: the projectile starts with it and it fades out over strafe_settle_time.
+#    The firing direction is nudged the other way by exactly the drift that causes,
+#    so the projectile still crosses the aim point.
+func _apply_player_velocity(proj: Bullet) -> void:
+	var dir := proj.global_basis.z.normalized()
+	var k := clampf(inherit_velocity, 0.0, 1.0)
+	if k <= 0.0:
+		proj.launch(dir, 0.0, Vector3.ZERO, strafe_settle_time)
+		return
+
+	var pv := GameManager.player.velocity * k
+	var along := pv.dot(dir)
+	var lateral := pv - dir * along
+	var boost := maxf(along, 0.0)   # moving backward never makes shots slower than normal
+	var speed := maxf(projectile_speed + boost, 0.1)
+
+	# Distance to the aim point along the shot (fallback if it's behind us or missing).
+	var aim_point := GameManager.player.lock_on.get_aim_point()
+	var dist := (aim_point - proj.global_position).dot(dir)
+	if dist < 1.0:
+		dist = 30.0
+	var tau := maxf(strafe_settle_time, 0.01)
+	var t := dist / speed
+	# Total sideways drift by the time it reaches the aim point.
+	var drift := lateral * tau * (1.0 - exp(-t / tau))
+	var aimed := (dir * dist - drift).normalized()
+	proj.launch(aimed, boost, lateral, tau)
+
+
 func _aim_projectile(proj: Node3D) -> void:
-	proj.global_position = muzzle.global_position
+	# The guns hang off the Head, which is drawn at the player's interpolated (slightly
+	# behind) position. Spawn from the player's real physics position instead, or fast
+	# movement leaves new bullets up to a tick of movement behind the barrel.
+	var player := GameManager.player
+	var lag: Vector3 = player.global_position - (player.head as Node3D).global_position
+	proj.global_position = muzzle.global_position + lag
 	proj.global_rotation = muzzle.global_rotation  # fallback
 
-	var aim_point := GameManager.player.lock_on.get_aim_point()
-	var dir := aim_point - muzzle.global_position
+	var aim_point := player.lock_on.get_aim_point()
+	var dir := aim_point - proj.global_position
 	if dir.length_squared() < 0.01:
 		return
 	# Avoid look_at errors when aiming straight up or down.
