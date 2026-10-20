@@ -56,6 +56,7 @@
 [ext_resource type="Texture2D" uid="uid://c7sguu8tgwy74" path="res://temp/Buildings_Shops_27.png" id="53_1vm84"]
 [ext_resource type="Texture2D" uid="uid://bdlqa20g7cj52" path="res://temp/Buildings_building_11.jpg" id="54_wu3dr"]
 [ext_resource type="Texture2D" uid="uid://biip3nhaunm3x" path="res://temp/Buildings_BrickSmallPainted.jpg" id="55_cyx1q"]
+[ext_resource type="Resource" uid="uid://bg7q4x8gbh07p" path="res://Items/static_coil.tres" id="58_uit24"]
 [ext_resource type="Script" uid="uid://jobdhj44kgue" path="res://Scripts/interactable_spawner.gd" id="58_vke2r"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_j3pel"]
@@ -2176,5 +2177,9 @@ script = ExtResource("58_vke2r")
 chest_scene = ExtResource("5_lquwl")
 chest_count = 25
 area_size = Vector3(200, 60, 200)
+
+[node name="ItemPickup13" parent="." unique_id=1813224495 instance=ExtResource("3_1bvp3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.300001, 3.4000003, 28.599998)
+item = ExtResource("58_uit24")
 
 [editable path="Buildings"]

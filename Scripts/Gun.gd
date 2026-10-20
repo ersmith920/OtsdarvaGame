@@ -3,6 +3,11 @@ class_name Gun
 
 const MIN_ATTACK_SPEED := 0.01
 const MIN_RELOAD_SPEED := 0.01
+## Audio bus every player gun sound plays through (its limiter is the volume ceiling).
+const GUN_BUS := &"PlayerGuns"
+## Most gun shot sounds allowed to play at once, across all guns.
+const MAX_SHOT_VOICES := 34
+static var _active_shot_voices := 0
 
 @export_group("Projectile")
 @export var projectile : PackedScene
@@ -63,6 +68,8 @@ const MIN_RELOAD_SPEED := 0.01
 @export var gunSounds : Array[AudioStream]
 @export var reloadSound : AudioStream
 ## Volume offset for shots and reloads, in dB. Negative = quieter.
+## All player gun sounds also go through the "PlayerGuns" audio bus, whose limiter caps
+## how loud they can get together (edit it in the Audio panel at the bottom of the editor).
 @export var shot_volume_db := -20
 @export var reload_volume_db := 0.0
 
@@ -99,6 +106,7 @@ func _ready() -> void:
 	_half_height = bounds.size.y * 0.5
 	_time = randf() * TAU   # so a group of guns doesn't bob in sync
 	animator.animation_finished.connect(_on_animation_finished)
+	audio_stream_player_3d.bus = GUN_BUS
 
 
 # ---------- World hover (only while lying on the floor) ----------
@@ -252,6 +260,7 @@ func _start_reload() -> void:
 		animator.play(&"reload", -1, anim_length / duration)
 	audio_stream_player_3d.stream = reloadSound
 	audio_stream_player_3d.volume_db = reload_volume_db
+	audio_stream_player_3d.bus = GUN_BUS
 	audio_stream_player_3d.play()
 
 	if duration <= 0.0:
@@ -279,14 +288,20 @@ func _play_shot_effects(attack_speed: float) -> void:
 	animator.stop()
 	animator.play("shoot", -1, attack_speed)
 
-	# One-shot audio player so rapid shots don't cut each other off.
+	# One-shot audio player so rapid shots don't cut each other off. Capped, so a
+	# dozen fast guns don't stack hundreds of overlapping voices.
+	if gunSounds.is_empty() or _active_shot_voices >= MAX_SHOT_VOICES:
+		return
+	_active_shot_voices += 1
 	var audio := AudioStreamPlayer3D.new()
 	audio.stream = gunSounds.pick_random()
 	audio.volume_db = shot_volume_db
 	audio.max_db = -1
+	audio.bus = GUN_BUS
 	add_child(audio)
 	audio.play()
 	audio.finished.connect(audio.queue_free)
+	audio.tree_exited.connect(Gun._release_shot_voice)   # also counts voices freed with the gun
 
 
 func _fire_projectiles(attack_speed: float) -> void:
@@ -371,3 +386,7 @@ func _on_animation_finished(anim_name: StringName) -> void:
 
 func can_be_cleared() -> bool:
 	return not _held
+
+
+static func _release_shot_voice() -> void:
+	_active_shot_voices = maxi(_active_shot_voices - 1, 0)
