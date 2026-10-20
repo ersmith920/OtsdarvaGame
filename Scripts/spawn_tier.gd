@@ -1,11 +1,15 @@
-# One category of enemy (Common, Elite, later Boss...) and how it spawns and scales.
+# One category of enemy (Minor, Major, later Boss...) and how it spawns and scales.
 # Count = base_count + extra_per_step for every `difficulty_step` increases in difficulty.
 class_name SpawnTier
 extends Resource
 
-@export var tier_name := "Common"
+@export var tier_name := "Minor"
 ## Every scene in here can spawn for this tier. List a scene twice to make it twice as likely.
 @export var enemies: Array[PackedScene]
+## Whether enemies from this tier can roll as elites (settings live on the EnemySpawner).
+@export var allow_elites := true
+## Whether swarms multiply this tier's wave size (settings live on the EnemySpawner).
+@export var boosted_by_swarms := true
 
 @export_group("Wave Frequency")
 ## This tier spawns every this many waves. 1 = every wave, 2 = every other wave, 3 = every third...
@@ -31,6 +35,19 @@ extends Resource
 ## Enemies of this tier spawn between these two distances from the spawner (horizontal, meters).
 @export_range(0.0, 500.0, 0.5, "suffix:m") var min_spawn_distance := 15.0
 @export_range(0.0, 500.0, 0.5, "suffix:m") var max_spawn_distance := 100.0
+
+@export_group("Clumps")
+## Enemies per clump. A wave is split into this many per group around the player,
+## leaving gaps between groups. 1 or less = spread evenly around the ring (no clumps).
+@export var enemies_per_clump := 8
+## Radius of a clump of enemies_per_clump enemies, in meters. Bigger clumps (swarms) grow
+## so they stay about as dense.
+@export_range(0.5, 50.0, 0.5, "suffix:m") var clump_radius := 4.0
+## Most clumps one wave of this tier splits into. Past this, clumps get bigger instead of more numerous.
+@export_range(1, 32) var max_clumps := 4
+## Clumps in the same wave are at least this many degrees apart around the player,
+## so there are always lanes between them.
+@export_range(0.0, 180.0, 1.0, "suffix:°") var clump_min_gap_deg := 50.0
 
 @export_group("Gold Drop")
 ## Gold each enemy of this tier drops at difficulty 1.

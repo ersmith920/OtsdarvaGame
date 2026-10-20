@@ -1,9 +1,0 @@
-[gd_scene format=3 uid="uid://buhyxyyteao2k"]
-
-[ext_resource type="Script" uid="uid://cios2phsic7pb" path="res://Scripts/explosion.gd" id="1_atm0c"]
-
-[node name="explosion" type="Node3D" unique_id=1997236623]
-script = ExtResource("1_atm0c")
-radius = 5.0
-damage = 200
-visual_color = Color(0.4051573, 0.40895152, 1, 0.5019608)

@@ -12,16 +12,8 @@ emission_energy_multiplier = 14.75
 [sub_resource type="BoxMesh" id="BoxMesh_4xxr5"]
 material = SubResource("StandardMaterial3D_j24xj")
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_4xxr5"]
-size = Vector3(1, 1, 6)
-
-[node name="Bullet" type="RigidBody3D" unique_id=289174295]
+[node name="Bullet" type="Node3D" unique_id=1310620337]
 transform = Transform3D(0.6996794, 0.714457, 0, -0.714457, 0.6996794, 0, 0, 0, 1, 0, 0, 0)
-mass = 0.1
-gravity_scale = 0.0
-freeze = true
-freeze_mode = 1
-continuous_cd = true
 script = ExtResource("1_j24xj")
 speed = 200.0
 hit_effect = ExtResource("2_4s4u5")
@@ -29,7 +21,3 @@ hit_effect = ExtResource("2_4s4u5")
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1888750652]
 transform = Transform3D(0.043249033, 1.8626451e-09, 0, -1.8626451e-09, 0.043249033, 0, 0, 0, 0.32863635, 0, 0, 0.14)
 mesh = SubResource("BoxMesh_4xxr5")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=873012075]
-transform = Transform3D(0.054347225, 0, 0, 0, 0.054347225, 0, 0, 0, 0.054347225, 0, 0, 0.13586806)
-shape = SubResource("BoxShape3D_4xxr5")

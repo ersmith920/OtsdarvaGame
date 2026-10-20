@@ -11,8 +11,8 @@
 [ext_resource type="Script" uid="uid://cvcgnjkdhgfip" path="res://Scripts/enemy_spawner.gd" id="6_ivps1"]
 [ext_resource type="Script" uid="uid://coywd10wgyey" path="res://Scripts/spawn_tier.gd" id="7_7hik5"]
 [ext_resource type="Script" uid="uid://b6sjxca1nbw56" path="res://Scripts/hud_bars.gd" id="8_dw050"]
-[ext_resource type="Resource" uid="uid://co2d0cuwh5t25" path="res://common_tier.tres" id="8_qtqh7"]
-[ext_resource type="Resource" uid="uid://ds3ti6ev72i8h" path="res://elite_tier.tres" id="9_2wuci"]
+[ext_resource type="Resource" uid="uid://co2d0cuwh5t25" path="res://minor_tier.tres" id="8_qtqh7"]
+[ext_resource type="Resource" uid="uid://ds3ti6ev72i8h" path="res://major_tier.tres" id="9_2wuci"]
 [ext_resource type="Script" uid="uid://b4meudqmfsp8v" path="res://Scripts/speed_blur.gd" id="9_5tmop"]
 [ext_resource type="Script" uid="uid://ctf7fflgutf4v" path="res://Scripts/tab_menu.gd" id="9_b26j0"]
 [ext_resource type="Script" uid="uid://d047ud5u33nrt" path="res://Scripts/hud_timer.gd" id="10_n7ghd"]
@@ -75,9 +75,26 @@ crosshair = NodePath("../../../HUD/Crosshair")
 
 [node name="EnemySpawner" type="Node3D" parent="." unique_id=2092120457]
 script = ExtResource("6_ivps1")
-spawnRate = 5
-difficulty_interval = 30.0
+spawnRate = 2
 tiers = Array[ExtResource("7_7hik5")]([ExtResource("8_qtqh7"), ExtResource("9_2wuci")])
+ray_height = null
+ray_depth = null
+max_attempts = null
+min_floor_normal_y = null
+elite_base_chance = 0.01
+elite_chance_per_difficulty = 0.001
+elite_max_chance = 1.0
+elite_cap_difficulty_step = 4
+elite_size_mult = 3.0
+elite_health_mult = 10.0
+elite_damage_mult = 5.0
+elite_speed_mult = null
+elite_gold_mult = 6.0
+swarm_count_mult = 4.0
+swarm_wave_rate_mult = 2.0
+swarm_starts_with_wave = null
+max_alive_enemies = null
+max_spawns_per_frame = null
 
 [node name="PlayerStats" type="Node" parent="." unique_id=1563529071]
 script = ExtResource("4_hqtel")

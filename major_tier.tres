@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SpawnTier" format=3 uid="uid://ds3ti6ev72i8h"]
+
+[ext_resource type="PackedScene" uid="uid://cdgskfmwi0syb" path="res://tank.tscn" id="1_x5ch1"]
+[ext_resource type="Script" uid="uid://coywd10wgyey" path="res://Scripts/spawn_tier.gd" id="2_aohtk"]
+
+[resource]
+script = ExtResource("2_aohtk")
+tier_name = "Major"
+enemies = Array[PackedScene]([ExtResource("1_x5ch1")])
+wave_interval = 8
+difficulty_step = 2
+extra_per_step = 1
+health_per_difficulty = 0.05
+min_spawn_distance = 18.0
+max_spawn_distance = 60.0
+enemies_per_clump = 4
+clump_radius = 6.0
+max_clumps = 6
+clump_min_gap_deg = 40.0
+gold_per_enemy = 50
+gold_difficulty_scaling = 0.05
+metadata/_custom_type_script = "uid://coywd10wgyey"

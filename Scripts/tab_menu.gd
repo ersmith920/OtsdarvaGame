@@ -164,19 +164,37 @@ func _build_buttons_panel() -> void:
 	_pause_toggle.focus_mode = Control.FOCUS_NONE
 	_pause_toggle.toggled.connect(_on_pause_toggled)
 	list.add_child(_pause_toggle)
-	
-	var spawn_button := Button.new()
-	spawn_button.text = "Spawn 25 Slimes"
-	spawn_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
-	spawn_button.pressed.connect(_on_spawn_slimes_pressed)
-	list.add_child(spawn_button)
-	
-	var elite_button := Button.new()
-	elite_button.text = "Spawn 25 Elites"
-	elite_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
-	elite_button.pressed.connect(_on_spawn_elites_pressed)
-	list.add_child(elite_button)
-	
+
+	var minor_button := Button.new()
+	minor_button.text = "Spawn 25 Minors"
+	minor_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
+	minor_button.pressed.connect(_on_spawn_minors_pressed)
+	list.add_child(minor_button)
+
+	var major_button := Button.new()
+	major_button.text = "Spawn 25 Majors"
+	major_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
+	major_button.pressed.connect(_on_spawn_majors_pressed)
+	list.add_child(major_button)
+
+	var elite_minor_button := Button.new()
+	elite_minor_button.text = "Spawn 5 Elite Minors"
+	elite_minor_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
+	elite_minor_button.pressed.connect(_on_spawn_elites_pressed.bind("Minor", 5))
+	list.add_child(elite_minor_button)
+
+	var elite_major_button := Button.new()
+	elite_major_button.text = "Spawn 3 Elite Majors"
+	elite_major_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
+	elite_major_button.pressed.connect(_on_spawn_elites_pressed.bind("Major", 3))
+	list.add_child(elite_major_button)
+
+	var swarm_button := Button.new()
+	swarm_button.text = "Start / End Swarm"
+	swarm_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
+	swarm_button.pressed.connect(_on_toggle_swarm_pressed)
+	list.add_child(swarm_button)
+
 	var clear_button := Button.new()
 	clear_button.text = "Clear Floor Pickups"
 	clear_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
@@ -186,20 +204,38 @@ func _build_buttons_panel() -> void:
 
 func _on_pause_toggled(on: bool) -> void:
 	GameManager.timer_paused = on
-	
-func _on_spawn_slimes_pressed() -> void:
-	if GameManager.player == null:
-		return
-	var spawner := GameManager.player.get_node_or_null("EnemySpawner") as EnemySpawner
-	if spawner != null:
-		spawner.spawn_enemies(25)
 
-func _on_spawn_elites_pressed() -> void:
+func _on_spawn_minors_pressed() -> void:
 	if GameManager.player == null:
 		return
 	var spawner := GameManager.player.get_node_or_null("EnemySpawner") as EnemySpawner
 	if spawner != null:
-		spawner.spawn_from_tier("Elite", 25)
+		spawner.spawn_from_tier("Minor", 25)
+
+func _on_spawn_majors_pressed() -> void:
+	if GameManager.player == null:
+		return
+	var spawner := GameManager.player.get_node_or_null("EnemySpawner") as EnemySpawner
+	if spawner != null:
+		spawner.spawn_from_tier("Major", 25)
+
+func _on_spawn_elites_pressed(tier_name: String, amount: int) -> void:
+	if GameManager.player == null:
+		return
+	var spawner := GameManager.player.get_node_or_null("EnemySpawner") as EnemySpawner
+	if spawner != null:
+		spawner.spawn_from_tier(tier_name, amount, true)
+
+func _on_toggle_swarm_pressed() -> void:
+	if GameManager.player == null:
+		return
+	var spawner := GameManager.player.get_node_or_null("EnemySpawner") as EnemySpawner
+	if spawner == null:
+		return
+	if spawner.swarm_active:
+		spawner.end_swarm()
+	else:
+		spawner.start_swarm()
 
 func _on_clear_pickups_pressed() -> void:
 	for node in get_tree().get_nodes_in_group(&"floor_pickups"):

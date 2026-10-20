@@ -1,4 +1,4 @@
-extends RigidBody3D
+extends Node3D
 class_name Bullet
 
 @export var speed : float = 50
@@ -24,21 +24,9 @@ var _ricochet_rolled := false
 var _ricochets_left := 0
 var _hit_enemies : Array = []   # enemies this bullet has already hit
 
-func _ready() -> void:
-	collision_mask = 1 | 16
-	# Script-driven projectile: the physics engine shouldn't simulate it.
-	freeze = true
-	freeze_mode = RigidBody3D.FREEZE_MODE_KINEMATIC
-	gravity_scale = 0.0
-
-	# Layer 0: nothing can collide with a bullet (no pushing slimes, no bullet-vs-bullet).
-	# Mask 1: the bullet's own move_and_collide still hits the world and enemies.
-	collision_layer = 0
-	collision_mask = 1
-
-	# Don't hit the player who fired it.
-	if GameManager.player != null:
-		add_collision_exception_with(GameManager.player)
+# The bullet is a plain Node3D: it has no body in the physics server at all.
+# All hit detection is done with the raycast below, so moving it every frame is free
+# as far as physics is concerned.
 
 func _physics_process(delta: float) -> void:
 	var speed_factor : float = source.projectile_speed.sample(elapsed_time / curve_time)
@@ -69,7 +57,6 @@ func hit(collider : Object, normal : Vector3 = Vector3.ZERO) -> void:
 	if collider is Enemy:
 		var roll : Dictionary = source.roll_damage()
 		collider.take_damage(roll.damage, roll.crit)
-	# ...rest of the function unchanged
 	if explosion_scene != null:
 		_explode()
 
@@ -141,10 +128,11 @@ func _find_ricochet_target() -> Node3D:
 		dists.remove_at(best)
 		enemies.remove_at(best)
 	return null
-	
-# The bullet itself and enemies it already hit must not block the aim ray.
+
+# The player and enemies this bullet already hit must not block its rays.
+# (The bullet itself has no physics body anymore, so it doesn't need excluding.)
 func _build_exclude_list() -> Array[RID]:
-	var rids : Array[RID] = [get_rid()]
+	var rids : Array[RID] = []
 	if GameManager.player != null:
 		rids.append(GameManager.player.get_rid())
 	for enemy in _hit_enemies:

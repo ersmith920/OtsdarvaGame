@@ -51,7 +51,11 @@ func _physics_process(delta: float) -> void:
 
 	for i in enemies.size():
 		var e := enemies[i]
-		if not e.dead:
+		if e.dead:
+			continue
+		if e.spawning:
+			e.step_spawn(delta)   # rising out of the floor: no thinking, moving or attacking
+		else:
 			_step(e, i, delta, player, ppos, space)
 
 
@@ -191,7 +195,6 @@ func _separate(e: Enemy, ppos: Vector3, delta: float) -> void:
 				checked += 1
 				if checked > MAX_NEIGHBORS:
 					break
-				# ...rest of the loop body unchanged
 				var d := Vector2(p.x - n.pos.x, p.z - n.pos.z)
 				var min_d := e.radius + n.radius
 				var dsq := d.length_squared()

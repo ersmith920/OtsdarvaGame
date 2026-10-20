@@ -31,11 +31,12 @@ func _process(delta: float) -> void:
 
 
 func _refresh() -> void:
-	var count := 0
-	for node in get_tree().get_nodes_in_group(&"lock_target"):
-		# Dying enemies stay in the group until the end of the frame, so skip them.
-		if not node.is_queued_for_deletion():
-			count += 1
+	var count := EnemyManager.enemies.size()
+
+	# Only touch the text when the number actually changes.
+	if count != _last_count:
+		_last_count = count
+		text = "Enemies: %d" % count
 
 	# Only touch the text when the number actually changes.
 	if count != _last_count:

@@ -32,6 +32,14 @@ class_name Enemy
 ## Extra reach beyond touching the player's edge.
 @export var attack_reach := 0.3
 
+@export_group("Spawn")
+## Seconds to rise up out of the floor. 0 = appear instantly (no emerge).
+@export var emerge_time := 0.8
+## Seconds to stand still once fully out, before it starts moving and attacking.
+@export var emerge_pause := 0.3
+## Extra depth below its own height to start from, so no part pokes through at first.
+@export var emerge_extra_depth := 0.1
+
 @export_group("Hit Flash")
 ## How long the red flash lasts, in seconds. 0 turns it off for this enemy.
 @export var flash_time := 0.08
@@ -74,6 +82,19 @@ var _next_attack_ms : int = 0
 ## Below 0 means hand-placed: GameManager's global health scaling is used instead.
 var health_multiplier := -1.0
 
+## True if the spawner rolled this enemy as an elite.
+var is_elite := false
+## Multiplies damage from attacks that don't go through attack_damage (e.g. the tank's shells).
+var damage_multiplier := 1.0
+
+## True while rising out of the floor and during the pause after. While spawning the enemy
+## can't move, attack, be targeted or be damaged.
+var spawning := false
+var _spawn_t := 0.0
+var _spawn_started := false
+var _surface_y := 0.0
+var _emerge_depth := 0.0
+
 # Owned by EnemyManager.
 var pos := Vector3.ZERO
 var wish_dir := Vector3.ZERO
@@ -87,18 +108,73 @@ var mgr_index := -1
 
 
 func _ready() -> void:
-	collision_layer = LAYER_ENEMY
 	collision_mask = 0   # never moves through physics; bullets and rays still hit it
 	audio_stream_player_3d.bus = ENEMY_SFX_BUS
-	add_to_group("lock_target")
 	var mult := health_multiplier if health_multiplier >= 0.0 else GameManager.get_enemy_health_multiplier()
 	maxHealth *= mult
 	health = maxHealth
+	if emerge_time > 0.0 or emerge_pause > 0.0:
+		# No hitbox and not a lock-on target until fully spawned.
+		spawning = true
+		collision_layer = 0
+		visible = false   # hidden until the manager moves it below the floor (avoids a 1-frame pop)
+	else:
+		_activate()
 	EnemyManager.register(self)
+
+
+## Called by EnemyManager every physics tick while spawning. Moves pos/global_position itself.
+func step_spawn(delta: float) -> void:
+	var first_tick := not _spawn_started
+	if first_tick:
+		# The spawner has placed us by now, so this is our floor position.
+		_spawn_started = true
+		_surface_y = pos.y
+		_emerge_depth = height + emerge_extra_depth
+		visible = true
+	_spawn_t += delta
+	if _spawn_t < emerge_time:
+		var k := _spawn_t / emerge_time
+		k = 1.0 - (1.0 - k) * (1.0 - k)   # ease out: fast start, settles gently at the top
+		pos.y = _surface_y - _emerge_depth * (1.0 - k)
+	else:
+		pos.y = _surface_y
+	global_position = pos
+	if first_tick:
+		reset_physics_interpolation()   # don't smear from the floor surface down to the start depth
+	if _spawn_t >= emerge_time + emerge_pause:
+		_activate()
+
+
+func _activate() -> void:
+	spawning = false
+	visible = true
+	collision_layer = LAYER_ENEMY
+	add_to_group("lock_target")
 
 
 func _exit_tree() -> void:
 	EnemyManager.unregister(self)
+
+
+## Turns this enemy into an elite. Call BEFORE add_child (the spawner does), so the
+## health multiplier is folded in before _ready applies difficulty scaling.
+func make_elite(size_mult: float, health_mult: float, damage_mult: float, speed_mult: float) -> void:
+	if is_elite:
+		return
+	is_elite = true
+	# Uniform scale on the root grows the model, collision shape and AimPoint together.
+	scale *= size_mult
+	# The manager's soft collision and ground probes don't read the node scale, so match them.
+	radius *= size_mult
+	height *= size_mult
+	step_height *= size_mult
+	max_climb_height *= size_mult
+	maxHealth *= health_mult
+	attack_damage *= damage_mult
+	damage_multiplier *= damage_mult
+	speed *= speed_mult
+	climb_speed *= speed_mult
 
 
 ## Behavior hook, called a few times per second by the manager.
@@ -147,7 +223,7 @@ static func _release_hit_sound(audio: AudioStreamPlayer3D) -> void:
 
 
 func take_damage(damage: float, is_crit: bool = false) -> void:
-	if dead:
+	if dead or spawning:
 		return
 	GameManager.enemy_damaged.emit(damage, is_crit)
 	health -= damage

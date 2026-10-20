@@ -98,7 +98,7 @@ func _schedule_reposition(now: int) -> void:
 # ---------- Per-tick: body, turret, cannon ----------
 
 func _physics_process(delta: float) -> void:
-	if dead:
+	if dead or spawning:
 		return
 	var player := GameManager.player
 	if player == null:
@@ -163,7 +163,7 @@ func _fire(target: Vector3) -> void:
 		return
 	var proj := projectile_scene.instantiate() as EnemyProjectile
 	proj.speed = shell_speed
-	proj.damage = shell_damage
+	proj.damage = shell_damage * damage_multiplier
 	get_tree().root.add_child(proj)
 	proj.global_position = muzzle.global_position
 
@@ -172,6 +172,7 @@ func _fire(target: Vector3) -> void:
 		# Avoid look_at errors when aiming straight up or down.
 		var up := Vector3.UP if absf(dir.normalized().y) < 0.99 else Vector3.RIGHT
 		proj.look_at(target, up, true)   # true = the shell's +Z points at the target
+	proj.scale *= scale   # elite tanks fire bigger shells to match their size
 	proj.reset_physics_interpolation()
 	_play_one_shot(shot_sound)
 

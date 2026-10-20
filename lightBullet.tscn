@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://bmxplp025lbog"]
 
 [ext_resource type="Script" uid="uid://pamo78lglyp2" path="res://Scripts/Bullet.gd" id="1_pi0b0"]
-[ext_resource type="PackedScene" uid="uid://cfhlino6cj3jf" path="res://hit_light.tscn" id="2_bu6jx"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_jfb0n"]
 size = Vector3(1, 1, 1.5)
@@ -11,24 +10,10 @@ emission_enabled = true
 emission = Color(0.92603517, 0.83839613, 0.40833429, 1)
 emission_energy_multiplier = 11.73
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_jfb0n"]
-size = Vector3(1, 1, 1.5)
-
-[node name="lightBullet" type="RigidBody3D" unique_id=138755467]
-gravity_scale = 0.0
-freeze = true
-freeze_mode = 1
-continuous_cd = true
+[node name="lightBullet" type="Node3D" unique_id=110412510]
 script = ExtResource("1_pi0b0")
-speed = 100.0
-hit_effect = ExtResource("2_bu6jx")
-metadata/_custom_type_script = "uid://pamo78lglyp2"
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1710646413]
 transform = Transform3D(0.031393263, 0, 0, 0, 0.031393263, 0, 0, 0, 0.031393263, 0, 0, 0.008109458)
 mesh = SubResource("BoxMesh_jfb0n")
 surface_material_override/0 = SubResource("StandardMaterial3D_pi0b0")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1844935039]
-transform = Transform3D(0.031393263, 0, 0, 0, 0.031393263, 0, 0, 0, 0.031393263, 0, 0, 0.008109458)
-shape = SubResource("BoxShape3D_jfb0n")
