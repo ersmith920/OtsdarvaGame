@@ -122,6 +122,9 @@ script = ExtResource("1_gtmjj")
 projectile = ExtResource("2_oyedp")
 projectile_speed = SubResource("Curve_8fjf0")
 damage = 400.0
+explosion_enabled = true
+explosion_damage = 200.0
+explosion_radius = 5.0
 fire_rate = 3.0
 gunSounds = Array[AudioStream]([ExtResource("3_a2rmm"), ExtResource("4_cvu0p")])
 

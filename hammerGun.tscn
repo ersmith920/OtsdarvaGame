@@ -1,14 +1,10 @@
 [gd_scene format=3 uid="uid://e7n1s0aa2mhd"]
 
 [ext_resource type="PackedScene" uid="uid://bx71mp0fm1vl7" path="res://models/hammerGun.glb" id="1_576ct"]
-[ext_resource type="PackedScene" uid="uid://bmxplp025lbog" path="res://lightBullet.tscn" id="2_7t316"]
+[ext_resource type="PackedScene" uid="uid://dqdovhq3j2pa" path="res://Bullet.tscn" id="2_7t316"]
 [ext_resource type="Script" uid="uid://05rxsbp5ho1h" path="res://Scripts/Gun.gd" id="2_iajnq"]
 [ext_resource type="AudioStream" uid="uid://d0melhgllp2my" path="res://Sounds/lightGun1.wav" id="3_s6liv"]
 [ext_resource type="AudioStream" uid="uid://cbfei54gyiigp" path="res://Sounds/lightGun2.wav" id="4_2375b"]
-
-[sub_resource type="Curve" id="Curve_iajnq"]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0]
-point_count = 1
 
 [sub_resource type="Animation" id="Animation_chie6"]
 length = 0.001
@@ -108,11 +104,12 @@ radius = 0.7
 [node name="HammerGun" type="Node3D" unique_id=2091589901]
 script = ExtResource("2_iajnq")
 projectile = ExtResource("2_7t316")
-cone_size = 10.0
-projectile_speed = SubResource("Curve_iajnq")
-damage = 5.0
-fire_rate = 0.08
-magSize = 50
+projectile_count = 2
+cone_size = 20.0
+projectile_speed = 30.0
+damage = 3.0
+fire_rate = 0.06
+magSize = 60
 gunSounds = Array[AudioStream]([ExtResource("3_s6liv"), ExtResource("4_2375b")])
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1271482598]

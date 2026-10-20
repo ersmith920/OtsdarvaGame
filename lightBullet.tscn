@@ -12,6 +12,7 @@ emission_energy_multiplier = 11.73
 
 [node name="lightBullet" type="Node3D" unique_id=110412510]
 script = ExtResource("1_pi0b0")
+speed = 10.0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1710646413]
 transform = Transform3D(0.031393263, 0, 0, 0, 0.031393263, 0, 0, 0, 0.031393263, 0, 0, 0.008109458)

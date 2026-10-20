@@ -7,10 +7,31 @@ const MIN_ATTACK_SPEED := 0.01
 @export var projectile : PackedScene
 @export var projectile_count : int = 1
 @export var cone_size : float = 0.05
-@export var projectile_speed : Curve
+## Flat speed of this gun's projectiles, in meters per second.
+@export var projectile_speed : float = 100.0
+## Optional: changes the speed over the projectile's flight, for special firing types
+## (e.g. starts slow then accelerates). Y = multiplier on Projectile Speed, X = 0 to 1
+## across Speed Curve Time. Leave empty for a flat speed.
+@export var speed_curve : Curve
+## Seconds the Speed Curve takes to play out. After that it holds its last value.
+@export var speed_curve_time : float = 1.0
 @export var pierce_count : int = 0
 @export var damage : float = 0
 @export var aiming : bool = true
+
+@export_group("Explosion")
+## Every projectile this gun fires explodes on impact (enemies AND walls/floor).
+## What the blast looks like is set on the projectile scene.
+@export var explosion_enabled := false
+## Base damage to every enemy in the blast. Scaled by the player's damage stat and can crit.
+## Stacks with the direct hit, so the enemy that was hit takes both.
+@export var explosion_damage := 20.0
+## Base blast radius in meters. The projectile's explosion visual is scaled to match.
+@export var explosion_radius := 3.0
+## Horizontal push (m/s) on enemies at the center of the blast; half that at the edge. 0 = none.
+@export var explosion_knockback := 0.0
+## Upward pop (m/s) at the center of the blast. 0 = none.
+@export var explosion_knockback_up := 0.0
 
 @export_group("Firing")
 ## Seconds between shots when the player's attack speed is 1.0.
@@ -106,11 +127,28 @@ func get_damage() -> float:
 ## Rolls one hit's damage including crits. Returns {"damage": float, "crit": bool}.
 ## Crit multiplier is 1 + crit_damage, so the default 1.0 gives 2x.
 func roll_damage() -> Dictionary:
-	var dmg := get_damage()
+	return _roll_crit(get_damage())
+
+## Same as roll_damage, for this gun's explosion.
+func roll_explosion_damage() -> Dictionary:
+	return _roll_crit(explosion_damage * _get_stat(&"damage"))
+
+func _roll_crit(dmg: float) -> Dictionary:
 	var is_crit := randf() < _get_stat(&"crit_chance")
 	if is_crit:
 		dmg *= 1.0 + _get_stat(&"crit_damage")
 	return {"damage": dmg, "crit": is_crit}
+
+## Blast radius in meters. One place to apply the future area_size stat, e.g.:
+##   return explosion_radius * _get_stat(&"area_size")
+func get_explosion_radius() -> float:
+	return explosion_radius
+
+## Projectile speed (m/s) at this point in its flight. One place for a future projectile speed stat.
+func get_projectile_speed(flight_time: float) -> float:
+	if speed_curve == null:
+		return projectile_speed
+	return projectile_speed * speed_curve.sample(flight_time / maxf(speed_curve_time, 0.001))
 
 ## Projectiles per shot: the gun's own count multiplied by the player's
 ## projectile_count stat rounded down (1.89 -> 1, 4.2 -> 4).

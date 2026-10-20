@@ -23,6 +23,8 @@ class_name Enemy
 ## If true, the manager rotates this whole enemy to face its movement direction.
 ## Turn off for enemies that handle their own facing (like the tank).
 @export var face_move_direction := true
+## 0 = takes full knockback from explosions, 1 = immune. Heavy enemies (tanks, bosses) should resist.
+@export_range(0.0, 1.0) var knockback_resist := 0.0
 
 @export_group("Attack")
 @export var attack_damage : float = 10.0
@@ -105,6 +107,8 @@ var wall_normal := Vector3.ZERO
 var climbing := false
 var fresh := true
 var mgr_index := -1
+## Horizontal knockback velocity (m/s). Set through EnemyManager.knock_back, decays on its own.
+var knock := Vector3.ZERO
 
 
 func _ready() -> void:

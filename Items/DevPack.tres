@@ -65,6 +65,24 @@ stat = &"battery_recharge_delay"
 amount_per_stack = -2.0
 metadata/_custom_type_script = "uid://5h1eu84vtblx"
 
+[sub_resource type="Resource" id="Resource_s6liv"]
+script = ExtResource("1_rnjsi")
+stat = &"pickup_range"
+amount_per_stack = 20.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[sub_resource type="Resource" id="Resource_dcx1g"]
+script = ExtResource("1_rnjsi")
+stat = &"max_health"
+amount_per_stack = 10000.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
+[sub_resource type="Resource" id="Resource_co06d"]
+script = ExtResource("1_rnjsi")
+stat = &"health_regen"
+amount_per_stack = 20.0
+metadata/_custom_type_script = "uid://5h1eu84vtblx"
+
 [resource]
 script = ExtResource("2_7dovl")
 id = &"item_dev_pc"
@@ -73,5 +91,5 @@ description = "Endless Flight, Huge Lock On, High Mobility"
 tier = 1
 icon = ExtResource("1_76gfj")
 model = ExtResource("2_76gfj")
-modifiers = Array[ExtResource("1_rnjsi")]([SubResource("Resource_76gfj"), SubResource("Resource_0q2xo"), SubResource("Resource_ekr0l"), SubResource("Resource_qrv1o"), SubResource("Resource_bk2ei"), SubResource("Resource_kiljd"), SubResource("Resource_oqahh"), SubResource("Resource_y5f8x"), SubResource("Resource_nwa3c"), SubResource("Resource_apwjn")])
+modifiers = Array[ExtResource("1_rnjsi")]([SubResource("Resource_76gfj"), SubResource("Resource_0q2xo"), SubResource("Resource_ekr0l"), SubResource("Resource_qrv1o"), SubResource("Resource_bk2ei"), SubResource("Resource_kiljd"), SubResource("Resource_oqahh"), SubResource("Resource_y5f8x"), SubResource("Resource_nwa3c"), SubResource("Resource_apwjn"), SubResource("Resource_s6liv"), SubResource("Resource_dcx1g"), SubResource("Resource_co06d")])
 metadata/_custom_type_script = "uid://btu6or7jc4i8g"

@@ -15,6 +15,8 @@ const MAX_PUSH_SPEEDS := 2.0      # separation can move an enemy at most this x 
 const EPS := 0.05
 const MAX_NEIGHBORS := 30
 const SEPARATE_INTERVAL := 2
+const KNOCK_DECEL := 40.0         # m/s lost per second: a 10 m/s knock slides ~1.25 m in 0.25 s
+const MAX_KNOCK_SPEED := 40.0     # stacked blasts can't launch an enemy faster than this
 
 
 var enemies: Array[Enemy] = []
@@ -37,6 +39,33 @@ func unregister(e: Enemy) -> void:
 	last.mgr_index = idx
 	enemies.pop_back()
 	e.mgr_index = -1
+
+
+## Pushes an enemy: `push` is a horizontal velocity (m/s), `up` an upward pop (m/s).
+## Scaled by the enemy's knockback_resist. One ray along the push makes sure the
+## slide stops at walls instead of shoving the enemy into buildings.
+func knock_back(e: Enemy, push: Vector3, up: float) -> void:
+	if e.dead or e.spawning:
+		return
+	var keep := 1.0 - e.knockback_resist
+	if keep <= 0.0:
+		return
+	push.y = 0.0
+	var v := (e.knock + push * keep).limit_length(MAX_KNOCK_SPEED)
+	var speed := v.length()
+	if speed > 0.01:
+		var dir := v / speed
+		var travel := speed * speed / (2.0 * KNOCK_DECEL)   # how far this push will slide
+		var from := e.pos + Vector3.UP * (e.step_height - 0.1)
+		var hit := get_viewport().world_3d.direct_space_state.intersect_ray(
+				PhysicsRayQueryParameters3D.create(from, from + dir * (travel + e.radius), WORLD_MASK, _ray_exclude))
+		if not hit.is_empty() and hit.normal.y < 0.7:
+			# Wall in the way: shrink the push so the slide ends right at the wall.
+			var room := maxf(from.distance_to(hit.position) - e.radius, 0.0)
+			v = dir * sqrt(2.0 * KNOCK_DECEL * room)
+	e.knock = v
+	if up > 0.0:
+		e.vy = maxf(e.vy, up * keep)
 
 
 func _physics_process(delta: float) -> void:
@@ -93,6 +122,12 @@ func _step(e: Enemy, i: int, delta: float, player: Player, ppos: Vector3, space:
 		e.climbing = e.can_climb
 	e.pos.x += vel.x * delta
 	e.pos.z += vel.z * delta
+
+	# --- Knockback slide (wall-checked once when it was applied) ---
+	if e.knock != Vector3.ZERO:
+		e.pos.x += e.knock.x * delta
+		e.pos.z += e.knock.z * delta
+		e.knock = e.knock.move_toward(Vector3.ZERO, KNOCK_DECEL * delta)
 
 	# --- Soft collision (also computes support from enemies below, for climbers) ---
 	if (i + _tick) % SEPARATE_INTERVAL == 0:

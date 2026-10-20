@@ -1,23 +1,37 @@
 extends Node3D
 class_name Bullet
 
-@export var speed : float = 50
-@export var curve_time : float = 1
+# Speed is set on the gun (Projectile Speed, plus an optional Speed Curve).
 @export var hit_effect : PackedScene
 @export var camera_shake_time : float = 0
 @export var delete_after : float = 4
 ## How far a ricochet can reach for its next enemy.
 @export var ricochet_range : float = 60.0
 
-@export_group("Explosion")
-## If set, the bullet detonates this on impact instead of doing direct damage.
-@export var explosion_scene : PackedScene
+@export_group("Explosion Visual")
+## Only used when the firing gun has its explosion turned on (damage, size and
+## knockback are set on the gun). This is just what the blast looks like.
+## Empty = the default see-through sphere below.
+@export var explosion_effect : PackedScene
+## The radius (m) explosion_effect was built at. It's scaled by gun radius / this,
+## so an effect made 1 m wide fills a 5 m blast automatically.
+@export var explosion_effect_radius := 1.0
+## Seconds the explosion visual stays on screen.
+@export var explosion_lifetime := 0.25
+## Color of the default sphere (alpha = how see-through).
+@export var explosion_color := Color(1.0, 0.1, 0.1, 0.35)
 
 var source : Gun
 var elapsed_time : float = 0
 
 const MAX_HIT_EFFECTS := 40   # a fast gun on a crowd can hit hundreds of times a second
 static var _active_hit_effects := 0
+
+# Explosion visuals are capped the same way. Damage still happens past the cap.
+const MAX_EXPLOSION_VISUALS := 40
+static var _active_explosion_visuals := 0
+static var _sphere_mesh : SphereMesh
+static var _sphere_materials := {}   # Color -> StandardMaterial3D, one per color ever used
 
 const MAX_LOS_CHECKS := 4
 var _ricochet_rolled := false
@@ -29,8 +43,7 @@ var _hit_enemies : Array = []   # enemies this bullet has already hit
 # as far as physics is concerned.
 
 func _physics_process(delta: float) -> void:
-	var speed_factor : float = source.projectile_speed.sample(elapsed_time / curve_time)
-	var motion := global_basis.z * delta * speed * speed_factor
+	var motion := global_basis.z * delta * source.get_projectile_speed(elapsed_time)
 	elapsed_time += delta
 
 	if elapsed_time > delete_after:
@@ -57,7 +70,7 @@ func hit(collider : Object, normal : Vector3 = Vector3.ZERO) -> void:
 	if collider is Enemy:
 		var roll : Dictionary = source.roll_damage()
 		collider.take_damage(roll.damage, roll.crit)
-	if explosion_scene != null:
+	if source.explosion_enabled:
 		_explode()
 
 	if collider is Enemy and _try_ricochet(collider):
@@ -65,10 +78,88 @@ func hit(collider : Object, normal : Vector3 = Vector3.ZERO) -> void:
 	queue_free()
 
 
+# ---------- Explosion ----------
+
 func _explode() -> void:
-	var blast : Explosion = explosion_scene.instantiate()
-	get_tree().current_scene.add_child(blast)
-	blast.detonate(global_position, source)
+	var r := source.get_explosion_radius()
+	if r <= 0.0:
+		return
+	Explosion.detonate(get_world_3d().direct_space_state, global_position, r, source)
+	_spawn_explosion_visual(r)
+
+
+func _spawn_explosion_visual(r : float) -> void:
+	if explosion_lifetime <= 0.0 or _active_explosion_visuals >= MAX_EXPLOSION_VISUALS:
+		return
+
+	var fx : Node3D
+	if explosion_effect != null:
+		fx = explosion_effect.instantiate() as Node3D
+		get_tree().current_scene.add_child(fx)
+		fx.global_position = global_position
+		fx.scale = Vector3.ONE * (r / maxf(explosion_effect_radius, 0.01))
+		var particles := fx as GPUParticles3D
+		if particles != null:
+			particles.one_shot = true
+			particles.restart()
+	else:
+		fx = _make_default_sphere(r)
+		get_tree().current_scene.add_child(fx)
+		fx.global_position = global_position
+
+	fx.reset_physics_interpolation()
+	_active_explosion_visuals += 1
+	# The tree owns this timer, so it still fires after the bullet itself is gone.
+	get_tree().create_timer(explosion_lifetime).timeout.connect(Bullet._release_explosion_visual.bind(fx))
+
+
+# See-through sphere that pops out to the blast radius, then fades.
+func _make_default_sphere(r : float) -> MeshInstance3D:
+	var mesh := MeshInstance3D.new()
+	mesh.mesh = _get_sphere_mesh()
+	mesh.material_override = _get_sphere_material(explosion_color)
+	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mesh.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF   # animated by a tween
+	mesh.scale = Vector3.ONE * r * 0.3
+
+	var tween := mesh.create_tween()   # owned by the mesh, so it dies with it
+	tween.tween_property(mesh, "scale", Vector3.ONE * r, explosion_lifetime * 0.35)\
+		.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+	# Per-instance fade: the material stays shared.
+	tween.tween_property(mesh, "transparency", 1.0, explosion_lifetime * 0.65)
+	return mesh
+
+
+# Unit-radius sphere shared by every explosion, so scale == blast radius.
+static func _get_sphere_mesh() -> SphereMesh:
+	if _sphere_mesh == null:
+		_sphere_mesh = SphereMesh.new()
+		_sphere_mesh.radius = 1.0
+		_sphere_mesh.height = 2.0
+		_sphere_mesh.radial_segments = 24
+		_sphere_mesh.rings = 12
+	return _sphere_mesh
+
+
+static func _get_sphere_material(color : Color) -> StandardMaterial3D:
+	var mat : StandardMaterial3D = _sphere_materials.get(color)
+	if mat == null:
+		mat = StandardMaterial3D.new()
+		mat.albedo_color = color
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mat.cull_mode = BaseMaterial3D.CULL_DISABLED   # still visible from inside the blast
+		_sphere_materials[color] = mat
+	return mat
+
+
+static func _release_explosion_visual(fx : Node) -> void:
+	_active_explosion_visuals -= 1
+	if is_instance_valid(fx):
+		fx.queue_free()
+
+
+# ---------- Ricochet ----------
 
 # Rolls the ricochet chance (once per bullet) and, if the bullet has bounces left,
 # turns it toward the next closest enemy. Returns true if the bullet lives on.
@@ -156,6 +247,9 @@ func _aim_point_of(enemy: Node3D) -> Vector3:
 	if enemy is Enemy:
 		return (enemy as Enemy).get_aim_position()
 	return enemy.global_position
+
+
+# ---------- Hit effect ----------
 
 func _spawn_hit_effect(normal : Vector3) -> void:
 	if hit_effect == null or _active_hit_effects >= MAX_HIT_EFFECTS:

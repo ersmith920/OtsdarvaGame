@@ -16,6 +16,7 @@ size = Vector3(1, 1, 0.90000004)
 script = ExtResource("1_8fjf0")
 speed = 70.0
 curve_time = 3.0
+explosion_color = Color(0.41, 0.41, 1, 0.35)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1545291320]
 transform = Transform3D(0.063695885, 0, 0, 0, 0.063695885, 0, 0, 0, 2.3056695, 0, 0, 1.055917)
