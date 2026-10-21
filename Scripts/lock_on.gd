@@ -83,7 +83,9 @@ func _ready() -> void:
 ## Switches the aim mode (1-4). show_name: flash the mode's name on screen.
 func set_mode(new_mode: int, show_name := true) -> void:
 	new_mode = clampi(new_mode, Mode.SINGLE, Mode.QUADRANTS)
-	var old_dir := _reticles[0].local_dir if not _reticles.is_empty() else Vector3.FORWARD
+	if new_mode == mode and not _reticles.is_empty():
+		return   # scrolled past the first or last mode: nothing changes
+	var old : Reticle = _reticles[0] if not _reticles.is_empty() else null
 	mode = new_mode as Mode
 	var h := REST_FRACTION
 	var d := REST_FRACTION * sqrt(0.5)   # along the diagonal, same distance out
@@ -109,7 +111,12 @@ func set_mode(new_mode: int, show_name := true) -> void:
 		var r := Reticle.new()
 		r.rest = specs[i][0]
 		r.region = specs[i][1]
-		r.local_dir = old_dir   # new crosshairs slide out from where the old one was
+		if old != null:
+			# New crosshairs slide out from where the old one was, and aim where it aimed
+			# until they've moved, so the guns don't jump for a frame.
+			r.local_dir = old.local_dir
+			r.distance = old.distance
+			r.aim_point = old.aim_point
 		r.crosshair = _crosshair_for(i)
 		_reticles.append(r)
 	for i in _spare_crosshairs.size():
