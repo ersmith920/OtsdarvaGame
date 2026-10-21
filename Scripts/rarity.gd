@@ -83,8 +83,10 @@ static func to_tier(rarity: int) -> int:
 	return 5 - clampi(rarity, 0, LEGENDARY)
 
 
-## Item tiers only go up to Legendary (tier 1), so this never returns MYTHIC.
+## Item tier 0 is Mythic (special items only); 1-5 are Legendary down to Common.
 static func from_tier(tier: int) -> int:
+	if tier <= 0:
+		return MYTHIC
 	return clampi(5 - tier, 0, LEGENDARY)
 
 

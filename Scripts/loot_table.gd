@@ -35,7 +35,11 @@ func roll(luck: float = 0.0) -> ItemData:
 
 	var tier := roll_tier(luck, allowed)
 	if tier == 0:
-		return items.pick_random()
+		# Fallback: any rollable item (never a Mythic tier-0 item, those aren't loot).
+		var rollable := []
+		for t in allowed:
+			rollable.append_array(by_tier[t])
+		return rollable.pick_random()
 	return by_tier[tier].pick_random()
 
 

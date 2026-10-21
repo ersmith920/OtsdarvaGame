@@ -371,7 +371,7 @@ func _rebuild_item_grid() -> void:
 	var items: Array = inventory.keys()
 	items.sort_custom(func(a: ItemData, b: ItemData) -> bool:
 		if a.tier != b.tier:
-			return a.tier > b.tier   # tier 5 (most common) first, tier 1 (rarest) last
+			return a.tier > b.tier   # tier 5 (most common) first, then up to tier 1 (Legendary) and 0 (Mythic) last
 		return a.display_name < b.display_name)
 	var total := 0
 	for item: ItemData in items:

@@ -251,8 +251,9 @@ func _player_guns() -> Array[Gun]:
 	return guns
 
 
+# Guns combine only with the same weapon at the same rarity.
 static func _same_kind(a: Gun, b: Gun) -> bool:
-	return a.scene_file_path == b.scene_file_path
+	return a.scene_file_path == b.scene_file_path and a.get_rarity() == b.get_rarity()
 
 
 # Can this gun be clicked right now?
@@ -269,14 +270,15 @@ func _refresh() -> void:
 	for i in 2:
 		var gun := _first if i == 0 else _second
 		_fill_frame(_slots[i], gun, "", "Empty\n\nPick a weapon\nfrom the left" if i == 0 \
-				else "Empty\n\nPick another\nof the same weapon")
+				else "Empty\n\nPick another of the\nsame weapon and rarity")
 	_rebuild_result()
 
 	if _first == null:
-		_hint.text = "Pick two of the same weapon"
+		_hint.text = "Pick two of the same weapon and rarity"
 	elif _second == null:
 		var any := _player_guns().any(func(g: Gun) -> bool: return _pickable(g))
-		_hint.text = ("Pick another %s" if any else "You have no other %s to combine") % _first.get_display_name()
+		var wanted := "%s %s" % [Rarity.name_of(_first.get_rarity()), _first.get_display_name()]
+		_hint.text = ("Pick another %s" if any else "You have no other %s to combine") % wanted
 	else:
 		_hint.text = "Click a weapon to take it back out"
 	var ready := _first != null and _second != null

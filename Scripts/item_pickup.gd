@@ -132,6 +132,15 @@ func _build_aura(center: Vector3, diameter: float) -> void:
 	glow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	aura.add_child(glow)
 
+	# Mythic items: the light and halo cycle through the rainbow.
+	if Rarity.from_tier(item.tier) >= Rarity.MYTHIC:
+		var spin := create_tween().set_loops()
+		spin.tween_method(func(_v: float) -> void:
+			var c := Rarity.rainbow()
+			light.light_color = c
+			material.albedo_color = Color(c.r * glow_strength, c.g * glow_strength, c.b * glow_strength, 1.0),
+			0.0, 1.0, Rarity.RAINBOW_CYCLE)
+
 func _process(delta: float) -> void:
 	_time += delta
 	model_anchor.position.y = float_height + sin(_time * bob_speed) * bob_height

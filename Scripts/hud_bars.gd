@@ -42,6 +42,9 @@ const SPEED_ARC_MAX := 2.0
 ## The speed arc: starts bottom left and sweeps clockwise this far.
 const SPEED_ARC_START := PI * 0.75
 const SPEED_ARC_SWEEP := PI * 1.5
+## The speed readout shows the engine speed times this (24.3 m/s reads 243), to sell the
+## mech's size. The speed arc still compares against the real move speed.
+const SPEED_DISPLAY_SCALE := 10.0
 ## Sample spacing along the arc, in pixels (smaller = smoother).
 const ARC_STEP := 3.0
 
@@ -182,7 +185,7 @@ func _process(delta: float) -> void:
 	_speed_frac = clampf(_speed / (move_speed * SPEED_ARC_MAX), 0.0, 1.0)
 	_over = clampf((_speed - move_speed) / move_speed, 0.0, 1.0)
 	_spin += delta * (0.3 + 2.5 * _speed_frac)
-	_speed_num.text = "%d" % roundi(_speed)
+	_speed_num.text = "%d" % roundi(_speed * SPEED_DISPLAY_SCALE)
 	_speed_num.add_theme_color_override("font_color", HudStyle.WHITE.lerp(HudStyle.CYAN.lerp(Color.WHITE, 0.3), _over))
 	_speed_num.scale = Vector2.ONE * (1.0 + 0.12 * _over)
 
