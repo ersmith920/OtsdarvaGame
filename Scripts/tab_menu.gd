@@ -178,6 +178,12 @@ func _build_buttons_panel() -> void:
 	minor_button.pressed.connect(_on_spawn_minors_pressed)
 	list.add_child(minor_button)
 
+	var minor_1000_button := Button.new()
+	minor_1000_button.text = "Spawn 1000 Minors"
+	minor_1000_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
+	minor_1000_button.pressed.connect(_on_spawn_many_minors_pressed.bind(1000))
+	list.add_child(minor_1000_button)
+
 	var major_button := Button.new()
 	major_button.text = "Spawn 25 Majors"
 	major_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
@@ -218,6 +224,25 @@ func _on_spawn_minors_pressed() -> void:
 	var spawner := GameManager.player.get_node_or_null("EnemySpawner") as EnemySpawner
 	if spawner != null:
 		spawner.spawn_from_tier("Minor", 25)
+
+# Big debug spawns go out in batches over a few frames, so the game doesn't freeze while
+# a thousand spawn points are found at once.
+const SPAWN_BATCH := 250
+
+func _on_spawn_many_minors_pressed(amount: int) -> void:
+	if GameManager.player == null:
+		return
+	var spawner := GameManager.player.get_node_or_null("EnemySpawner") as EnemySpawner
+	if spawner == null:
+		return
+	var left := amount
+	while left > 0:
+		spawner.spawn_from_tier("Minor", mini(left, SPAWN_BATCH))
+		left -= SPAWN_BATCH
+		if left > 0:
+			await get_tree().physics_frame
+			if not is_instance_valid(spawner):
+				return
 
 func _on_spawn_majors_pressed() -> void:
 	if GameManager.player == null:
