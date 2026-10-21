@@ -76,6 +76,8 @@ private:
 	int max_neighbors = 6;
 	int max_looked = 14;
 	float pile_layer = 0.75f;
+	int pile_capacity = 1;
+	float climber_push_scale = 0.3f;
 	float gravity = 24.0f;
 	float step_up_speed = 10.0f;
 	float fall_kill_y = -100.0f;

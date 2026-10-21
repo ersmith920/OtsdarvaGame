@@ -32,6 +32,8 @@ var close_range := 14.0
 var max_neighbors := 6
 var max_looked := 14
 var pile_layer := 0.75
+var pile_capacity := 1
+var climber_push_scale := 0.3
 var gravity := 24.0
 var step_up_speed := 10.0
 var fall_kill_y := -100.0
@@ -135,6 +137,7 @@ func set_tuning(d: Dictionary) -> void:
 	think_interval = maxi(think_interval, 1)
 	ground_recheck = maxi(ground_recheck, 1)
 	crowd_capacity = maxi(crowd_capacity, 1)
+	pile_capacity = maxi(pile_capacity, 1)
 	if d.has("fill_budget"):
 		_terrain.fill_budget = d["fill_budget"]
 	if d.has("prefill_budget"):
@@ -379,14 +382,16 @@ func step(delta: float, ppos: Vector3, now_ms: int) -> PackedInt32Array:
 				if fl > 0.0001:
 					_fx[s] = fx / fl
 					_fz[s] = fz / fl
+			# Climbers spread out less: they deal with a crowd by climbing it instead.
+			var push_k := climber_push_scale if (f & F_CLIMBER) != 0 else 1.0
 			var cx := c % gw
 			var cz := c / gw
 			if cx > 0 and cz > 0 and cx < gw - 1 and cz < gd - 1:
-				vx += float(_dens[c - 1] - _dens[c + 1]) * crowd_push
-				vz += float(_dens[c - gw] - _dens[c + gw]) * crowd_push
+				vx += float(_dens[c - 1] - _dens[c + 1]) * crowd_push * push_k
+				vz += float(_dens[c - gw] - _dens[c + gw]) * crowd_push * push_k
 			if here > cap:
 				var a := float(s) * 2.39996   # golden angle: each enemy its own direction
-				var spread := float(here - cap) * cell_spread
+				var spread := float(here - cap) * cell_spread * push_k
 				vx += cos(a) * spread
 				vz += sin(a) * spread
 			_vx[s] = vx
@@ -471,8 +476,10 @@ func step(delta: float, ppos: Vector3, now_ms: int) -> PackedInt32Array:
 
 		# --- Vertical: gravity, stepping up, climbing walls, piling on the crowd ---
 		var floor_y := _gnd[s]
-		if climber and rank >= cap and here > cap:
-			floor_y += minf(float(rank / cap) * h * pile_layer, _max_climb[s])
+		# Piling: in a crowded cell, each climber stands on the ones before it, pile_capacity
+		# enemies per layer, up to its max climb height.
+		if climber and rank >= pile_capacity:
+			floor_y += minf(float(rank / pile_capacity) * h * pile_layer, _max_climb[s])
 		var vy := _vy[s]
 		if climbing:
 			y += _climb[s] * delta

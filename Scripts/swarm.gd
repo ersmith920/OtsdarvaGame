@@ -37,6 +37,13 @@ const TUNING := {
 	"max_looked": 14,
 	# Climbers pile up where the crowd overflows: each pile layer is this much of their height.
 	"pile_layer": 0.75,
+	# Climbers sharing a crowd cell stack this many per layer (1 = every extra one goes up
+	# a layer, 2 = two side by side per layer, so lower, wider piles). Pile height is also
+	# capped by each enemy's Max Climb Height export.
+	"pile_capacity": 1,
+	# How much climbers spread away from crowds compared to non-climbers (1 = same).
+	# Lower = they bunch up and pile higher instead of spreading into a flat carpet.
+	"climber_push_scale": 0.3,
 	"gravity": 24.0,
 	"step_up_speed": 10.0,
 	"fall_kill_y": -100.0,

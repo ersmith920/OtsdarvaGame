@@ -3,3 +3,4 @@
 /android/
 native/godot-cpp/
 native/build/
+bin/~*

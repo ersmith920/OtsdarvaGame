@@ -61,6 +61,8 @@ void SwarmCore::set_tuning(const Dictionary &d) {
 	TUNE_I(max_neighbors)
 	TUNE_I(max_looked)
 	TUNE_F(pile_layer)
+	TUNE_I(pile_capacity)
+	TUNE_F(climber_push_scale)
 	TUNE_F(gravity)
 	TUNE_F(step_up_speed)
 	TUNE_F(fall_kill_y)
@@ -80,6 +82,7 @@ void SwarmCore::set_tuning(const Dictionary &d) {
 	think_interval = std::max(think_interval, 1);
 	ground_recheck = std::max(ground_recheck, 1);
 	crowd_capacity = std::max(crowd_capacity, 1);
+	pile_capacity = std::max(pile_capacity, 1);
 }
 
 void SwarmCore::set_world(Object *space_state, const TypedArray<RID> &exclude) {
@@ -553,14 +556,16 @@ PackedInt32Array SwarmCore::step(float delta, const Vector3 &ppos, int64_t now_m
 					u.fz = fz / fl;
 				}
 			}
+			// Climbers spread out less: they deal with a crowd by climbing it instead.
+			const float push_k = (u.flags & F_CLIMBER) ? climber_push_scale : 1.0f;
 			int cx = c % gw, cz = c / gw;
 			if (cx > 0 && cz > 0 && cx < gw - 1 && cz < gd - 1) {
-				vx += (float)(dens[c - 1] - dens[c + 1]) * crowd_push;
-				vz += (float)(dens[c - gw] - dens[c + gw]) * crowd_push;
+				vx += (float)(dens[c - 1] - dens[c + 1]) * crowd_push * push_k;
+				vz += (float)(dens[c - gw] - dens[c + gw]) * crowd_push * push_k;
 			}
 			if (here > crowd_capacity) {
 				float a = (float)s * 2.39996f;   // golden angle: each enemy its own direction
-				float spread = (float)(here - crowd_capacity) * cell_spread;
+				float spread = (float)(here - crowd_capacity) * cell_spread * push_k;
 				vx += std::cos(a) * spread;
 				vz += std::sin(a) * spread;
 			}
@@ -656,8 +661,10 @@ PackedInt32Array SwarmCore::step(float delta, const Vector3 &ppos, int64_t now_m
 
 		// --- Vertical: gravity, stepping up, climbing walls, piling on the crowd ---
 		float floor_y = u.gnd;
-		if (climber && rank >= crowd_capacity && here > crowd_capacity) {
-			floor_y += std::min((float)(rank / crowd_capacity) * h * pile_layer, u.max_climb);
+		// Piling: in a crowded cell, each climber stands on the ones before it, pile_capacity
+		// enemies per layer, up to its max climb height.
+		if (climber && rank >= pile_capacity) {
+			floor_y += std::min((float)(rank / pile_capacity) * h * pile_layer, u.max_climb);
 		}
 		if (climbing) {
 			y += u.climb * delta;
