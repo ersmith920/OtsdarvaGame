@@ -171,6 +171,9 @@ func get_rollable_kinds() -> Array[int]:
 			continue
 		if not explosion_enabled and kind in WeaponStat.NEEDS_EXPLOSION:
 			continue
+		# A Knockback roll multiplies the gun's own knockback, so it does nothing at 0.
+		if kind == WeaponStat.Kind.KNOCKBACK and explosion_knockback <= 0.0 and explosion_knockback_up <= 0.0:
+			continue
 		kinds.append(kind)
 	return kinds
 
@@ -193,6 +196,63 @@ func _bonus(kind: int) -> float:
 # Percent bonus as a multiplier: +25% -> 1.25.
 func _bonus_mult(kind: int) -> float:
 	return 1.0 + _bonus(kind) / 100.0
+
+
+## This gun's own stats with its rolls applied (not the player's stats), for menus and cards.
+## Each entry: {"name", "value" (text), "bonus" (the roll, e.g. "+15%", or ""), "boosted" (bool)}.
+## Only stats that apply to this gun are listed (no explosion lines on a gun without one, etc.).
+func get_stat_summary() -> Array[Dictionary]:
+	var out : Array[Dictionary] = []
+	if damage > 0.0:
+		_add_stat(out, "Damage", _fmt(damage * _bonus_mult(WeaponStat.Kind.DAMAGE)), WeaponStat.Kind.DAMAGE)
+	if explosion_enabled:
+		_add_stat(out, "Explosion Damage", _fmt(explosion_damage * _bonus_mult(WeaponStat.Kind.AOE_DAMAGE)), WeaponStat.Kind.AOE_DAMAGE)
+		_add_stat(out, "Explosion Size", _fmt(get_explosion_radius()) + " m", WeaponStat.Kind.AOE_SIZE)
+		if explosion_knockback > 0.0 or explosion_knockback_up > 0.0:
+			_add_stat(out, "Knockback", _fmt(get_explosion_knockback()), WeaponStat.Kind.KNOCKBACK)
+	_add_stat(out, "Fire Rate", _fmt(_bonus_mult(WeaponStat.Kind.ATTACK_SPEED) / maxf(fire_rate, 0.001)) + "/s", WeaponStat.Kind.ATTACK_SPEED)
+	var projectiles := float(projectile_count) + _bonus(WeaponStat.Kind.PROJECTILE_COUNT)
+	if projectiles > 1.0 or _bonus(WeaponStat.Kind.PROJECTILE_COUNT) != 0.0:
+		_add_stat(out, "Projectiles", _fmt(projectiles), WeaponStat.Kind.PROJECTILE_COUNT)
+	_add_stat(out, "Projectile Speed", _fmt(get_base_projectile_speed()) + " m/s", WeaponStat.Kind.PROJECTILE_SPEED)
+	if cone_size > 0.0:
+		# Spread = how far (degrees) a shot can stray from the aim point. Accuracy shrinks it.
+		var spread := rad_to_deg(true_cone_value() / _bonus_mult(WeaponStat.Kind.ACCURACY))
+		if spread >= 0.1 or _bonus(WeaponStat.Kind.ACCURACY) != 0.0:   # skip it on pinpoint guns
+			_add_stat(out, "Spread", _fmt(spread) + "°", WeaponStat.Kind.ACCURACY)
+	_add_stat(out, "Magazine", str(get_mag_size()), WeaponStat.Kind.MAGAZINE_SIZE)
+	_add_stat(out, "Reload", _fmt(maxf(reload_time, 0.0) / _bonus_mult(WeaponStat.Kind.RELOAD_SPEED)) + " s", WeaponStat.Kind.RELOAD_SPEED)
+	# Ricochet only exists on a gun through its rolls (or items), so these show the roll itself.
+	var chance := _bonus(WeaponStat.Kind.RICOCHET_CHANCE)
+	var bounces := floori(_bonus(WeaponStat.Kind.RICOCHET_BOUNCES) + 0.0001)
+	if chance != 0.0:
+		bounces = maxi(bounces, 1)   # a chance roll always comes with at least one bounce
+		_add_stat(out, "Ricochet Chance", "+" + _fmt(chance) + "%", WeaponStat.Kind.RICOCHET_CHANCE, false)
+	if bounces > 0:
+		_add_stat(out, "Ricochet Bounces", "+" + str(bounces), WeaponStat.Kind.RICOCHET_BOUNCES, false)
+	return out
+
+
+## Base spread in radians (the export is in hundredths of a radian).
+func true_cone_value() -> float:
+	return cone_size / 100.0
+
+
+func _add_stat(out: Array[Dictionary], stat_name: String, value: String, kind: int, show_bonus := true) -> void:
+	var b := _bonus(kind)
+	var bonus := ""
+	if b != 0.0 and show_bonus:
+		var prefix := "+" if b > 0.0 else "-"
+		bonus = prefix + _fmt(absf(b)) + ("" if WeaponStat.is_flat(kind) else "%")
+	out.append({"name": stat_name, "value": value, "bonus": bonus, "boosted": b != 0.0 or (kind == WeaponStat.Kind.RICOCHET_BOUNCES and _bonus(WeaponStat.Kind.RICOCHET_CHANCE) != 0.0)})
+
+
+static func _fmt(v: float) -> String:
+	if is_equal_approx(v, roundf(v)):
+		return str(int(roundf(v)))
+	if absf(v) >= 10.0:
+		return str(snappedf(v, 0.1))
+	return str(snappedf(v, 0.01))
 
 
 ## Magazine size after the Magazine Size roll. Any positive roll adds at least 1 round.

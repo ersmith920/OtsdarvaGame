@@ -48,7 +48,7 @@ var _box: Panel
 @export var tip_box_color := Color(0.06, 0.06, 0.06, 0.95)
 @export var section_header_font_size := 18
 @export var section_header_color := Color(0.8, 0.8, 0.8)
-## Weapon tooltips: color of the base-stat lines under the rolled bonuses.
+## Weapon tooltips: color of the stat lines (the gun's stats with its rolls applied).
 @export var tip_base_stat_color := Color(0.6, 0.6, 0.6)
 
 func _ready() -> void:
@@ -454,7 +454,6 @@ func _build_item_tooltip() -> void:
 
 	_tip_desc = Label.new()
 	_tip_desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_tip_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_tip_desc.add_theme_font_override("font", description_font)
 	_tip_desc.add_theme_font_size_override("font_size", tip_description_font_size)
 	_tip_desc.add_theme_color_override("font_color", tip_description_color)
@@ -462,7 +461,6 @@ func _build_item_tooltip() -> void:
 
 	_tip_extra = Label.new()
 	_tip_extra.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_tip_extra.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_tip_extra.add_theme_font_override("font", description_font)
 	_tip_extra.add_theme_font_size_override("font_size", tip_description_font_size)
 	_tip_extra.add_theme_color_override("font_color", tip_base_stat_color)
@@ -513,20 +511,14 @@ func _fill_tooltip(item: ItemData) -> void:
 # Name in its rarity color, then rarity, rolled bonuses, and the gun's own base stats.
 func _fill_weapon_tooltip(gun: Gun) -> void:
 	var color := Rarity.get_color(gun.get_rarity())
-	var lines := PackedStringArray()
-	lines.append(Rarity.name_of(gun.get_rarity()))
-	if gun.roll != null:
-		lines.append_array(gun.roll.describe())
-	var base := PackedStringArray()
-	base.append("Damage: %s" % _num(gun.damage))
-	if gun.explosion_enabled:
-		base.append("Explosion: %s dmg, %sm" % [_num(gun.explosion_damage), _num(gun.get_explosion_radius())])
-	base.append("Fire Rate: %s/s" % _num(1.0 / maxf(gun.fire_rate, 0.001)))
-	base.append("Magazine: %d" % gun.get_mag_size())
-	base.append("Reload: %ss" % _num(gun.reload_time))
-	if gun.projectile_count > 1:
-		base.append("Projectiles: %d" % gun.projectile_count)
-	_fill_tip(gun.get_display_name(), color, "\n".join(lines), "\n".join(base))
+	# The gun's own stats with its rolls applied; rolled ones show the roll in brackets.
+	var stats := PackedStringArray()
+	for stat in gun.get_stat_summary():
+		var line : String = "%s: %s" % [stat.name, stat.value]
+		if not stat.bonus.is_empty():
+			line += "  (%s)" % stat.bonus
+		stats.append(line)
+	_fill_tip(gun.get_display_name(), color, Rarity.name_of(gun.get_rarity()), "\n".join(stats))
 
 
 func _num(v: float) -> String:
@@ -536,18 +528,42 @@ func _num(v: float) -> String:
 func _fill_tip(title: String, tier_color: Color, description: String, extra := "") -> void:
 	_tip_name.add_theme_color_override("font_color", tier_color)
 	TextGlow.set_text(_tip_name, title, tier_color)
-	_tip_desc.text = description
+	# Line breaks are put in here instead of using Label autowrap: a wrapping Label works out
+	# its height from its current width, which is stale right after the text changes (zero the
+	# very first time, so every word got its own line: the screen-tall box), and that made
+	# the box come out a different height each time.
+	_tip_desc.text = _wrap(description, _tip_desc, TIP_MAX_TEXT_WIDTH)
 	_tip_desc.visible = not description.is_empty()
-	_tip_extra.text = extra
+	_tip_extra.text = _wrap(extra, _tip_extra, TIP_MAX_TEXT_WIDTH)
 	_tip_extra.visible = not extra.is_empty()
 
-	# Same sizing trick as the pickup popup: hug the text, wrap past a max width.
+	# Hug the text: as wide as the widest line.
 	var width := maxf(_text_width(_tip_name), maxf(_text_width(_tip_desc), _text_width(_tip_extra)))
-	width = ceilf(minf(width, TIP_MAX_TEXT_WIDTH)) + 2.0
+	width = ceilf(width) + 2.0
 	_tip_name.custom_minimum_size.x = width
 	_tip_desc.custom_minimum_size.x = width
 	_tip_extra.custom_minimum_size.x = width
 	_tip.reset_size()   # containers grow on their own but never shrink back
+
+
+# Breaks text into lines no wider than max_width (keeps existing line breaks).
+func _wrap(text: String, label: Label, max_width: float) -> String:
+	if text.is_empty():
+		return text
+	var font := label.get_theme_font("font")
+	var font_size := label.get_theme_font_size("font_size")
+	var out := PackedStringArray()
+	for paragraph in text.split("\n"):
+		var line := ""
+		for word in paragraph.split(" ", false):
+			var candidate := word if line.is_empty() else line + " " + word
+			if not line.is_empty() and font.get_string_size(candidate, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > max_width:
+				out.append(line)
+				line = word
+			else:
+				line = candidate
+		out.append(line)
+	return "\n".join(out)
 
 
 # Widest line of the label's text (tooltips can have several lines).

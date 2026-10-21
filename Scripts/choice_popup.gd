@@ -132,6 +132,12 @@ func _wrap_card(content: Control, index: int) -> Button:
 
 	_ignore_mouse(content)
 	margin.add_child(content)
+	# Grow the card if its content needs more room than card_size (e.g. a long stat list).
+	var fit := func() -> void:
+		var need := margin.get_combined_minimum_size()
+		button.custom_minimum_size = Vector2(maxf(card_size.x, need.x), maxf(card_size.y, need.y))
+	margin.minimum_size_changed.connect(fit)
+	fit.call_deferred()
 	return button
 
 
