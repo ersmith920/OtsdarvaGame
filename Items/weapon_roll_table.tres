@@ -5,25 +5,32 @@
 
 [sub_resource type="Resource" id="Range_damage"]
 script = ExtResource("2_range")
+common = Vector2(10, 20)
+uncommon = Vector2(20, 35)
+rare = Vector2(35, 55)
+epic = Vector2(55, 85)
+legendary = Vector2(100, 150)
+mythic = Vector2(150, 220)
 
 [sub_resource type="Resource" id="Range_attack_speed"]
 script = ExtResource("2_range")
 stat = 1
-uncommon = Vector2(8, 14)
-rare = Vector2(12, 20)
-epic = Vector2(18, 28)
-legendary = Vector2(25, 40)
-mythic = Vector2(40, 55)
+common = Vector2(10, 20)
+uncommon = Vector2(20, 35)
+rare = Vector2(35, 55)
+epic = Vector2(55, 85)
+legendary = Vector2(100, 150)
+mythic = Vector2(150, 220)
 
 [sub_resource type="Resource" id="Range_reload_speed"]
 script = ExtResource("2_range")
 stat = 2
-common = Vector2(10, 20)
-uncommon = Vector2(20, 30)
-rare = Vector2(30, 50)
-epic = Vector2(50, 75)
-legendary = Vector2(75, 100)
-mythic = Vector2(100, 130)
+common = Vector2(20, 40)
+uncommon = Vector2(40, 70)
+rare = Vector2(70, 110)
+epic = Vector2(110, 170)
+legendary = Vector2(200, 300)
+mythic = Vector2(300, 400)
 
 [sub_resource type="Resource" id="Range_projectile_count"]
 script = ExtResource("2_range")
@@ -40,52 +47,61 @@ step = 0.1
 script = ExtResource("2_range")
 stat = 4
 common = Vector2(10, 20)
-uncommon = Vector2(15, 30)
-rare = Vector2(25, 40)
-epic = Vector2(35, 55)
-legendary = Vector2(50, 75)
-mythic = Vector2(75, 100)
+uncommon = Vector2(20, 35)
+rare = Vector2(35, 55)
+epic = Vector2(55, 85)
+legendary = Vector2(100, 150)
+mythic = Vector2(150, 220)
 
 [sub_resource type="Resource" id="Range_accuracy"]
 script = ExtResource("2_range")
 stat = 5
 common = Vector2(10, 20)
-uncommon = Vector2(15, 30)
-rare = Vector2(25, 40)
-epic = Vector2(35, 55)
-legendary = Vector2(50, 75)
-mythic = Vector2(75, 100)
+uncommon = Vector2(20, 35)
+rare = Vector2(35, 55)
+epic = Vector2(55, 85)
+legendary = Vector2(100, 150)
+mythic = Vector2(150, 220)
 
 [sub_resource type="Resource" id="Range_magazine_size"]
 script = ExtResource("2_range")
 stat = 6
-common = Vector2(10, 20)
-uncommon = Vector2(15, 30)
-rare = Vector2(25, 40)
-epic = Vector2(35, 55)
-legendary = Vector2(50, 100)
-mythic = Vector2(100, 150)
+common = Vector2(20, 40)
+uncommon = Vector2(40, 70)
+rare = Vector2(70, 110)
+epic = Vector2(110, 170)
+legendary = Vector2(200, 300)
+mythic = Vector2(300, 400)
 
 [sub_resource type="Resource" id="Range_aoe_size"]
 script = ExtResource("2_range")
 stat = 7
-epic = Vector2(20, 30)
-legendary = Vector2(25, 40)
-mythic = Vector2(40, 55)
+common = Vector2(10, 20)
+uncommon = Vector2(20, 35)
+rare = Vector2(35, 55)
+epic = Vector2(55, 85)
+legendary = Vector2(100, 150)
+mythic = Vector2(150, 220)
 
 [sub_resource type="Resource" id="Range_aoe_damage"]
 script = ExtResource("2_range")
 stat = 8
+common = Vector2(10, 20)
+uncommon = Vector2(20, 35)
+rare = Vector2(35, 55)
+epic = Vector2(55, 85)
+legendary = Vector2(100, 150)
+mythic = Vector2(150, 220)
 
 [sub_resource type="Resource" id="Range_knockback"]
 script = ExtResource("2_range")
 stat = 9
-common = Vector2(10, 25)
-uncommon = Vector2(20, 40)
-rare = Vector2(30, 60)
-epic = Vector2(50, 80)
-legendary = Vector2(75, 120)
-mythic = Vector2(120, 160)
+common = Vector2(10, 20)
+uncommon = Vector2(20, 35)
+rare = Vector2(35, 55)
+epic = Vector2(55, 85)
+legendary = Vector2(100, 150)
+mythic = Vector2(150, 220)
 
 [sub_resource type="Resource" id="Range_ricochet_chance"]
 script = ExtResource("2_range")
