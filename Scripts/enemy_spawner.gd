@@ -57,11 +57,12 @@ class_name EnemySpawner
 @export var swarm_starts_with_wave := true
 
 @export_group("Performance")
-## Wave spawning pauses while this many enemies are alive. Debug buttons ignore it.
-@export var max_alive_enemies := 1000
+## Wave spawning pauses while this many enemies are alive (swarm + node enemies).
+## Debug buttons ignore it.
+@export var max_alive_enemies := 10000
 ## Wave enemies spawn spread over several frames, at most this many per frame, so a
 ## big wave doesn't freeze the game for a moment.
-@export var max_spawns_per_frame := 40
+@export var max_spawns_per_frame := 120
 
 signal swarm_started
 signal swarm_ended
@@ -197,7 +198,7 @@ func spawn_wave() -> void:
 func _drain_queue() -> void:
 	var budget := max_spawns_per_frame
 	while budget > 0 and not _queue.is_empty():
-		var room := max_alive_enemies - EnemyManager.enemies.size()
+		var room := max_alive_enemies - EnemyManager.get_total_count()
 		if room <= 0:
 			# At the limit: drop what's left of this wave rather than spawning it later.
 			if not _limit_warned:
@@ -277,6 +278,22 @@ func _spawn_tier(tier: SpawnTier, total: int, elite_mode: EliteMode, clumps: Arr
 		var point = _find_spawn_point(tier, clump)
 		if point == null:
 			continue   # no valid spot found this time; skip this enemy
+		# Plain Enemy scenes become lightweight swarm enemies (no node). Scripted ones
+		# like the tank fall through and spawn as normal nodes below.
+		if Swarm.can_swarm(scene_to_spawn):
+			var elite := {}
+			var unit_gold := gold
+			if _roll_elite(tier, elite_mode):
+				unit_gold = roundi(gold * elite_gold_mult)
+				elite = {"size": elite_size_mult, "health": elite_health_mult,
+						"damage": elite_damage_mult, "speed": elite_speed_mult}
+				if elite_mode == EliteMode.ROLL:
+					_elites_this_wave += 1
+					print("Elite ", tier.tier_name, " spawned (wave ", wave_number, ")")
+			# The swarm stands enemies on the floor itself (no body to lift out of it).
+			if Swarm.spawn(scene_to_spawn, point - Vector3.UP * 0.1, unit_gold, health_mult, elite) != null:
+				spawned += 1
+			continue
 		var enemy : Node3D = scene_to_spawn.instantiate()
 		if enemy is Enemy:
 			var e := enemy as Enemy

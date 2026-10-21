@@ -19,6 +19,7 @@ const KNOCK_DECEL := 40.0         # m/s lost per second: a 10 m/s knock slides ~
 const MAX_KNOCK_SPEED := 40.0     # stacked blasts can't launch an enemy faster than this
 
 
+## Node enemies only (tanks, hand-placed enemies...). Swarm enemies live in the Swarm autoload.
 var enemies: Array[Enemy] = []
 var _grid := {}
 var _tick := 0
@@ -41,11 +42,23 @@ func unregister(e: Enemy) -> void:
 	e.mgr_index = -1
 
 
+## Every enemy alive: node enemies plus swarm enemies.
+func get_total_count() -> int:
+	return enemies.size() + Swarm.count()
+
+
 ## Pushes an enemy: `push` is a horizontal velocity (m/s), `up` an upward pop (m/s).
 ## Scaled by the enemy's knockback_resist. One ray along the push makes sure the
 ## slide stops at walls instead of shoving the enemy into buildings.
-func knock_back(e: Enemy, push: Vector3, up: float) -> void:
-	if e.dead or e.spawning:
+## Works for both node enemies and swarm enemies (SwarmUnit).
+func knock_back(target, push: Vector3, up: float) -> void:
+	if target == null or not is_instance_valid(target):
+		return
+	if target is SwarmUnit:
+		Swarm.knock_back((target as SwarmUnit).slot, push, up)
+		return
+	var e := target as Enemy
+	if e == null or e.dead or e.spawning:
 		return
 	var keep := 1.0 - e.knockback_resist
 	if keep <= 0.0:
@@ -69,9 +82,23 @@ func knock_back(e: Enemy, push: Vector3, up: float) -> void:
 
 
 ## Closest living, fully spawned enemy to `from` within max_range (3D distance), skipping
-## any in `skip` (a Dictionary used as a set). Uses the movement grid, so it's cheap even
-## in big crowds: it searches outward ring by ring and stops once nothing closer is possible.
-func find_nearest(from: Vector3, max_range: float, skip: Dictionary = {}) -> Enemy:
+## any in `skip` (a Dictionary used as a set). Searches node enemies AND swarm enemies, and
+## returns either an Enemy or a SwarmUnit (both have get_aim_position(), dead, etc.).
+func find_nearest(from: Vector3, max_range: float, skip: Dictionary = {}) -> Object:
+	var best: Object = _find_nearest_node(from, max_range, skip)
+	var best_d := INF
+	if best != null:
+		var e := best as Enemy
+		best_d = from.distance_squared_to(e.pos + Vector3(0.0, e.height * 0.5, 0.0))
+	var swarm := Swarm.find_nearest(from, max_range, skip)
+	if not swarm.is_empty() and swarm[1] < best_d:
+		best = swarm[0]
+	return best
+
+
+# Grid search over node enemies only. Searches outward ring by ring and stops once
+# nothing closer is possible.
+func _find_nearest_node(from: Vector3, max_range: float, skip: Dictionary) -> Enemy:
 	var best: Enemy = null
 	var best_d := max_range * max_range
 	var cx := floori(from.x / CELL_SIZE)

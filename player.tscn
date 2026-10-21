@@ -112,8 +112,6 @@ elite_gold_mult = 10.0
 swarm_count_mult = 3.0
 swarm_wave_rate_mult = 2.0
 swarm_starts_with_wave = null
-max_alive_enemies = null
-max_spawns_per_frame = null
 
 [node name="PlayerStats" type="Node" parent="." unique_id=1563529071]
 script = ExtResource("4_hqtel")

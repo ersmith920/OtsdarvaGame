@@ -1,0 +1,13 @@
+; Native (C++) core of the enemy swarm. Loaded automatically; the Swarm autoload uses it
+; when it's here, and falls back to the slower GDScript copy (swarm_core_gd.gd) when it isn't.
+; Source code: native/swarm_core (rebuild only needed if you change the C++).
+[configuration]
+entry_symbol = "swarm_core_init"
+compatibility_minimum = "4.5"
+reloadable = false
+
+[libraries]
+windows.debug.x86_64 = "res://bin/libswarm_core.windows.template_release.x86_64.dll"
+windows.release.x86_64 = "res://bin/libswarm_core.windows.template_release.x86_64.dll"
+linux.debug.x86_64 = "res://bin/libswarm_core.linux.template_release.x86_64.so"
+linux.release.x86_64 = "res://bin/libswarm_core.linux.template_release.x86_64.so"

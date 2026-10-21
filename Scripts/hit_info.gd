@@ -5,7 +5,8 @@ extends RefCounted
 
 enum Kind { DIRECT, RICOCHET, EXPLOSION, DOT, EFFECT }
 
-var enemy: Enemy
+## The enemy hit: an Enemy node or a SwarmUnit (both have dead, take_damage(), get_aim_position()).
+var enemy: Object
 var damage := 0.0
 var crit := false
 ## The gun this hit came from (can be null for some effects).
@@ -22,7 +23,7 @@ var chain: Array[StringName] = []
 var killed := false
 
 
-static func make(p_enemy: Enemy, p_damage: float, p_crit: bool, p_source: Gun,
+static func make(p_enemy: Object, p_damage: float, p_crit: bool, p_source: Gun,
 		p_proc: float, p_kind: Kind, p_position: Vector3) -> HitInfo:
 	var info := HitInfo.new()
 	info.enemy = p_enemy

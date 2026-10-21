@@ -10,6 +10,8 @@ const MIN_REST_DISTANCE := 8.0         # keeps guns from crossing sharply near w
 const REQUIRE_LINE_OF_SIGHT := true    # don't lock onto targets behind walls
 # Only used to project the crosshair's direction onto the screen; any positive number works.
 const SCREEN_PROJECT_DISTANCE := 10.0
+# Most-centered swarm enemies checked for line of sight each frame.
+const SWARM_CANDIDATES := 8
 
 @export var crosshair: Control   # the 2D HUD crosshair (drag it in from the scene)
 @export var idle_color := Color(1.0, 1.0, 1.0, 0.6)
@@ -17,7 +19,7 @@ const SCREEN_PROJECT_DISTANCE := 10.0
 
 @onready var camera: Camera3D = get_parent() as Camera3D
 
-var target: Node3D = null   # the currently locked target (null = none)
+var target: Object = null   # the currently locked target: an Enemy node or a SwarmUnit (null = none)
 
 # Smoothed state: the crosshair's direction (in camera space) and the guns' aim distance.
 var _local_dir := Vector3.FORWARD
@@ -56,6 +58,9 @@ func _physics_process(_delta: float) -> void:
 
 	var stats := GameManager.player.stats_node
 	var max_angle := deg_to_rad(stats.get_value(&"lock_fov"))
+	# A locked enemy that died (freed node or dead swarm unit): drop it right away.
+	if target != null and (not is_instance_valid(target) or (target is SwarmUnit and target.dead)):
+		target = null
 	target = _find_target(max_angle)
 
 	if target != null:
@@ -76,10 +81,11 @@ func _build_exclude_list() -> Array[RID]:
 
 
 # Returns the target closest to the screen center within max_angle, or null.
-func _find_target(max_angle: float) -> Node3D:
+func _find_target(max_angle: float) -> Object:
 	var origin := camera.global_position
 	var forward := -camera.global_basis.z
-	var candidates: Array = []
+	# Swarm enemies: the Swarm returns its few most centered ones (already sorted).
+	var candidates: Array = Swarm.lock_candidates(origin, forward, max_angle, MAX_LOCK_RANGE, SWARM_CANDIDATES)
 
 	for node in get_tree().get_nodes_in_group(TARGET_GROUP):
 		var enemy := node as Node3D
@@ -101,12 +107,14 @@ func _find_target(max_angle: float) -> Node3D:
 	return null
 
 
-func _has_line_of_sight(enemy: Node3D) -> bool:
+func _has_line_of_sight(enemy: Object) -> bool:
 	var query := PhysicsRayQueryParameters3D.create(camera.global_position, _aim_point_of(enemy))
 	query.exclude = _exclude
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if hit.is_empty():
 		return true
+	if not (enemy is Node):
+		return false   # swarm enemy: it has no body, so anything hit is in the way
 	# Fine if the first thing hit is the enemy itself (or part of it).
 	var collider := hit.collider as Node
 	return collider == enemy or enemy.is_ancestor_of(collider) or collider.is_ancestor_of(enemy)
@@ -125,10 +133,10 @@ func _distance_to_surface() -> float:
 
 
 # Aim at a child Marker3D named "AimPoint" if the enemy has one, otherwise its origin.
-func _aim_point_of(enemy: Node3D) -> Vector3:
-	if enemy is Enemy:
-		return (enemy as Enemy).get_aim_position()
-	return enemy.global_position
+func _aim_point_of(enemy: Object) -> Vector3:
+	if enemy is Enemy or enemy is SwarmUnit:
+		return enemy.get_aim_position()
+	return (enemy as Node3D).global_position
 
 
 # ---------- Moving the crosshair (every frame, for smoothness) ----------

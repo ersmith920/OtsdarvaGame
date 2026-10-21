@@ -23,7 +23,7 @@ func mark_effects_dirty() -> void:
 
 
 func deal_hit(info: HitInfo) -> void:
-	var enemy := info.enemy
+	var enemy = info.enemy   # Enemy node or SwarmUnit
 	if enemy == null or not is_instance_valid(enemy) or enemy.dead or enemy.spawning:
 		return
 	if _dirty:

@@ -41,9 +41,9 @@ func _ready() -> void:
 ## Adds one DoT stack that deals `damage_per_tick` every TICK seconds for `duration` seconds.
 ## Past max_stacks for this enemy and key, it replaces the stack closest to running out.
 ## `proc` is the proc coefficient of its ticks (0 = they never trigger on-hit items).
-func add_dot(enemy: Enemy, key: StringName, damage_per_tick: float, duration: float, max_stacks: int,
+func add_dot(enemy: Object, key: StringName, damage_per_tick: float, duration: float, max_stacks: int,
 		source: Gun, proc: float = 0.0) -> void:
-	if enemy == null or enemy.dead or damage_per_tick <= 0.0 or duration <= 0.0:
+	if enemy == null or not is_instance_valid(enemy) or enemy.dead or damage_per_tick <= 0.0 or duration <= 0.0:
 		return
 	var b := _bucket_of(enemy)
 	var tick_count := maxi(roundi(duration / TICK), 1)
@@ -76,7 +76,7 @@ func add_dot(enemy: Enemy, key: StringName, damage_per_tick: float, duration: fl
 
 
 ## How many stacks of a DoT an enemy has right now (e.g. for "more damage to burning enemies").
-func get_stacks(enemy: Enemy, key: StringName) -> int:
+func get_stacks(enemy: Object, key: StringName) -> int:
 	if not is_instance_valid(enemy):
 		return 0
 	var per_enemy: Dictionary = _counts.get(enemy.get_instance_id(), {})
@@ -96,7 +96,7 @@ func _physics_process(delta: float) -> void:
 	var i := b.enemy.size() - 1
 	while i >= 0:
 		var e = b.enemy[i]
-		if not is_instance_valid(e) or (e as Enemy).dead:
+		if not is_instance_valid(e) or e.dead:
 			_remove(b, i)
 			i -= 1
 			continue
@@ -110,14 +110,14 @@ func _physics_process(delta: float) -> void:
 			_remove(b, i)
 		i -= 1
 
-	for e: Enemy in totals:
+	for e in totals:
 		var per_enemy: Dictionary = totals[e]
 		for key: StringName in per_enemy:
 			var entry: Array = per_enemy[key]
 			_deal(e, entry[0], entry[1], key, entry[2])
 
 
-func _deal(e: Enemy, amount: float, src, key: StringName, proc: float) -> void:
+func _deal(e: Object, amount: float, src, key: StringName, proc: float) -> void:
 	if amount <= 0.0 or not is_instance_valid(e) or e.dead:
 		return
 	var hit := HitInfo.make(e, amount, false, src if is_instance_valid(src) else null, proc,
@@ -126,7 +126,7 @@ func _deal(e: Enemy, amount: float, src, key: StringName, proc: float) -> void:
 	HitSystem.deal_hit(hit)
 
 
-func _bucket_of(e: Enemy) -> Bucket:
+func _bucket_of(e: Object) -> Bucket:
 	return _buckets[e.get_instance_id() % SLICES]
 
 

@@ -80,6 +80,15 @@ func _physics_process(delta: float) -> void:
 	query.exclude = _build_exclude_list()
 	var result := get_world_3d().direct_space_state.intersect_ray(query)
 
+	# Swarm enemies have no physics bodies, so they're checked separately, only up to
+	# whatever the physics ray hit first.
+	var end := global_position + motion if result.is_empty() else (result.position as Vector3)
+	var swarm_hit := Swarm.raycast(global_position, end, _swarm_skip())
+	if not swarm_hit.is_empty():
+		global_position = swarm_hit.position
+		hit(swarm_hit.unit, swarm_hit.normal)
+		return
+
 	if result.is_empty():
 		global_position += motion
 		return
@@ -88,10 +97,22 @@ func _physics_process(delta: float) -> void:
 	hit(result.collider, result.normal)
 
 
+# Swarm enemies this bullet already hit (ricochets don't hit the same one twice).
+func _swarm_skip() -> Dictionary:
+	if _hit_enemies.is_empty():
+		return {}
+	var skip := {}
+	for e in _hit_enemies:
+		if is_instance_valid(e) and e is SwarmUnit:   # check validity first: hit enemies can be freed
+			skip[e] = true
+	return skip
+
+
 func hit(collider : Object, normal : Vector3 = Vector3.ZERO) -> void:
 	_spawn_hit_effect(normal)
 
-	if collider is Enemy:
+	var is_enemy := collider is Enemy or collider is SwarmUnit
+	if is_enemy:
 		var roll : Dictionary = source.roll_damage()
 		var ricocheted := _bounces > 0
 		var proc := source.proc_coefficient * (source.ricochet_proc_multiplier if ricocheted else 1.0)
@@ -100,7 +121,7 @@ func hit(collider : Object, normal : Vector3 = Vector3.ZERO) -> void:
 	if source.explosion_enabled:
 		_explode()
 
-	if collider is Enemy and _try_ricochet(collider):
+	if is_enemy and _try_ricochet(collider):
 		return
 	queue_free()
 
@@ -190,7 +211,7 @@ static func _release_explosion_visual(fx : Node) -> void:
 
 # Rolls the ricochet chance (once per bullet) and, if the bullet has bounces left,
 # turns it toward the next closest enemy. Returns true if the bullet lives on.
-func _try_ricochet(from_enemy : Enemy) -> bool:
+func _try_ricochet(from_enemy : Object) -> bool:
 	if not _ricochet_rolled:
 		_ricochet_rolled = true
 		if randf() < source.get_ricochet_chance():
@@ -217,38 +238,23 @@ func _try_ricochet(from_enemy : Enemy) -> bool:
 	return true
 
 
-# Closest living enemy within range that this bullet hasn't hit yet.
-func _find_ricochet_target() -> Node3D:
-	var range_sq := ricochet_range * ricochet_range
+# Closest living enemy within range that this bullet hasn't hit yet and can see.
+# Covers node enemies and swarm enemies (EnemyManager.find_nearest searches both).
+func _find_ricochet_target() -> Object:
 	var origin := global_position
-	var dists := PackedFloat32Array()
-	var enemies : Array[Enemy] = []
-
-	for node in get_tree().get_nodes_in_group("lock_target"):
-		var enemy := node as Enemy
-		if enemy == null or enemy.is_queued_for_deletion() or _hit_enemies.has(enemy):
-			continue
-		var d := origin.distance_squared_to(enemy.get_aim_position())
-		if d <= range_sq:
-			dists.append(d)
-			enemies.append(enemy)
-
+	var skip := {}
+	for e in _hit_enemies:
+		skip[e] = true
 	var exclude := _build_exclude_list()
 	for attempt in MAX_LOS_CHECKS:
-		# Pick the closest remaining one: no sort needed.
-		var best := -1
-		var best_d := INF
-		for i in dists.size():
-			if dists[i] < best_d:
-				best_d = dists[i]
-				best = i
-		if best == -1:
+		var candidate = EnemyManager.find_nearest(origin, ricochet_range, skip)
+		if candidate == null:
 			return null
-		if _has_line_of_sight(enemies[best], exclude):
-			return enemies[best]
-		dists.remove_at(best)
-		enemies.remove_at(best)
+		if _has_line_of_sight(candidate, exclude):
+			return candidate
+		skip[candidate] = true   # blocked by a wall: try the next closest
 	return null
+
 
 # The player and enemies this bullet already hit must not block its rays.
 # (The bullet itself has no physics body anymore, so it doesn't need excluding.)
@@ -257,26 +263,28 @@ func _build_exclude_list() -> Array[RID]:
 	if GameManager.player != null:
 		rids.append(GameManager.player.get_rid())
 	for enemy in _hit_enemies:
-		if is_instance_valid(enemy):
+		if is_instance_valid(enemy) and enemy is CollisionObject3D:
 			rids.append((enemy as CollisionObject3D).get_rid())
 	return rids
 
 
-func _has_line_of_sight(enemy : Node3D, exclude : Array[RID]) -> bool:
+func _has_line_of_sight(enemy : Object, exclude : Array[RID]) -> bool:
 	var query := PhysicsRayQueryParameters3D.create(global_position, _aim_point_of(enemy))
 	query.exclude = exclude
 	var result := get_world_3d().direct_space_state.intersect_ray(query)
 	if result.is_empty():
 		return true
+	if not (enemy is Node):
+		return false   # swarm enemy: it has no body, so anything hit is in the way
 	# Fine if the first thing hit is the enemy itself (or part of it).
 	var collider := result.collider as Node
 	return collider == enemy or enemy.is_ancestor_of(collider) or collider.is_ancestor_of(enemy)
 
 # Aim at a child Marker3D named "AimPoint" if the enemy has one, otherwise its origin.
-func _aim_point_of(enemy: Node3D) -> Vector3:
-	if enemy is Enemy:
-		return (enemy as Enemy).get_aim_position()
-	return enemy.global_position
+func _aim_point_of(enemy: Object) -> Vector3:
+	if enemy is Enemy or enemy is SwarmUnit:
+		return enemy.get_aim_position()
+	return (enemy as Node3D).global_position
 
 
 # ---------- Hit effect ----------

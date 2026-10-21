@@ -1,3 +1,5 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+native/godot-cpp/
+native/build/

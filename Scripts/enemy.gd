@@ -57,6 +57,15 @@ class_name Enemy
 ## Volume offset for this enemy's hit sounds, in dB. Negative = quieter.
 @export var hit_volume_db := 0.0
 
+@export_group("Swarm")
+## Spawn as a lightweight swarm enemy (no node per enemy, drawn with GPU instancing), so
+## thousands can be alive at once. Only for enemies using this plain Enemy script: enemies
+## with their own script (like the tank) always spawn as normal nodes. Hand-placed enemies
+## in a level stay nodes too. Turn off to force this enemy to spawn as a node.
+@export var use_swarm := true
+## Swarm enemies drawing shadows. Off by default: thousands of shadow casters are expensive.
+@export var swarm_cast_shadows := false
+
 const ENEMY_SFX_BUS := &"EnemySFX"
 const MAX_DEATH_SOUNDS := 8
 const HIT_SOUND_MIN_GAP_MS := 30

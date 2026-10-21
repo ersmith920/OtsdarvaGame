@@ -1,4 +1,4 @@
-# Enemy counter, top left of the HUD. Counts everything in the lock_target group.
+# Enemy counter, top left of the HUD. Counts node enemies and swarm enemies.
 extends Label
 
 const PADDING := 16
@@ -31,12 +31,7 @@ func _process(delta: float) -> void:
 
 
 func _refresh() -> void:
-	var count := EnemyManager.enemies.size()
-
-	# Only touch the text when the number actually changes.
-	if count != _last_count:
-		_last_count = count
-		text = "Enemies: %d" % count
+	var count := EnemyManager.get_total_count()
 
 	# Only touch the text when the number actually changes.
 	if count != _last_count:

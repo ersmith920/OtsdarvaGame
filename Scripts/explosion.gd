@@ -5,7 +5,8 @@ class_name Explosion
 extends RefCounted
 
 const ENEMY_MASK := 16        # physics layer 5: enemies only, so terrain never uses up target slots
-const MAX_TARGETS := 128      # most enemies one blast can hit
+const MAX_TARGETS := 128      # most node enemies one blast can hit
+const MAX_SWARM_TARGETS := 256  # most swarm enemies one blast can hit
 ## Knockback at the very edge of the blast, as a fraction of the knockback at the center.
 const EDGE_KNOCKBACK := 0.5
 
@@ -28,7 +29,9 @@ static func detonate(space: PhysicsDirectSpaceState3D, at: Vector3, radius: floa
 	_query.transform = Transform3D(Basis.IDENTITY, at)
 
 	var results := space.intersect_shape(_query, MAX_TARGETS)
-	if results.is_empty():
+	# Swarm enemies have no physics bodies: they're found through the Swarm's own grid.
+	var swarm_hits := Swarm.query_sphere(at, radius, MAX_SWARM_TARGETS)
+	if results.is_empty() and swarm_hits.is_empty():
 		return
 
 	# One damage roll per blast: the whole explosion crits or it doesn't.
@@ -37,13 +40,16 @@ static func detonate(space: PhysicsDirectSpaceState3D, at: Vector3, radius: floa
 	var pop := src.get_explosion_knockback_up()
 	var has_knockback := push > 0.0 or pop > 0.0
 	var seen := {}
-
+	var targets : Array = []
 	for result in results:
 		var enemy := result.collider as Enemy
 		if enemy == null or enemy.dead or seen.has(enemy):
 			continue   # an enemy with several shapes only gets hit once
 		seen[enemy] = true
+		targets.append(enemy)
+	targets.append_array(swarm_hits)
 
+	for enemy in targets:
 		var hit := HitInfo.make(enemy, roll.damage, roll.crit, src, src.explosion_proc_coefficient,
 				HitInfo.Kind.EXPLOSION, enemy.get_aim_position())
 		HitSystem.deal_hit(hit)
@@ -51,7 +57,7 @@ static func detonate(space: PhysicsDirectSpaceState3D, at: Vector3, radius: floa
 			continue
 
 		if has_knockback:
-			var away := enemy.pos - at
+			var away: Vector3 = enemy.pos - at
 			away.y = 0.0
 			var dist := away.length()
 			var dir := away / dist if dist > 0.01 else Vector3.FORWARD.rotated(Vector3.UP, randf() * TAU)

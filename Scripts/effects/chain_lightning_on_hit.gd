@@ -36,11 +36,11 @@ func _apply(info: HitInfo, stacks: int) -> void:
 	var count := jumps + jumps_per_stack * (stacks - 1)
 
 	for i in count:
-		var target := EnemyManager.find_nearest(from, jump_range, already)
+		var target = EnemyManager.find_nearest(from, jump_range, already)   # Enemy or SwarmUnit
 		if target == null:
 			break
 		already[target] = true
-		var to := target.get_aim_position()
+		var to: Vector3 = target.get_aim_position()
 		_draw_bolt(player, from, to)
 		var hit := HitInfo.make(target, dmg, info.crit, info.source, child_proc_coefficient,
 				HitInfo.Kind.EFFECT, to)
