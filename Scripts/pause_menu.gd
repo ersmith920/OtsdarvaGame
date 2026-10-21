@@ -32,8 +32,15 @@ const SENS_DISPLAY_MIN := 1.0
 const SENS_DISPLAY_MAX := 20.0
 const SENS_DISPLAY_STEP := 0.1
 
+const INFO_SIZE := Vector2(260, 74)
+
 var _main_page: VBoxContainer
 var _settings_page: VBoxContainer
+var _header: Control
+var _title: Label
+var _info: Control
+var _info_time: Label
+var _info_scrap: Label
 
 
 func _ready() -> void:
@@ -72,57 +79,154 @@ func _build_background() -> void:
 
 
 func _build_pages() -> void:
-	var center := CenterContainer.new()
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(center)
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# KH2-style layout: a big "PAUSE" header across the top left, a stack of glossy command
+	# plates down the left side, and a mission info plate (time, scrap) bottom right.
+	var header := Control.new()
+	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(header)
+	header.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	header.offset_bottom = 90
+	header.draw.connect(func() -> void:
+		# A dark band with a thin blue line under it, the KH menu header.
+		header.draw_rect(Rect2(0, 18, header.size.x, 56), Color(0.02, 0.04, 0.12, 0.7))
+		header.draw_rect(Rect2(0, 74, header.size.x, 2), Color(HudStyle.CYAN, 0.8))
+		header.draw_rect(Rect2(0, 77, header.size.x * 0.4, 1), Color(HudStyle.CYAN, 0.35)))
+	_header = header
+	_title = HudStyle.make_label("PAUSE", 44, HudStyle.WHITE, true)
+	_title.position = Vector2(60, 16)
+	header.add_child(_title)
 
-	# Main page: Resume / Settings / Exit
-	_main_page = VBoxContainer.new()
-	_main_page.add_theme_constant_override("separation", button_gap)
-	center.add_child(_main_page)
+	_main_page = _make_window("COMMAND")
 	_main_page.add_child(_make_button("Resume", _resume))
 	_main_page.add_child(_make_button("Settings", func(): _show_settings(true)))
 	_main_page.add_child(_make_button("Exit", _on_exit_pressed))
 
-	# Settings page: sensitivity slider + Back
-	_settings_page = VBoxContainer.new()
-	_settings_page.add_theme_constant_override("separation", button_gap)
+	_settings_page = _make_window("CONFIG")
 	_settings_page.visible = false
-	center.add_child(_settings_page)
-
-	var title := _make_label("Settings")
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_settings_page.add_child(title)
-
 	_add_slider_row("Mouse Sensitivity", SENS_DISPLAY_MIN, SENS_DISPLAY_MAX, SENS_DISPLAY_STEP,
 		GameManager.mouse_sensitivity * SENS_DISPLAY_SCALE, _on_sensitivity_changed, "%.1f")
 	_add_slider_row("Master Volume", 0.0, 100.0, 1.0,
 		GameManager.master_volume * 100.0, _on_volume_changed, "%d%%")
-
 	_settings_page.add_child(_make_button("Back", func(): _show_settings(false)))
 
+	# Mission info, bottom right (like KH's time / munny box).
+	_info = Control.new()
+	_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_info)
+	_info.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_info.offset_left = -60 - INFO_SIZE.x
+	_info.offset_right = -60
+	_info.offset_top = -50 - INFO_SIZE.y
+	_info.offset_bottom = -50
+	_info.draw.connect(func() -> void:
+		var r := Rect2(Vector2.ZERO, INFO_SIZE)
+		HudStyle.draw_backing(_info, r.grow(4.0))
+		HudStyle.draw_plate(_info, Rect2(4, 4, r.size.x - 8, 30), HudStyle.PLATE_TOP, HudStyle.PLATE_BOTTOM, HudStyle.PLATE_RIM, 15.0)
+		HudStyle.draw_plate(_info, Rect2(4, 40, r.size.x - 8, 30), HudStyle.PLATE_TOP, HudStyle.PLATE_BOTTOM, HudStyle.PLATE_RIM, 15.0))
+	for i in 2:
+		var cap := HudStyle.make_label(["TIME", "SCRAP"][i], 13, HudStyle.WHITE)
+		cap.position = Vector2(18, 10 + 36 * i)
+		_info.add_child(cap)
+		var num := HudStyle.make_label("0", 20, HudStyle.GOLD if i == 1 else HudStyle.WHITE, true)
+		num.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		num.position = Vector2(80, 6 + 36 * i)
+		num.size = Vector2(INFO_SIZE.x - 98, 26)
+		_info.add_child(num)
+		if i == 0:
+			_info_time = num
+		else:
+			_info_scrap = num
 
+
+# The command window: a metal frame down the left side holding a column of plates.
+func _make_window(tab_text: String) -> VBoxContainer:
+	# Full-screen holder that keeps the window centered vertically, a fixed gap from the left.
+	var holder := MarginContainer.new()
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_theme_constant_override("margin_left", 80)
+	add_child(holder)
+	holder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var frame := MarginContainer.new()
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	for side in ["left", "right", "top", "bottom"]:
+		frame.add_theme_constant_override("margin_" + side, 14)
+	frame.add_theme_constant_override("margin_top", 22)
+	frame.add_theme_constant_override("margin_right", 26)   # room for a lit plate's slide
+	holder.add_child(frame)
+	frame.draw.connect(func() -> void:
+		var r := Rect2(Vector2.ZERO, frame.size)
+		HudStyle.draw_backing(frame, r)
+		# "COMMAND" tab on the top edge.
+		var tab := Rect2(14, -10, 110, 20)
+		HudStyle.draw_plate(frame, tab, Color(1, 1, 1, 0.98), Color(0.75, 0.82, 0.95, 0.98), Color(0.1, 0.2, 0.45), 10.0)
+		frame.draw_string(HudStyle.MENU_FONT, Vector2(tab.position.x, tab.end.y - 5.0), tab_text,
+				HORIZONTAL_ALIGNMENT_CENTER, tab.size.x, 13, Color(0.08, 0.16, 0.42)))
+	var page := VBoxContainer.new()
+	page.add_theme_constant_override("separation", button_gap)
+	frame.add_child(page)
+	page.visibility_changed.connect(func() -> void: holder.visible = page.visible)
+	return page
+
+
+# A KH2 command plate: glossy blue, white rim, text on the left. Hovered, it lights up,
+# slides right a little and a pointer appears beside it.
 func _make_button(text: String, on_pressed: Callable) -> Button:
 	var button := Button.new()
-	button.text = text
+	button.text = text.to_upper()
 	button.custom_minimum_size = button_size
+	button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
-	if font != null:
-		button.add_theme_font_override("font", font)
+	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	for st in ["normal", "hover", "pressed", "disabled", "focus", "hover_pressed"]:
+		var box := StyleBoxEmpty.new()
+		box.content_margin_left = 30
+		button.add_theme_stylebox_override(st, box)
+	button.add_theme_font_override("font", HudStyle.MENU_FONT)
 	button.add_theme_font_size_override("font_size", font_size)
+	for c in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
+		button.add_theme_color_override(c, HudStyle.WHITE)
+	button.add_theme_color_override("font_outline_color", Color(0.02, 0.04, 0.12, 0.95))
+	button.add_theme_constant_override("outline_size", 6)
+	button.set_meta(&"lit", 0.0)
+	# The plate is drawn by a child shown behind the button, so the text stays on top.
+	var plate := Control.new()
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plate.show_behind_parent = true
+	button.add_child(plate)
+	plate.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	plate.draw.connect(func() -> void:
+		var lit : float = button.get_meta(&"lit")
+		var r := Rect2(Vector2(lit * 10.0, 0), button.size)
+		var top := HudStyle.PLATE_TOP.lerp(Color(0.55, 0.8, 1.0, 0.95), lit)
+		var bottom := HudStyle.PLATE_BOTTOM.lerp(Color(0.12, 0.3, 0.7, 0.95), lit)
+		HudStyle.draw_plate(plate, r, top, bottom, HudStyle.PLATE_RIM, r.size.y * 0.5)
+		if lit > 0.01:
+			# Pointer: a white arrowhead left of the plate.
+			var y := r.get_center().y
+			var x := r.position.x - 6.0
+			var pts := PackedVector2Array([Vector2(x - 18, y - 9), Vector2(x, y), Vector2(x - 18, y + 9), Vector2(x - 13, y)])
+			plate.draw_colored_polygon(pts, Color(1, 1, 1, lit))
+			plate.draw_polyline(pts + PackedVector2Array([pts[0]]), Color(0.05, 0.1, 0.3, lit), 1.5, true))
+	var light := func(to: float) -> void:
+		var t := UIJuice.tween_of(button)
+		t.tween_method(func(v: float) -> void:
+			button.set_meta(&"lit", v)
+			plate.queue_redraw(), button.get_meta(&"lit"), to, 0.12)
+	button.mouse_entered.connect(func() -> void:
+		light.call(1.0)
+		UIJuice.play(UIJuice.Sfx.HOVER))
+	button.mouse_exited.connect(func() -> void: light.call(0.0))
+	button.button_down.connect(func() -> void:
+		UIJuice.play(UIJuice.Sfx.CLICK)
+		UIJuice.punch(button, -0.06))
 	button.pressed.connect(on_pressed)
-	UIJuice.hover_lift(button)
 	return button
 
 
 func _make_label(text: String) -> Label:
-	var label := Label.new()
-	label.text = text
-	if font != null:
-		label.add_theme_font_override("font", font)
-	label.add_theme_font_size_override("font_size", font_size)
-	return label
+	return HudStyle.make_label(text.to_upper(), roundi(font_size * 0.75), HudStyle.WHITE)
 
 
 # ---------- Input ----------
@@ -151,10 +255,27 @@ func _input(event: InputEvent) -> void:
 
 func _pause() -> void:
 	_show_settings(false)
+	get_parent().move_child(self, -1)   # over every HUD element
 	visible = true
-	UIJuice.pop_in(_main_page, 0.0, 0.9)
+	var secs := int(GameManager.levelTime)
+	@warning_ignore("integer_division")
+	_info_time.text = "%02d:%02d" % [secs / 60, secs % 60]
+	_info_scrap.text = str(GameManager.player.gold) if GameManager.player != null else "0"
+	# Commands deal in from the left one after another; header and info slide in.
 	for i in _main_page.get_child_count():
-		UIJuice.pop_in(_main_page.get_child(i), 0.04 * i, 0.8)
+		var b : Control = _main_page.get_child(i)
+		b.set_meta(&"lit", 0.0)
+		b.get_child(0).queue_redraw()
+		b.modulate.a = 0.0
+		var t := UIJuice.tween_of(b)
+		t.tween_interval(0.05 * i)
+		t.tween_property(b, "modulate:a", 1.0, 0.12)
+		t.parallel().tween_property(b, "position:x", 0.0, 0.25).from(-40.0).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	for c : Control in [_header, _info]:
+		c.modulate.a = 0.0
+		UIJuice.tween_of(c).tween_property(c, "modulate:a", 1.0, 0.18)
+	_title.pivot_offset = Vector2(0, 30)
+	UIJuice.pop_in(_title, 0.0, 0.7)
 	UIJuice.play(UIJuice.Sfx.OPEN)
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -170,6 +291,8 @@ func _resume() -> void:
 func _show_settings(show: bool) -> void:
 	_main_page.visible = not show
 	_settings_page.visible = show
+	if _title != null:
+		_title.text = "SETTINGS" if show else "PAUSE"
 
 
 func _on_exit_pressed() -> void:

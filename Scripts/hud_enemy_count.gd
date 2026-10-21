@@ -2,7 +2,7 @@
 # swarm enemies. Ticks up with a brief amber flash when the count rises.
 extends Label
 
-const FONT_SIZE := 15
+const FONT_SIZE := 18
 const REFRESH_INTERVAL := 0.1   # seconds between recounts; no need to do it every frame
 
 var _last_count := -1
@@ -15,8 +15,11 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	set_anchors_preset(Control.PRESET_TOP_LEFT)
-	position = HudStyle.MISSION_POS + Vector2(HudStyle.MISSION_SIZE.x - 14 - 120, HudStyle.MISSION_ROW_HOSTILE)
-	size = Vector2(120, 20)
+	position = HudStyle.MISSION_POS + Vector2(HudStyle.MISSION_SIZE.x - 16 - 120, HudStyle.MISSION_ROW_HOSTILE + 5)
+	size = Vector2(120, 22)
+	vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	add_theme_color_override("font_outline_color", Color(0.02, 0.04, 0.1, 0.95))
+	add_theme_constant_override("outline_size", 5)
 	add_theme_font_override("font", HudStyle.NUMBER_FONT)
 	add_theme_font_size_override("font_size", FONT_SIZE)
 	_refresh()
@@ -29,7 +32,7 @@ func _process(delta: float) -> void:
 		_refresh()
 	if _flash > 0.0:
 		_flash = maxf(_flash - delta * 3.0, 0.0)
-		add_theme_color_override("font_color", HudStyle.CYAN.lerp(HudStyle.AMBER, _flash))
+		add_theme_color_override("font_color", HudStyle.WHITE.lerp(HudStyle.AMBER, _flash))
 
 
 func _refresh() -> void:
@@ -40,4 +43,4 @@ func _refresh() -> void:
 			_flash = 1.0
 		_last_count = count
 		text = "%04d" % count
-		add_theme_color_override("font_color", HudStyle.CYAN.lerp(HudStyle.AMBER, _flash))
+		add_theme_color_override("font_color", HudStyle.WHITE.lerp(HudStyle.AMBER, _flash))

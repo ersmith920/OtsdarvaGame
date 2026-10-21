@@ -1,53 +1,59 @@
-# Status block, bottom left: health and energy (battery) as segmented mech gauges
-# on an angled HUD panel (see HudStyle).
+# Vitals, bottom right, in the Kingdom Hearts 2 style crossed with mech hardware (see HudStyle):
 #
-#   HEALTH                   0100
-#   ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▱▱▱▱▱
-#   ENERGY                     72
-#   ▰▰▰▰▰▰▰▰▰▰▰▰▱▱▱
+#                       .---HP---.
+#   HP ================'  (core)  )      the HP gauge wraps over the core, then runs left
+#   EN ===========        '------'       energy below it, like KH's MP gauge
 #
-# Feel: the filled segments glow (a soft halo, a bright leading edge and a sheen that sweeps
-# along them, breathing gently). When a gauge drops, the lost segments stay as a pale trail
-# that drains a moment later; health flashes and the panel jolts on hits; health turns amber
-# at half and red when critical, with a blinking warning above the panel. It slides in when
-# the level starts.
+# The core is a round mech emblem standing in for KH's portrait: health number in the middle,
+# a slowly turning tick ring, and a glow in the health color.
+# Feel: the gauges glow (a halo, a bright end, a sheen sweeping along them). Damage comes off
+# the far (left) end first, KH style, leaving a red trail that drains a moment later; the
+# gauge flashes white and the cluster jolts on hits. Health turns amber at half, and red with
+# a blinking DANGER tag when critical. The cluster slides in when the level starts.
 extends Control
 
-const PADDING := 18
-const BLOCK_SIZE := Vector2(292, 82)
-const ARMOR_SEGMENTS := 40
-const ENERGY_SEGMENTS := 40
-## Seconds the lost segments wait before draining away.
+const PADDING := 12
+const BLOCK_SIZE := Vector2(440, 128)
+## The core (the round emblem the HP gauge wraps over).
+const CORE_RADIUS := 38.0
+const RING_RADIUS := 50.0
+const HP_WIDTH := 14.0
+const ARC_FROM := -0.14     # radians: where the arc starts (just right of the top)
+const ARC_TO := -3.0        # where it ends, on the left, and the straight gauge begins
+const HP_BAR_LENGTH := 260.0
+const EN_BAR_LENGTH := 230.0
+const EN_HEIGHT := 9.0
+## Seconds the red damage trail waits before draining.
 const GHOST_DELAY := 0.35
-## How fast that trail drains (fraction of the gap per second, roughly).
 const GHOST_SPEED := 4.0
-## Health turns amber below this fraction, red (and warns) below LOW.
+## Health turns amber below this fraction, red (with DANGER) below LOW.
 const CAUTION := 0.5
 const LOW := 0.25
-const ENERGY_COLOR := Color(0.4, 0.7, 1.0)
-## Glow: how bright the halo around the filled segments is (0 = none).
+## Glow brightness (0 = none) and seconds between sheens along the gauges.
 const GLOW_STRENGTH := 1.0
-## Seconds between sheens sweeping along a gauge.
 const SHEEN_CYCLE := 2.6
-const ARMOR_BAR := Rect2(14, 30, 264, 12)
-const ENERGY_BAR := Rect2(14, 64, 264, 6)
 
-var _block : Control          # the panel (first child: the Tab menu keeps clear of it)
+var _block : Control          # the cluster (first child: the Tab menu keeps clear of it)
 var _glow : Control           # additive glow drawn over the gauges
-var _armor_num : Label
-var _energy_num : Label
-var _warning : Label
-var _armor := 1.0
-var _armor_ghost := 1.0
-var _energy := 1.0
-var _energy_ghost := 1.0
-var _armor_wait := 0.0
-var _energy_wait := 0.0
+var _hp_num : Label
+var _en_num : Label
+var _danger : Label
+var _hp := 1.0
+var _hp_ghost := 1.0
+var _en := 1.0
+var _en_ghost := 1.0
+var _hp_wait := 0.0
+var _en_wait := 0.0
 var _last_health := -1.0
 var _flash := 0.0
 var _jolt := 0.0
-var _time := 0.0
 var _jolting := false
+var _time := 0.0
+
+var _core_center := Vector2(BLOCK_SIZE.x - 64, BLOCK_SIZE.y - 60)
+var _arc_end := _core_center + Vector2(cos(ARC_TO), sin(ARC_TO)) * RING_RADIUS
+var _hp_bar := Rect2(_arc_end.x - HP_BAR_LENGTH, _arc_end.y - HP_WIDTH * 0.5, HP_BAR_LENGTH + 2.0, HP_WIDTH)
+var _en_bar := Rect2(_arc_end.x - EN_BAR_LENGTH - 6.0, _arc_end.y + HP_WIDTH * 0.5 + 8.0, EN_BAR_LENGTH, EN_HEIGHT)
 
 
 func _ready() -> void:
@@ -58,32 +64,38 @@ func _ready() -> void:
 	_block.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_block.custom_minimum_size = BLOCK_SIZE
 	add_child(_block)
-	_block.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	_block.offset_left = PADDING
-	_block.offset_right = PADDING + BLOCK_SIZE.x
+	_block.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_block.offset_left = -PADDING - BLOCK_SIZE.x
+	_block.offset_right = -PADDING
 	_block.offset_top = -PADDING - BLOCK_SIZE.y
 	_block.offset_bottom = -PADDING
 	_block.draw.connect(_draw_block)
 
-	_block.add_child(_caption("HEALTH", Vector2(14, 10)))
-	_armor_num = HudStyle.make_label("0100", 20, HudStyle.CYAN, true)
-	_armor_num.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_armor_num.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-	_armor_num.position = Vector2(BLOCK_SIZE.x - 14 - 120, 4)
-	_armor_num.size = Vector2(120, 24)
-	_block.add_child(_armor_num)
+	# Health number in the core, "HP" above it.
+	var tag := HudStyle.make_label("HP", 10, HudStyle.CYAN_DIM)
+	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tag.position = _core_center + Vector2(-30, -26)
+	tag.size = Vector2(60, 14)
+	_block.add_child(tag)
+	_hp_num = HudStyle.make_label("100", 22, HudStyle.WHITE, true)
+	_hp_num.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hp_num.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_hp_num.position = _core_center + Vector2(-40, -14)
+	_hp_num.size = Vector2(80, 30)
+	_block.add_child(_hp_num)
 
-	_block.add_child(_caption("ENERGY", Vector2(14, 48)))
-	_energy_num = HudStyle.make_label("100", 13, ENERGY_COLOR, true)
-	_energy_num.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_energy_num.position = Vector2(BLOCK_SIZE.x - 14 - 80, 46)
-	_energy_num.size = Vector2(80, 16)
-	_block.add_child(_energy_num)
+	# Tags at the left ends of the gauges.
+	var hp_tag := HudStyle.make_label("HP", 12, HudStyle.HP_GREEN, true)
+	hp_tag.position = Vector2(_hp_bar.position.x - 30, _hp_bar.position.y - 3)
+	_block.add_child(hp_tag)
+	_en_num = HudStyle.make_label("EN", 11, HudStyle.EN_BLUE, true)
+	_en_num.position = Vector2(_en_bar.position.x - 30, _en_bar.position.y - 5)
+	_block.add_child(_en_num)
 
-	_warning = HudStyle.make_label("HEALTH CRITICAL", 13, HudStyle.RED, true)
-	_warning.position = Vector2(4, -22)
-	_warning.visible = false
-	_block.add_child(_warning)
+	_danger = HudStyle.make_label("DANGER", 16, HudStyle.RED, true)
+	_danger.position = Vector2(_hp_bar.position.x, _hp_bar.position.y - 30)
+	_danger.visible = false
+	_block.add_child(_danger)
 
 	# Glow layer over the gauges (additive, so it only ever brightens).
 	_glow = Control.new()
@@ -94,22 +106,15 @@ func _ready() -> void:
 	_glow.material = add
 	_glow.draw.connect(_draw_glow)
 	_block.add_child(_glow)
-	for num in [_armor_num, _energy_num]:
-		_glow_text(num)
+	_block.move_child(_glow, 0)   # under the labels
 
-	# Boot-up: slides in from the left.
+	# Boot-up: slides in from the right.
 	_block.modulate.a = 0.0
 	var t := create_tween()
 	t.tween_interval(0.25)
 	t.tween_property(_block, "modulate:a", 1.0, 0.15)
-	t.parallel().tween_property(_block, "position:x", _block.position.x, 0.35).from(_block.position.x - 60.0) \
+	t.parallel().tween_property(_block, "position:x", _block.position.x, 0.4).from(_block.position.x + 80.0) \
 			.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
-
-
-func _caption(text: String, at: Vector2) -> Label:
-	var l := HudStyle.make_label(HudStyle.caption(text), 10, HudStyle.CYAN_DIM)
-	l.position = at
-	return l
 
 
 func _process(delta: float) -> void:
@@ -120,8 +125,8 @@ func _process(delta: float) -> void:
 	var stats := player.stats_node
 	var max_health := maxf(stats.get_value(&"max_health"), 0.001)
 	var max_energy := maxf(stats.get_value(&"battery_capacity"), 0.001)
-	var armor := clampf(player.health / max_health, 0.0, 1.0)
-	var energy := clampf(player.battery_charge / max_energy, 0.0, 1.0)
+	var hp := clampf(player.health / max_health, 0.0, 1.0)
+	var en := clampf(player.battery_charge / max_energy, 0.0, 1.0)
 
 	# Hits: flash and jolt, harder for bigger hits.
 	if _last_health >= 0.0 and player.health < _last_health - 0.01:
@@ -130,33 +135,32 @@ func _process(delta: float) -> void:
 		_jolt = minf(_jolt + 0.4 + lost * 4.0, 1.5)
 	_last_health = player.health
 
-	var a := _trail(armor, _armor, _armor_ghost, _armor_wait, delta)
-	_armor = a[0]; _armor_ghost = a[1]; _armor_wait = a[2]
-	var e := _trail(energy, _energy, _energy_ghost, _energy_wait, delta)
-	_energy = e[0]; _energy_ghost = e[1]; _energy_wait = e[2]
-
+	var a := _trail(hp, _hp, _hp_ghost, _hp_wait, delta)
+	_hp = a[0]; _hp_ghost = a[1]; _hp_wait = a[2]
+	var e := _trail(en, _en, _en_ghost, _en_wait, delta)
+	_en = e[0]; _en_ghost = e[1]; _en_wait = e[2]
 	_flash = maxf(_flash - delta * 5.0, 0.0)
 	_jolt = maxf(_jolt - delta * 6.0, 0.0)
 
-	var color := _armor_color()
-	_armor_num.text = "%04d" % ceili(player.health)
-	_armor_num.add_theme_color_override("font_color", color.lerp(Color.WHITE, _flash * 0.7))
-	_armor_num.add_theme_color_override("font_shadow_color", Color(color, 0.45))
-	_energy_num.text = "%d" % roundi(energy * 100.0)
-	var ec := HudStyle.AMBER if energy < 0.2 else ENERGY_COLOR
-	_energy_num.add_theme_color_override("font_color", ec)
-	_energy_num.add_theme_color_override("font_shadow_color", Color(ec, 0.45))
+	_hp_num.text = "%d" % ceili(player.health)
+	_hp_num.add_theme_color_override("font_color", HudStyle.WHITE.lerp(_hp_color(), 0.35 if _hp <= CAUTION else 0.0))
+	_en_num.add_theme_color_override("font_color", HudStyle.AMBER if en < 0.2 else HudStyle.EN_BLUE)
 
-	var critical := armor <= LOW and player.health > 0.0
-	_warning.visible = critical and fmod(_time, 0.6) < 0.4
+	var critical := hp <= LOW and player.health > 0.0
+	_danger.visible = critical and fmod(_time, 0.6) < 0.42
 	if _jolt > 0.0:
-		_block.position.x = PADDING + randf_range(-1.0, 1.0) * 4.0 * _jolt
+		_block.position += Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * 3.0 * _jolt
+		_block.position = _block.position.lerp(_rest_pos(), 0.5)
 		_jolting = true
 	elif _jolting:
-		_block.position.x = PADDING
+		_block.position = _rest_pos()
 		_jolting = false
 	_block.queue_redraw()
 	_glow.queue_redraw()
+
+
+func _rest_pos() -> Vector2:
+	return Vector2(size.x - PADDING - BLOCK_SIZE.x, size.y - PADDING - BLOCK_SIZE.y)
 
 
 # [shown fill, trail, trail wait]: the fill jumps, the trail holds then drains after it.
@@ -172,67 +176,124 @@ func _trail(value: float, shown: float, ghost: float, wait: float, delta: float)
 	return [shown, ghost, 0.0]
 
 
-func _armor_color() -> Color:
-	var c := HudStyle.CYAN
-	if _armor <= LOW:
-		c = HudStyle.RED.lerp(Color(1, 0.6, 0.55), 0.5 + 0.5 * sin(_time * TAU * 1.6))   # pulsing
-	elif _armor <= CAUTION:
-		c = HudStyle.AMBER
-	return c
+func _hp_color() -> Color:
+	if _hp <= LOW:
+		return HudStyle.RED.lerp(Color(1, 0.6, 0.55), 0.5 + 0.5 * sin(_time * TAU * 1.6))
+	if _hp <= CAUTION:
+		return HudStyle.AMBER
+	return HudStyle.HP_GREEN
+
+
+# ---------- Drawing ----------
+
+func _arc_length() -> float:
+	return RING_RADIUS * absf(ARC_TO - ARC_FROM)
+
+
+# Draws the part of the HP path (arc over the core, then the straight gauge to the left) from
+# its start up to `amount` (0-1 of the whole path).
+func _draw_hp_path(ci: CanvasItem, amount: float, color: Color) -> void:
+	if amount <= 0.0:
+		return
+	var arc_len := _arc_length()
+	var total := arc_len + HP_BAR_LENGTH
+	var shown := amount * total
+	var arc_part := minf(shown, arc_len) / arc_len
+	HudStyle.draw_gauge_arc(ci, _core_center, RING_RADIUS, ARC_FROM, ARC_FROM + (ARC_TO - ARC_FROM) * arc_part, HP_WIDTH, color)
+	var bar_part := maxf(shown - arc_len, 0.0)
+	if bar_part > 0.0:
+		var w := maxf(bar_part, HP_WIDTH)
+		HudStyle._gloss_fill(ci, Rect2(_hp_bar.end.x - w, _hp_bar.position.y, w, HP_WIDTH), color, HP_WIDTH * 0.5)
 
 
 func _draw_block() -> void:
-	var color := _armor_color()
-	var accent := color if _armor <= CAUTION else HudStyle.CYAN
-	HudStyle.draw_panel(_block, Rect2(Vector2.ZERO, BLOCK_SIZE), accent)
-	var bar_color := color.lerp(Color.WHITE, _flash * 0.8)
-	HudStyle.draw_segment_bar(_block, ARMOR_BAR, _armor, _armor_ghost,
-			bar_color, ARMOR_SEGMENTS)
-	var energy_color := HudStyle.AMBER if _energy < 0.2 else ENERGY_COLOR
-	HudStyle.draw_segment_bar(_block, ENERGY_BAR, _energy, _energy_ghost,
-			energy_color, ENERGY_SEGMENTS, 2.0, 2.0)
+	# Gritty metal backing behind the gauges.
+	HudStyle.draw_backing(_block, Rect2(_hp_bar.position.x - 40, _hp_bar.position.y - 16,
+			_core_center.x - _hp_bar.position.x + 40, _en_bar.end.y - _hp_bar.position.y + 30))
+
+	# Troughs.
+	var trough := Color(0.02, 0.03, 0.06, 0.92)
+	_block.draw_arc(_core_center, RING_RADIUS, ARC_FROM, ARC_TO, 32, trough, HP_WIDTH + 4.0, true)
+	_block.draw_colored_polygon(HudStyle.rounded_points(_hp_bar.grow(2.0), HP_WIDTH * 0.5 + 2.0), trough)
+
+	# HP: red damage trail, then the gauge itself.
+	_draw_hp_path(_block, _hp_ghost, HudStyle.RED)
+	_draw_hp_path(_block, _hp, _hp_color().lerp(Color.WHITE, _flash * 0.7))
+
+	# EN gauge.
+	var en_color := HudStyle.AMBER if _en < 0.2 else HudStyle.EN_BLUE
+	HudStyle.draw_gauge(_block, _en_bar, _en, _en_ghost, en_color, Color(0.75, 0.85, 1.0, 0.6))
+
+	_draw_core()
 
 
-# Readout digits get a soft glow in their own color (an outline shadow, no offset).
-func _glow_text(label: Label) -> void:
-	label.add_theme_constant_override("shadow_offset_x", 0)
-	label.add_theme_constant_override("shadow_offset_y", 0)
-	label.add_theme_constant_override("shadow_outline_size", 7)
+# The round emblem: metal disc, beveled rim, a glow in the health color, a turning tick ring.
+func _draw_core() -> void:
+	var c := _core_center
+	var hp_color := _hp_color()
+	_block.draw_circle(c, CORE_RADIUS + 3.0, Color(0.02, 0.03, 0.06, 0.95))
+	_block.draw_circle(c, CORE_RADIUS, Color(0.12, 0.13, 0.16, 0.95))
+	# Inner glow, stronger when hurt.
+	for i in 5:
+		var r := CORE_RADIUS * (0.85 - i * 0.14)
+		_block.draw_circle(c, r, Color(hp_color, 0.07 + 0.03 * i + 0.1 * _flash))
+	# Bevel: light on top, dark underneath.
+	_block.draw_arc(c, CORE_RADIUS - 1.5, PI, TAU, 24, Color(1, 1, 1, 0.35), 2.0, true)
+	_block.draw_arc(c, CORE_RADIUS - 1.5, 0.0, PI, 24, Color(0, 0, 0, 0.5), 2.0, true)
+	_block.draw_arc(c, CORE_RADIUS + 1.5, 0.0, TAU, 48, HudStyle.PLATE_RIM, 2.0, true)
+	# Turning tick ring.
+	var spin := _time * 0.6
+	for i in 16:
+		var a := spin + TAU * i / 16.0
+		var d := Vector2(cos(a), sin(a))
+		var long := i % 4 == 0
+		_block.draw_line(c + d * (CORE_RADIUS - 9.0 - (3.0 if long else 0.0)), c + d * (CORE_RADIUS - 5.0),
+				Color(HudStyle.CYAN, 0.7 if long else 0.35), 2.0 if long else 1.0, true)
 
 
 func _draw_glow() -> void:
-	var breathe := 0.85 + 0.15 * sin(_time * 2.2)
-	_gauge_glow(ARMOR_BAR, _armor, _armor_color().lerp(Color.WHITE, _flash * 0.6), breathe * (1.0 + _flash), 0.0)
-	var energy_color := HudStyle.AMBER if _energy < 0.2 else ENERGY_COLOR
-	_gauge_glow(ENERGY_BAR, _energy, energy_color, breathe * 0.8, 0.45)
-
-
-# A soft halo around the filled part of a gauge, a bright leading edge, and a sheen sweeping
-# along it. phase offsets the sheen so the two gauges don't sweep in sync.
-func _gauge_glow(r: Rect2, fill: float, color: Color, strength: float, phase: float) -> void:
-	if fill <= 0.001:
-		return
-	var filled := Rect2(r.position, Vector2(r.size.x * fill, r.size.y))
-	var k := GLOW_STRENGTH * strength
-	# Halo: stacked, growing, fading rects (reads as a soft bloom).
-	for i in range(6, 0, -1):
-		var grow := i * 1.6
-		var a := 0.055 * k * (1.0 - float(i) / 7.0)
-		_glow.draw_rect(filled.grow(grow), Color(color, a))
-	_glow.draw_rect(filled, Color(color, 0.12 * k))
-	# Leading edge: a bright sliver where the gauge ends.
-	var edge_x := filled.end.x
+	var breathe := (0.85 + 0.15 * sin(_time * 2.2)) * GLOW_STRENGTH
+	var hp_color := _hp_color().lerp(Color.WHITE, _flash * 0.6)
+	var k := breathe * (1.0 + _flash)
+	# HP halo: wide faint copies of the path.
+	var arc_len := _arc_length()
+	var shown := _hp * (arc_len + HP_BAR_LENGTH)
+	var arc_to := ARC_FROM + (ARC_TO - ARC_FROM) * minf(shown, arc_len) / arc_len
+	for i in range(5, 0, -1):
+		var w := HP_WIDTH + i * 4.0
+		var col := Color(hp_color, 0.05 * k * (1.0 - i / 6.0))
+		_glow.draw_arc(_core_center, RING_RADIUS, ARC_FROM, arc_to, 32, col, w, true)
+		var bar_part := maxf(shown - arc_len, 0.0)
+		if bar_part > 0.0:
+			_glow.draw_rect(Rect2(_hp_bar.end.x - bar_part, _hp_bar.position.y, bar_part, HP_WIDTH).grow(i * 2.0), col)
+	# Bright leading edge at the end of the HP gauge.
+	var end_pt : Vector2
+	if shown <= arc_len:
+		end_pt = _core_center + Vector2(cos(arc_to), sin(arc_to)) * RING_RADIUS
+	else:
+		end_pt = Vector2(_hp_bar.end.x - (shown - arc_len), _hp_bar.get_center().y)
 	for i in 4:
-		var w := 2.0 + i * 2.0
-		_glow.draw_rect(Rect2(edge_x - w * 0.5, r.position.y - i, w, r.size.y + i * 2.0), Color(color.lerp(Color.WHITE, 0.5), 0.22 * k / (i + 1)))
-	# Sheen: a light band sliding left to right across the filled part.
-	var t := fposmod(_time / SHEEN_CYCLE + phase, 1.0) * 1.4 - 0.2   # a pause between sweeps
+		_glow.draw_circle(end_pt, 3.0 + i * 3.0, Color(hp_color.lerp(Color.WHITE, 0.5), 0.16 * k / (i + 1)))
+	# Sheens sweeping along the straight gauges.
+	_sheen(Rect2(_hp_bar.end.x - maxf(shown - arc_len, 0.0), _hp_bar.position.y, maxf(shown - arc_len, 0.0), HP_WIDTH), 0.0, k)
+	var en_color := HudStyle.AMBER if _en < 0.2 else HudStyle.EN_BLUE
+	var en_rect := Rect2(_en_bar.end.x - _en_bar.size.x * _en, _en_bar.position.y, _en_bar.size.x * _en, EN_HEIGHT)
+	for i in range(4, 0, -1):
+		_glow.draw_rect(en_rect.grow(i * 1.6), Color(en_color, 0.05 * breathe * (1.0 - i / 5.0)))
+	_sheen(en_rect, 0.45, breathe * 0.8)
+
+
+# A light band sliding right to left (toward the far end) across a filled gauge.
+func _sheen(r: Rect2, phase: float, k: float) -> void:
+	if r.size.x <= 1.0:
+		return
+	var t := fposmod(_time / SHEEN_CYCLE + phase, 1.0) * 1.4 - 0.2
 	if t < 0.0 or t > 1.0:
 		return
-	var center := filled.position.x + filled.size.x * t
+	var center := r.end.x - r.size.x * t
 	for i in 6:
 		var half := 3.0 + i * 4.0
-		var x0 := maxf(center - half, filled.position.x)
-		var x1 := minf(center + half, filled.end.x)
+		var x0 := maxf(center - half, r.position.x)
+		var x1 := minf(center + half, r.end.x)
 		if x1 > x0:
-			_glow.draw_rect(Rect2(x0, r.position.y, x1 - x0, r.size.y), Color(1, 1, 1, 0.07 * k / (i + 1)))
+			_glow.draw_rect(Rect2(x0, r.position.y, x1 - x0, r.size.y), Color(1, 1, 1, 0.08 * k / (i + 1)))
