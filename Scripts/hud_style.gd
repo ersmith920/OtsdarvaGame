@@ -242,6 +242,9 @@ static func color_card(s: HudPanelStyle, color: Color, lit := 0.0) -> void:
 	s.fill_bottom = Color(0.02, 0.03, 0.05, 0.94).lerp(Color(color.darkened(0.75), 0.94), 0.15 + 0.1 * lit)
 	s.glow = Color(color, 0.9)
 	s.glow_size = 12.0 + 10.0 * lit
+	# Bright glow hugging the inside of the border (stronger when hovered).
+	s.inner_glow = Color(color.lerp(Color.WHITE, 0.2), 0.9 + 0.1 * lit)
+	s.inner_glow_size = 12.0 + 6.0 * lit
 
 
 ## An empty card frame (nothing in the slot yet).
@@ -252,6 +255,7 @@ static func empty_card_style(padding := 10.0) -> HudPanelStyle:
 	s.fill_top = PANEL_TOP
 	s.fill_bottom = PANEL_BOTTOM
 	s.glow_size = 0.0
+	s.inner_glow_size = 0.0
 	return s
 
 

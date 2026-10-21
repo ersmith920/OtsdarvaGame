@@ -337,7 +337,8 @@ func _build_items_panel() -> void:
 
 # A header plus a scrolling tile grid taking an equal share of the column's height.
 func _add_grid_section(parent: Control, title: String) -> ScrollContainer:
-	parent.add_child(HudStyle.make_header(title, 13))
+	var header := HudStyle.make_header(title, 13)
+	parent.add_child(header)
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -355,6 +356,7 @@ func _add_grid_section(parent: Control, title: String) -> ScrollContainer:
 	scroll.add_child(pad)
 	pad.add_child(grid)
 	scroll.set_meta(&"grid", grid)
+	scroll.set_meta(&"header", header.get_meta(&"label"))
 	return scroll
 
 
@@ -371,8 +373,12 @@ func _rebuild_item_grid() -> void:
 		if a.tier != b.tier:
 			return a.tier > b.tier   # tier 5 (most common) first, tier 1 (rarest) last
 		return a.display_name < b.display_name)
+	var total := 0
 	for item: ItemData in items:
 		_item_grid.add_child(_make_item_tile(item, inventory[item]))
+		total += inventory[item]
+	# "ITEMS  /  12": how many you're carrying in all.
+	(_item_scroll.get_meta(&"header") as Label).text = HudStyle.caption("Items  /  %d" % total)
 
 
 # Every gun slot, laid out like they sit on screen: four quadrants (upper on top, left on
@@ -861,9 +867,8 @@ func _process(_delta: float) -> void:
 	_update_item_hover()
 	_update_drop_target()
 
-# Sizes the panel so it stops short of the timer and enemy count (top) and the
-# health/energy bars (bottom right). Measured on open, so font or size changes
-# to those elements are picked up automatically.
+# Sizes the panel so it stops short of the timer, enemy count and scrap counter (top).
+# Measured on open, so font or size changes to those elements are picked up automatically.
 func _fit_to_hud() -> void:
 	var hud := get_parent()
 
@@ -873,11 +878,9 @@ func _fit_to_hud() -> void:
 		if label != null:
 			top = maxf(top, label.get_global_rect().end.y + HUD_CLEARANCE)
 
+	# The bottom runs down to the screen margin, over the health / energy gauges: the menu
+	# needs the room more than the gauges need to show while it's held open.
 	var bottom := size.y * EDGE_MARGIN
-	var bars := hud.get_node_or_null("StatBars")
-	if bars != null and bars.get_child_count() > 0:
-		var bars_rect := (bars.get_child(0) as Control).get_global_rect()
-		bottom = maxf(bottom, size.y - bars_rect.position.y + HUD_CLEARANCE)
 
 	_box.anchor_top = 0.0
 	_box.anchor_bottom = 1.0
@@ -887,6 +890,7 @@ func _fit_to_hud() -> void:
 func _open() -> void:
 	visible = true
 	_fit_to_hud()
+	_fade_vitals(0.12)
 	UIJuice.pop_in(_box, 0.0, 0.97, 0.12)
 	# The columns deal in one after another.
 	for i in _columns.get_child_count():
@@ -908,8 +912,18 @@ func _open() -> void:
 		_update_stat_values()
 
 
+# The health / energy gauges sit under the bottom of the menu: they fade back while it's open
+# so they don't show through the stats.
+func _fade_vitals(alpha: float) -> void:
+	var bars := get_parent().get_node_or_null("StatBars") as CanvasItem
+	if bars != null:
+		var t := bars.create_tween()
+		t.tween_property(bars, "modulate:a", alpha, 0.12)
+
+
 func _close() -> void:
 	visible = false
+	_fade_vitals(1.0)
 	_tip.visible = false
 	_set_hover_tile(null)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED

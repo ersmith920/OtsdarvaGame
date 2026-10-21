@@ -38,6 +38,11 @@ var glow := Color(0, 0, 0, 0):
 	set(v): glow = v; emit_changed()
 var glow_size := 0.0:
 	set(v): glow_size = v; emit_changed()
+## Soft glow along the inside of the border, fading in toward the middle (size 0 = none).
+var inner_glow := Color(0, 0, 0, 0):
+	set(v): inner_glow = v; emit_changed()
+var inner_glow_size := 0.0:
+	set(v): inner_glow_size = v; emit_changed()
 ## 0-1: lights the panel up in the accent color (hover / pressed).
 var lit := 0.0:
 	set(v): lit = v; emit_changed()
@@ -68,6 +73,19 @@ static func paint(rid: RID, r: Rect2, s: HudPanelStyle) -> void:
 	for p in pts:
 		cols.append(top.lerp(bottom, clampf((p.y - r.position.y) / maxf(r.size.y, 1.0), 0.0, 1.0)))
 	rs.canvas_item_add_polygon(rid, pts, cols)
+	# Inner glow: rings just inside the border, brightest at the border.
+	if s.inner_glow_size > 0.0 and s.inner_glow.a > 0.0:
+		var rings := 6
+		var step := s.inner_glow_size / rings
+		for i in rings:
+			var inset := step * (i + 0.5)
+			var inner := r.grow(-inset)
+			if inner.size.x <= 2.0 or inner.size.y <= 2.0:
+				break
+			var fade := 1.0 - float(i) / rings
+			var c := Color(s.inner_glow, s.inner_glow.a * 0.5 * fade * fade)
+			rs.canvas_item_add_polyline(rid, _closed(HudStyle.chamfer_points(inner, maxf(s.cut - inset * 0.4, 0.0))),
+					PackedColorArray([c]), step + 0.5, true)
 	# Border.
 	var edge := s.edge.lerp(Color(a, maxf(s.edge.a, 0.7)), lit)
 	rs.canvas_item_add_polyline(rid, _closed(pts), PackedColorArray([edge]), s.edge_width, true)
