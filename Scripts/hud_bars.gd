@@ -1,9 +1,10 @@
 # Vitals, bottom right: a KH2-style cluster in a clean, modern style (see HudStyle).
 #
-#                     ___HP___
-#   HP ==============='        `.        the HP gauge runs left from the top of the core and
-#   EN ===========        (core) |       wraps down its right side and around the bottom as
-#                        `.____.'        one smooth path; energy runs underneath
+#                          .----.
+#                        (  core  )|     the HP gauge comes out from underneath the core,
+#   HP =================='-------'/      running left; the other end wraps up the core's
+#   EN ==========================        right side to the top, as one smooth path;
+#                                        energy runs underneath
 #
 # The HP path is built as a single polygon strip (arc and straight part share one outline),
 # so there are no seams or corners where it starts to curve.
@@ -21,10 +22,10 @@ const BLOCK_SIZE := Vector2(440, 140)
 const CORE_RADIUS := 38.0
 const RING_RADIUS := 50.0
 const HP_WIDTH := 12.0
-## The arc starts here (radians: bottom left of the core), runs under the core, up its right
-## side and over to the top, where the straight part takes over.
-const ARC_FROM := PI * 0.8
-const ARC_TO := -PI * 0.5
+## The arc starts at the top of the core (radians), runs clockwise down its right side to the
+## bottom, where the straight part takes over and runs left from underneath the core.
+const ARC_FROM := -PI * 0.5
+const ARC_TO := PI * 0.5
 const HP_BAR_LENGTH := 260.0
 const EN_HEIGHT := 7.0
 ## Seconds the damage trail waits before draining.
@@ -68,12 +69,12 @@ var _speed_frac := 0.0        # speed / (move speed * SPEED_ARC_MAX)
 var _over := 0.0              # 0-1, how far past normal top speed
 const _MAX_FRAC := 1.0 / SPEED_ARC_MAX
 
-var _c := Vector2(BLOCK_SIZE.x - 64, BLOCK_SIZE.y - 62)   # core center
-var _arc_len := RING_RADIUS * (ARC_FROM - ARC_TO)
+var _c := Vector2(BLOCK_SIZE.x - 64, BLOCK_SIZE.y - 78)   # core center
+var _arc_len := RING_RADIUS * (ARC_TO - ARC_FROM)
 var _path_len := _arc_len + HP_BAR_LENGTH
-var _bar_y := _c.y - RING_RADIUS                           # center line of the straight part
+var _bar_y := _c.y + RING_RADIUS                           # center line of the straight part
 var _bar_left := _c.x - HP_BAR_LENGTH
-var _en_bar := Rect2(_bar_left, _bar_y + HP_WIDTH * 0.5 + 9.0, _c.x - RING_RADIUS - 14.0 - _bar_left, EN_HEIGHT)
+var _en_bar := Rect2(_bar_left, _bar_y + HP_WIDTH * 0.5 + 9.0, _c.x - 6.0 - _bar_left, EN_HEIGHT)
 
 
 func _ready() -> void:
@@ -225,12 +226,12 @@ func _hp_color() -> Color:
 
 
 # ---------- The HP path ----------
-# Distance s runs from the arc's start (0, below the core's right side) to the far left end
+# Distance s runs from the arc's start (0, the top of the core) to the far left end
 # of the straight part (_path_len). A fill of f covers s = 0 .. f * _path_len.
 
 func _point(s: float) -> Vector2:
 	if s <= _arc_len:
-		var a := ARC_FROM - s / RING_RADIUS
+		var a := ARC_FROM + s / RING_RADIUS
 		return _c + Vector2(cos(a), sin(a)) * RING_RADIUS
 	return Vector2(_c.x - (s - _arc_len), _bar_y)
 
@@ -238,8 +239,8 @@ func _point(s: float) -> Vector2:
 # Direction of travel at s (the arc's tangent flows straight into the bar's: no corner).
 func _tangent(s: float) -> Vector2:
 	if s <= _arc_len:
-		var a := ARC_FROM - s / RING_RADIUS
-		return Vector2(sin(a), -cos(a))
+		var a := ARC_FROM + s / RING_RADIUS
+		return Vector2(-sin(a), cos(a))
 	return Vector2.LEFT
 
 
@@ -259,7 +260,7 @@ func _samples(s0: float, s1: float) -> PackedFloat32Array:
 
 
 # Fills the HP path between s0 and s1 as one polygon with rounded ends. outer is the color on
-# the outside of the curve (the top of the bar), inner on the inside, for a soft gloss.
+# the upper side of the bar (the inside of the curve), inner on the other side, for a soft gloss.
 func _strip(ci: CanvasItem, s0: float, s1: float, width: float, outer: Color, inner: Color) -> void:
 	s0 = clampf(s0, 0.0, _path_len)
 	s1 = clampf(s1, 0.0, _path_len)
@@ -270,7 +271,7 @@ func _strip(ci: CanvasItem, s0: float, s1: float, width: float, outer: Color, in
 	var inner_pts := PackedVector2Array()
 	for s in _samples(s0, s1):
 		var p := _point(s)
-		var n := _tangent(s).rotated(PI * 0.5)   # outward
+		var n := _tangent(s).rotated(PI * 0.5)   # toward the 'outer' color's side
 		outer_pts.append(p + n * half)
 		inner_pts.append(p - n * half)
 	var pts := PackedVector2Array()
