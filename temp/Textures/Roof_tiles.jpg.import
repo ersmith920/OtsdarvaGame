@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cdbt4dl2v2u5k"
-path.s3tc="res://.godot/imported/Roof_tiles.jpg-11de77b6591877f4dd41d47ccedbdd5e.s3tc.ctex"
+path.s3tc="res://.godot/imported/Roof_tiles.jpg-c08fdf0a91e5419d17a0e4998ae07e6f.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://temp/textures/Roof_tiles.jpg"
-dest_files=["res://.godot/imported/Roof_tiles.jpg-11de77b6591877f4dd41d47ccedbdd5e.s3tc.ctex"]
+source_file="res://temp/Textures/Roof_tiles.jpg"
+dest_files=["res://.godot/imported/Roof_tiles.jpg-c08fdf0a91e5419d17a0e4998ae07e6f.s3tc.ctex"]
 
 [params]
 

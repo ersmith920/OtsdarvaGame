@@ -226,8 +226,10 @@ func _color_frame(frame: PanelContainer, rarity: int) -> void:
 			(child as RarityAnimator).apply = Callable()   # stop it before it's freed
 			child.queue_free()
 	var style := frame.get_theme_stylebox("panel") as StyleBoxFlat
+	Rarity.paint(frame, rarity)   # Mythic: rainbow border and glow (-1 clears it)
 	if rarity < 0:
 		style.border_color = EMPTY_BORDER
+		style.bg_color = PANEL_BG
 		style.shadow_size = 0
 		return
 	style.shadow_size = 14
@@ -303,6 +305,7 @@ func _make_tile(gun: Gun) -> Control:
 		style.bg_color = Color(c.darkened(0.8), 0.5)
 		style.border_color = c.lerp(Color.WHITE, 0.6)
 		style.shadow_color = Color(c, 0.6))
+	Rarity.paint(tile, rarity)
 
 	if gun.icon != null:
 		var icon := TextureRect.new()
@@ -508,6 +511,8 @@ func _show_tip(gun: Gun) -> void:
 		var boost := c.lerp(Color.WHITE, 0.45)
 		for label in lit:
 			label.add_theme_color_override("font_color", boost))
+	for item in [name_label] + lit:
+		Rarity.paint(item, gun.get_rarity())
 	_tip.reset_size()
 	_tip.visible = true
 	_place_tip()

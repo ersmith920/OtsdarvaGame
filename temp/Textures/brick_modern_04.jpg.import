@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ct8vcea4gsygj"
-path.s3tc="res://.godot/imported/brick_modern_04.jpg-183f4d1021e783811b6c2fbab1a1010e.s3tc.ctex"
+path.s3tc="res://.godot/imported/brick_modern_04.jpg-7d874daf812637a2718a1899358fa853.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://temp/textures/brick_modern_04.jpg"
-dest_files=["res://.godot/imported/brick_modern_04.jpg-183f4d1021e783811b6c2fbab1a1010e.s3tc.ctex"]
+source_file="res://temp/Textures/brick_modern_04.jpg"
+dest_files=["res://.godot/imported/brick_modern_04.jpg-7d874daf812637a2718a1899358fa853.s3tc.ctex"]
 
 [params]
 

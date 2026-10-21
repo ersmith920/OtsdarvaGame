@@ -485,7 +485,8 @@ func _notification(what: int) -> void:
 
 func _make_weapon_tile(gun: Gun) -> Control:
 	var tile := _make_tile_frame(gun, Rarity.get_color(gun.get_rarity()))
-	if Rarity.is_animated(gun.get_rarity()):   # Mythic: keep the frame cycling
+	Rarity.paint(tile, gun.get_rarity())   # Mythic: rainbow frame and glow
+	if Rarity.is_animated(gun.get_rarity()):
 		var style := tile.get_theme_stylebox("panel") as StyleBoxFlat
 		RarityAnimator.attach(tile, gun.get_rarity(), func(c: Color) -> void: _color_tile_style(style, c))
 	if gun.icon != null:
@@ -650,6 +651,7 @@ func _tile_data_at(scroll: ScrollContainer, grid: GridContainer, mouse: Vector2)
 
 func _fill_tooltip(item: ItemData) -> void:
 	_fill_tip(item.display_name, item.get_tier_color(), item.description)
+	Rarity.paint(_tip_name, -1)   # the tooltip is reused: clear a Mythic rainbow
 
 
 # Name in its rarity color, then rarity, rolled bonuses, and the gun's own base stats.
@@ -665,6 +667,11 @@ func _fill_weapon_tooltip(gun: Gun) -> void:
 			line += "  (%s)" % stat.bonus
 		stats.append({"text": line, "color": boost_color if stat.boosted else tip_base_stat_color, "boosted": stat.boosted})
 	_fill_tip(gun.get_display_name(), color, Rarity.name_of(gun.get_rarity()), stats)
+	# Mythic: the name and rolled stats get the rolling rainbow (other rarities clear it).
+	Rarity.paint(_tip_name, gun.get_rarity())
+	for label in _tip_stats.get_children():
+		if label.get_meta(&"boosted", false):
+			Rarity.paint(label, gun.get_rarity())
 
 
 # Re-tints a weapon tooltip that's already showing (for animated rarity colors).

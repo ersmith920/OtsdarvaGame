@@ -61,14 +61,14 @@ static func build(scene: PackedScene, gun: Gun, note := "", preview_px := PREVIE
 		lit.append(note_label)
 		column.add_child(note_label)
 
-	# Colors go on through an animator, so a Mythic card keeps cycling its rainbow.
-	var display_name := gun.get_display_name()
-	RarityAnimator.attach(column, rarity, func(c: Color) -> void:
-		TextGlow.set_text(name_label, display_name, c)
-		rarity_label.add_theme_color_override("font_color", c.lerp(Color.WHITE, 0.25))
-		var boost := c.lerp(Color.WHITE, 0.45)
-		for label in lit:
-			label.add_theme_color_override("font_color", boost))
+	TextGlow.set_text(name_label, gun.get_display_name(), color)
+	rarity_label.add_theme_color_override("font_color", color.lerp(Color.WHITE, 0.25))
+	var boost := color.lerp(Color.WHITE, 0.45)
+	for label in lit:
+		label.add_theme_color_override("font_color", boost)
+	# Mythic: everything drawn in the rarity color gets the rolling rainbow.
+	for item in [name_label, rarity_label] + lit:
+		Rarity.paint(item, rarity)
 	return column
 
 
