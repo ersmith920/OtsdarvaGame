@@ -36,7 +36,7 @@ func _ready() -> void:
 	_mission_panel = _make_panel(HudStyle.MISSION_SIZE, true)
 	_mission_panel.position = HudStyle.MISSION_POS
 	_mission_panel.add_child(_caption("HOSTILE", Vector2(14, HudStyle.MISSION_ROW_HOSTILE + 8)))
-	_mission_panel.add_child(_caption("SCRAP", Vector2(38, HudStyle.MISSION_ROW_SCRAP + 8)))
+	# (The SCRAP caption belongs to hud_gold.gd, so it kicks along with the number.)
 
 	# The time itself, centered in its panel.
 	set_anchors_preset(Control.PRESET_CENTER_TOP)

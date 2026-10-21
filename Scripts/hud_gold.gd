@@ -53,6 +53,7 @@ const GLOW_STRENGTH := 1.6
 const GLOW_FLARE := 1.2
 
 var _icon: TextureRect
+var _caption: Label
 var _halo: TextureRect
 var _kick := 0.0
 var _last_total := 0
@@ -80,6 +81,10 @@ func _ready() -> void:
 	Rarity.paint(self, Rarity.LEGENDARY)
 
 	_build_icon()
+	# The "SCRAP" caption rides on this label too, so it grows and shakes with the number.
+	_caption = HudStyle.make_caption("SCRAP", 10)
+	_caption.position = Vector2(2, 5)
+	add_child(_caption)
 	resized.connect(_place_icon)
 	_place_icon()
 
@@ -110,6 +115,7 @@ func _process(delta: float) -> void:
 			position = _base_pos
 			if _halo != null:
 				_halo.self_modulate = Color.WHITE
+			_caption.add_theme_color_override("font_color", HudStyle.CYAN_DIM)
 			_set_number(int(_shown))
 		return
 	_kick *= exp(-pulse_decay * delta)
@@ -120,6 +126,7 @@ func _process(delta: float) -> void:
 	if _halo != null:
 		var bright := 1.0 + flash_amount * _kick
 		_halo.self_modulate = Color(bright, bright, bright, 1.0)
+	_caption.add_theme_color_override("font_color", HudStyle.CYAN_DIM.lerp(GLOW_COLOR, minf(_kick, 1.0)))
 	_set_number(int(_shown))   # the glow flares with the kick
 
 

@@ -95,6 +95,7 @@ func _ready() -> void:
 	text_column.add_child(_desc_label)
 
 	GameManager.item_picked_up.connect(show_item)
+	UIJuice.warm_chimes()
 
 
 func show_item(item: ItemData) -> void:
@@ -134,6 +135,7 @@ func show_item(item: ItemData) -> void:
 		_panel.queue_redraw(), 0.0, 1.0, 0.45).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
 	_icon.pivot_offset = _icon.custom_minimum_size * 0.5
 	UIJuice.pop_in(_icon, 0.12, 0.6)
+	UIJuice.play_chime(Rarity.from_tier(item.tier))
 	if item.tier <= 2:
 		UIJuice.flash(_name_label, 1.0, 0.5)
 	_tween.tween_interval(HOLD_TIME)

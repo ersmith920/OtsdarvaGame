@@ -24,6 +24,11 @@ const HOVER_SCALE := 1.04
 const PRESS_SCALE := 0.96
 
 static var _sounds := {}
+static var _chimes := []
+static var _chimes_started := false
+## Number of chimes (one per rarity) and how much louder than the other UI sounds they are.
+const CHIME_COUNT := 6
+const CHIME_VOLUME_DB := 2.0
 static var _last_hover_ms := 0
 static var _blur : ShaderMaterial
 static var _spark_mat : CanvasItemMaterial
@@ -252,6 +257,124 @@ static func play(kind: Sfx, pitch := 1.0) -> void:
 	tree.root.add_child(audio)
 	audio.play()
 	audio.finished.connect(audio.queue_free)
+
+
+## The item-get chime for a rarity (Rarity.COMMON .. MYTHIC): a quick, bright bell
+## arpeggio climbing to a held note, in the spirit of KH2's ability / level-up jingle. Rarer
+## items get a longer climb, a full chord on the last note and a glittering sparkle tail.
+## Built off the main thread ahead of time (warm_chimes) so the first pickup doesn't hitch.
+static func play_chime(rarity: int) -> void:
+	rarity = clampi(rarity, 0, CHIME_COUNT - 1)
+	var stream : AudioStreamWAV = _chimes[rarity] if _chimes.size() == CHIME_COUNT else _build_chime(rarity)
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null or tree.root == null:
+		return
+	var audio := AudioStreamPlayer.new()
+	audio.stream = stream
+	audio.volume_db = VOLUME_DB + CHIME_VOLUME_DB
+	audio.process_mode = Node.PROCESS_MODE_ALWAYS
+	tree.root.add_child(audio)
+	audio.play()
+	audio.finished.connect(audio.queue_free)
+
+
+## Builds every chime on a worker thread. Safe to call more than once.
+static func warm_chimes() -> void:
+	if _chimes_started:
+		return
+	_chimes_started = true
+	WorkerThreadPool.add_task(func() -> void:
+		var built := []
+		for r in CHIME_COUNT:
+			built.append(_build_chime(r))
+		_chimes = built)   # one assignment, so the main thread sees all or nothing
+
+
+static func _build_chime(rarity: int) -> AudioStreamWAV:
+	const RATE := 32000
+	# Major arpeggio climbing through the octaves (semitones above the root).
+	const STEPS := [0, 4, 7, 12, 16, 19, 24, 28, 31]
+	const ROOT := 659.26   # E5
+	var count : int = [3, 4, 5, 6, 7, 8][rarity]
+	var step_time := 0.07 - 0.004 * rarity
+	var hold := 0.8 + 0.15 * rarity
+	var length := step_time * count + hold + 0.6
+	var buf := PackedFloat32Array()
+	buf.resize(int(length * RATE))
+
+	var freq_of := func(semi: float) -> float: return ROOT * pow(2.0, semi / 12.0)
+	# The climb.
+	for i in count:
+		var last := i == count - 1
+		_bell(buf, RATE, i * step_time, freq_of.call(STEPS[i]), hold if last else 0.35, 0.55 if last else 0.4)
+	var end_t := (count - 1) * step_time
+	var top : float = STEPS[count - 1]
+	# Rare and up: the held note becomes a chord.
+	if rarity >= Rarity.RARE:
+		_bell(buf, RATE, end_t, freq_of.call(top - 5.0), hold, 0.22)
+		_bell(buf, RATE, end_t, freq_of.call(top - 8.0), hold, 0.18)
+	if rarity >= Rarity.LEGENDARY:
+		_bell(buf, RATE, end_t, freq_of.call(top - 12.0), hold * 1.2, 0.25)
+	# Uncommon and up: sparkle, quiet high pentatonic glints tumbling after the top note.
+	if rarity >= Rarity.UNCOMMON:
+		var glints := 3 + rarity * 3
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 1234 + rarity   # the same sparkle every time
+		const PENTA := [0, 2, 4, 7, 9]
+		for g in glints:
+			var t := end_t + 0.04 + g * (0.05 + 0.01 * rng.randf())
+			var semi : float = 24 + PENTA[rng.randi() % 5] + 12 * (rng.randi() % 2)
+			_bell(buf, RATE, t, freq_of.call(semi), 0.18, 0.12 * (1.0 - float(g) / glints) + 0.04)
+
+	# Echo taps for a little space (KH's jingles ring out).
+	var echo := PackedFloat32Array(buf)
+	for tap in [[0.11, 0.28], [0.19, 0.16], [0.31, 0.09]]:
+		var d := int(tap[0] * RATE)
+		for i in range(d, buf.size()):
+			echo[i] += buf[i - d] * tap[1]
+	# Normalize, then fade the very end.
+	var peak := 0.001
+	for v in echo:
+		peak = maxf(peak, absf(v))
+	var gain := 0.85 / peak
+	var fade := int(0.05 * RATE)
+	var data := PackedByteArray()
+	data.resize(echo.size() * 2)
+	for i in echo.size():
+		var v := echo[i] * gain
+		if i > echo.size() - fade:
+			v *= float(echo.size() - i) / fade
+		data.encode_s16(i * 2, int(clampf(v, -1.0, 1.0) * 30000.0))
+	var wav := AudioStreamWAV.new()
+	wav.format = AudioStreamWAV.FORMAT_16_BITS
+	wav.mix_rate = RATE
+	wav.stereo = false
+	wav.data = data
+	return wav
+
+
+# Adds one bell/glockenspiel-like note into buf: a sine with a slightly detuned twin (shimmer)
+# plus higher partials (one inharmonic, for the metallic ring) that die away faster.
+static func _bell(buf: PackedFloat32Array, rate: int, start: float, freq: float, length: float, vol: float) -> void:
+	const PARTIALS := [[1.0, 1.0, 1.0], [2.0, 0.32, 2.2], [3.01, 0.1, 3.5], [4.16, 0.07, 5.0]]   # ratio, amp, decay x
+	var first := int(start * rate)
+	var count := int(length * rate)
+	var w := TAU / rate
+	for i in count:
+		var idx := first + i
+		if idx >= buf.size():
+			break
+		var t := float(i) / rate
+		var attack := minf(t / 0.003, 1.0)
+		var base := exp(-t * 4.5 / length)
+		var v := 0.0
+		for p in PARTIALS:
+			var f : float = freq * p[0]
+			if f > rate * 0.45:
+				continue   # above what the sample rate can hold: it would alias into noise
+			v += p[1] * exp(-t * p[2] * 4.0 / length) * sin(w * f * i)
+		v += 0.35 * base * sin(w * freq * 1.004 * i)   # detuned twin
+		buf[idx] += vol * attack * base * v
 
 
 static func _sound(kind: Sfx) -> AudioStreamWAV:

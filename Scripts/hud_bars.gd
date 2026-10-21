@@ -2,8 +2,8 @@
 #
 #                     ___HP___
 #   HP ==============='        `.        the HP gauge runs left from the top of the core and
-#   EN ===========        (core) |       wraps down around its right side as one smooth
-#                          `.__.'        path; energy runs underneath
+#   EN ===========        (core) |       wraps down its right side and around the bottom as
+#                        `.____.'        one smooth path; energy runs underneath
 #
 # The HP path is built as a single polygon strip (arc and straight part share one outline),
 # so there are no seams or corners where it starts to curve.
@@ -21,9 +21,9 @@ const BLOCK_SIZE := Vector2(440, 140)
 const CORE_RADIUS := 38.0
 const RING_RADIUS := 50.0
 const HP_WIDTH := 12.0
-## The arc starts here (radians, below the right side) and runs up to the top of the core,
-## where the straight part takes over.
-const ARC_FROM := 0.55
+## The arc starts here (radians: bottom left of the core), runs under the core, up its right
+## side and over to the top, where the straight part takes over.
+const ARC_FROM := PI * 0.8
 const ARC_TO := -PI * 0.5
 const HP_BAR_LENGTH := 260.0
 const EN_HEIGHT := 7.0
