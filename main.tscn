@@ -58,6 +58,8 @@
 [ext_resource type="Texture2D" uid="uid://biip3nhaunm3x" path="res://temp/Buildings_BrickSmallPainted.jpg" id="55_cyx1q"]
 [ext_resource type="Resource" uid="uid://bg7q4x8gbh07p" path="res://Items/static_coil.tres" id="58_uit24"]
 [ext_resource type="Script" uid="uid://jobdhj44kgue" path="res://Scripts/interactable_spawner.gd" id="58_vke2r"]
+[ext_resource type="PackedScene" path="res://gun_store.tscn" id="59_store"]
+[ext_resource type="Script" uid="uid://carmys8n66qb1" path="res://Scripts/interactable_spawn_entry.gd" id="60_entry"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_j3pel"]
 panorama = ExtResource("1_efxa6")
@@ -1793,6 +1795,17 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_nko4j")
 
+[sub_resource type="Resource" id="SpawnEntry_chest"]
+script = ExtResource("60_entry")
+scene = ExtResource("5_lquwl")
+weight = 25.0
+
+[sub_resource type="Resource" id="SpawnEntry_store"]
+script = ExtResource("60_entry")
+scene = ExtResource("59_store")
+weight = 10.0
+allow_tilt = false
+
 [node name="Main" type="Node3D" unique_id=1954402824]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1474718006]
@@ -2174,8 +2187,7 @@ mesh = ExtResource("16_2cqfq")
 
 [node name="InteractableSpawner" type="Node3D" parent="." unique_id=876657920]
 script = ExtResource("58_vke2r")
-chest_scene = ExtResource("5_lquwl")
-chest_count = 25
+entries = Array[ExtResource("60_entry")]([SubResource("SpawnEntry_chest"), SubResource("SpawnEntry_store")])
 area_size = Vector3(200, 60, 200)
 
 [node name="ItemPickup13" parent="." unique_id=1813224495 instance=ExtResource("3_1bvp3")]

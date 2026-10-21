@@ -1,0 +1,103 @@
+[gd_resource type="Resource" script_class="WeaponRollTable" format=3 uid="uid://dcjxvc8ebw4bx"]
+
+[ext_resource type="Script" uid="uid://boefg7gjy3byd" path="res://Scripts/weapon_roll_table.gd" id="1_table"]
+[ext_resource type="Script" uid="uid://be1agal5pkm2y" path="res://Scripts/weapon_stat_range.gd" id="2_range"]
+
+[sub_resource type="Resource" id="Range_damage"]
+script = ExtResource("2_range")
+
+[sub_resource type="Resource" id="Range_attack_speed"]
+script = ExtResource("2_range")
+stat = 1
+uncommon = Vector2(8, 14)
+rare = Vector2(12, 20)
+epic = Vector2(18, 28)
+legendary = Vector2(25, 40)
+
+[sub_resource type="Resource" id="Range_reload_speed"]
+script = ExtResource("2_range")
+stat = 2
+common = Vector2(10, 20)
+uncommon = Vector2(20, 30)
+rare = Vector2(30, 50)
+epic = Vector2(50, 75)
+legendary = Vector2(75, 100)
+
+[sub_resource type="Resource" id="Range_projectile_count"]
+script = ExtResource("2_range")
+stat = 3
+common = Vector2(0.1, 0.3)
+uncommon = Vector2(0.2, 0.5)
+rare = Vector2(0.4, 0.8)
+epic = Vector2(0.6, 1)
+legendary = Vector2(0.8, 1.5)
+step = 0.1
+
+[sub_resource type="Resource" id="Range_projectile_speed"]
+script = ExtResource("2_range")
+stat = 4
+common = Vector2(10, 20)
+uncommon = Vector2(15, 30)
+rare = Vector2(25, 40)
+epic = Vector2(35, 55)
+legendary = Vector2(50, 75)
+
+[sub_resource type="Resource" id="Range_accuracy"]
+script = ExtResource("2_range")
+stat = 5
+common = Vector2(10, 20)
+uncommon = Vector2(15, 30)
+rare = Vector2(25, 40)
+epic = Vector2(35, 55)
+legendary = Vector2(50, 75)
+
+[sub_resource type="Resource" id="Range_magazine_size"]
+script = ExtResource("2_range")
+stat = 6
+common = Vector2(10, 20)
+uncommon = Vector2(15, 30)
+rare = Vector2(25, 40)
+epic = Vector2(35, 55)
+legendary = Vector2(50, 100)
+
+[sub_resource type="Resource" id="Range_aoe_size"]
+script = ExtResource("2_range")
+stat = 7
+epic = Vector2(20, 30)
+legendary = Vector2(25, 40)
+
+[sub_resource type="Resource" id="Range_aoe_damage"]
+script = ExtResource("2_range")
+stat = 8
+
+[sub_resource type="Resource" id="Range_knockback"]
+script = ExtResource("2_range")
+stat = 9
+common = Vector2(10, 25)
+uncommon = Vector2(20, 40)
+rare = Vector2(30, 60)
+epic = Vector2(50, 80)
+legendary = Vector2(75, 120)
+
+[sub_resource type="Resource" id="Range_ricochet_chance"]
+script = ExtResource("2_range")
+stat = 10
+common = Vector2(3, 6)
+uncommon = Vector2(5, 10)
+rare = Vector2(8, 15)
+epic = Vector2(12, 20)
+legendary = Vector2(18, 30)
+
+[sub_resource type="Resource" id="Range_ricochet_bounces"]
+script = ExtResource("2_range")
+stat = 11
+common = Vector2(1, 1)
+uncommon = Vector2(1, 1)
+rare = Vector2(1, 2)
+epic = Vector2(1, 2)
+legendary = Vector2(2, 3)
+
+[resource]
+script = ExtResource("1_table")
+common_rolls = 1
+stat_ranges = Array[ExtResource("2_range")]([SubResource("Range_damage"), SubResource("Range_attack_speed"), SubResource("Range_reload_speed"), SubResource("Range_projectile_count"), SubResource("Range_projectile_speed"), SubResource("Range_accuracy"), SubResource("Range_magazine_size"), SubResource("Range_aoe_size"), SubResource("Range_aoe_damage"), SubResource("Range_knockback"), SubResource("Range_ricochet_chance"), SubResource("Range_ricochet_bounces")])

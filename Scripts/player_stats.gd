@@ -28,6 +28,8 @@ extends Node
 @export var base_lock_strength := 2.0   # how fast the crosshair moves onto targets
 @export var base_pickup_range := 4.0       # meters; gold (and later xp) inside this gets pulled in
 @export var base_gold_multiplier := 1.0
+## Extra rolls on chest/gun rarity, keeping the best. 1 = best of 2, 0.5 = 50% chance of a 2nd roll.
+@export var base_luck := 0.0
 
 var stats: Dictionary = {}
 
@@ -59,6 +61,7 @@ func _ready() -> void:
 		&"lock_strength": Stat.new(base_lock_strength),
 		&"pickup_range": Stat.new(base_pickup_range),
 		&"gold_multiplier": Stat.new(base_gold_multiplier),
+		&"luck": Stat.new(base_luck),
 	}
 
 func get_stat(stat_name: StringName) -> Stat:

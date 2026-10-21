@@ -1,0 +1,91 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/gun_store.gd" id="1_store"]
+[ext_resource type="PackedScene" uid="uid://cqf3elvyoak0p" path="res://heavyRifle.tscn" id="2_heavy"]
+[ext_resource type="PackedScene" uid="uid://e7n1s0aa2mhd" path="res://hammerGun.tscn" id="3_hammer"]
+[ext_resource type="PackedScene" uid="uid://bojefmceio81n" path="res://Rifle.tscn" id="4_rifle"]
+[ext_resource type="PackedScene" uid="uid://b0kb1vpk6sb2" path="res://Krsw.tscn" id="5_krsw"]
+[ext_resource type="Resource" path="res://Items/weapon_roll_table.tres" id="6_rolls"]
+[ext_resource type="Resource" uid="uid://c7rsmcadkj856" path="res://Items/loot_table.tres" id="7_odds"]
+[ext_resource type="FontFile" uid="uid://krpi7jvgdvw0" path="res://Fonts/KHGummi.otf" id="8_font"]
+[ext_resource type="Texture2D" uid="uid://c4ouwq3a62pco" path="res://Images/gold2.png" id="9_coin"]
+[ext_resource type="AudioStream" path="res://Sounds/pylonActivate.wav" id="10_open"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_body"]
+albedo_color = Color(0.16, 0.17, 0.2, 1)
+metallic = 0.6
+roughness = 0.45
+
+[sub_resource type="BoxMesh" id="Mesh_body"]
+material = SubResource("Mat_body")
+size = Vector3(1.1, 2, 0.8)
+
+[sub_resource type="StandardMaterial3D" id="Mat_screen"]
+shading_mode = 0
+albedo_color = Color(0.2, 0.9, 1, 1)
+emission_enabled = true
+emission = Color(0.2, 0.9, 1, 1)
+emission_energy_multiplier = 2.0
+
+[sub_resource type="QuadMesh" id="Mesh_screen"]
+size = Vector2(0.8, 0.6)
+
+[sub_resource type="StandardMaterial3D" id="Mat_used"]
+albedo_color = Color(0.05, 0.06, 0.07, 1)
+roughness = 0.3
+
+[sub_resource type="BoxShape3D" id="Shape_body"]
+size = Vector3(1.1, 2, 0.8)
+
+[sub_resource type="SphereShape3D" id="Shape_zone"]
+radius = 1.3
+
+[node name="GunStore" type="Node3D" node_paths=PackedStringArray("used_meshes")]
+script = ExtResource("1_store")
+gun_pool = Array[PackedScene]([ExtResource("2_heavy"), ExtResource("3_hammer"), ExtResource("4_rifle"), ExtResource("5_krsw")])
+roll_table = ExtResource("6_rolls")
+rarity_table = ExtResource("7_odds")
+used_meshes = [NodePath("StaticBody3D/Screen"), NodePath("StaticBody3D/ScreenBack")]
+used_material = SubResource("Mat_used")
+open_sound = ExtResource("10_open")
+base_cost = 40
+cost_increase_percent = 25.0
+cost_font = ExtResource("8_font")
+cost_font_size = 48
+cost_icon = ExtResource("9_coin")
+cost_height = 2.6
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+collision_layer = 3
+collision_mask = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("Shape_body")
+
+[node name="Body" type="MeshInstance3D" parent="StaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("Mesh_body")
+
+[node name="Screen" type="MeshInstance3D" parent="StaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0.405)
+mesh = SubResource("Mesh_screen")
+material_override = SubResource("Mat_screen")
+
+[node name="ScreenBack" type="MeshInstance3D" parent="StaticBody3D"]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 1.35, -0.405)
+mesh = SubResource("Mesh_screen")
+material_override = SubResource("Mat_screen")
+
+[node name="interactZone" type="Area3D" parent="."]
+collision_layer = 4
+collision_mask = 4
+
+[node name="zone" type="CollisionShape3D" parent="interactZone"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("Shape_zone")
+
+[node name="Marker3D" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]

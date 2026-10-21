@@ -31,3 +31,12 @@ func _process(delta: float) -> void:
 		stageTime = 0
 		print('Difficulty has increased: ', difficulty-1, ' -> ', difficulty)
 	levelTime += delta
+## Gun stores bought from this run. Every gun store's price grows with this (separate from chests).
+var gun_stores_purchased := 0
+signal gun_stores_purchased_changed(count: int)
+## The pick-one-of-three popup (set by ChoicePopup when it loads).
+var choice_popup : ChoicePopup
+## True while a choice popup is open (the game is paused under it).
+var choice_open := false
+## Fired when a gun goes into one of the player's slots (floor pickup or gun store).
+signal gun_equipped(gun: Gun)

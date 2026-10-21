@@ -14,7 +14,8 @@ func _create_reward() -> FloorPickup:
 	if loot_table == null or pickup_scene == null:
 		push_warning("ItemChest needs a loot_table and pickup_scene")
 		return null
-	var item := loot_table.roll()
+	var luck := GameManager.player.stats_node.get_value(&"luck") if GameManager.player != null else 0.0
+	var item := loot_table.roll(luck)
 	if item == null:
 		return null
 

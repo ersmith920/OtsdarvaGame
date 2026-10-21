@@ -140,6 +140,9 @@ func _input(event: InputEvent) -> void:
 		# Don't open on top of the hold-Tab menu.
 		if GameManager.player != null and GameManager.player.menu_open:
 			return
+		# Or on top of a pick-one popup (gun store): it has to be answered first.
+		if GameManager.choice_open:
+			return
 		_pause()
 
 

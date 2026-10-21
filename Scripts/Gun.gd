@@ -9,6 +9,19 @@ const GUN_BUS := &"PlayerGuns"
 const MAX_SHOT_VOICES := 34
 static var _active_shot_voices := 0
 
+## Name shown on shop cards and in the Tab menu. Empty = the scene's root node name.
+@export var display_name := ""
+## Optional small picture for the Tab menu. Empty = a rendered preview of the model.
+@export var icon : Texture2D
+
+@export_group("Rolls")
+## Which stats this gun may roll when it comes from a gun store or gun box.
+## How much each one rolls is set globally in Items/weapon_roll_table.tres.
+## AoE Size, AoE Damage and Knockback are skipped automatically on guns without an explosion.
+@export_flags("Damage", "Attack Speed", "Reload Speed", "Projectile Count", "Projectile Speed",
+		"Accuracy", "Magazine Size", "AoE Size", "AoE Damage", "Knockback",
+		"Ricochet Chance", "Ricochet Bounces") var rollable_stats := 4095
+
 @export_group("Projectile")
 @export var projectile : PackedScene
 @export var projectile_count : int = 1
@@ -80,7 +93,7 @@ static var _active_shot_voices := 0
 @export var bob_speed := 2.0
 @export var spin_speed := 1.0         # radians per second, 0 to disable
 
-@onready var shotsLeft : int = magSize
+@onready var shotsLeft : int = get_mag_size()
 @onready var true_cone : float = cone_size / 100
 
 @onready var model_anchor : Node3D = $ModelAnchor
@@ -92,6 +105,10 @@ static var _active_shot_voices := 0
 var next_use : int = 0  # Time.get_ticks_msec() value when we can fire again
 var reloading : bool = false
 var _reload_id := 0   # bumped every reload, so stale reload timers are ignored
+
+## This instance's rarity and rolled bonuses (null = a plain, unrolled gun).
+## Set it with apply_roll(), ideally before the gun enters the tree.
+var roll : GunRoll
 
 var _held := false
 var _time := 0.0
@@ -137,6 +154,55 @@ func _get_model_bounds() -> AABB:
 	return bounds if found else AABB(Vector3(-0.5, 0.0, -0.5), Vector3.ONE)
 
 
+# ---------- Rolls ----------
+
+## Gives this gun a rarity and stat bonuses. Safe before or after it enters the tree.
+func apply_roll(new_roll: GunRoll) -> void:
+	roll = new_roll
+	if is_node_ready():
+		shotsLeft = get_mag_size()
+
+
+## The stats this gun can roll, as WeaponStat.Kind values.
+func get_rollable_kinds() -> Array[int]:
+	var kinds : Array[int] = []
+	for kind in WeaponStat.COUNT:
+		if rollable_stats & (1 << kind) == 0:
+			continue
+		if not explosion_enabled and kind in WeaponStat.NEEDS_EXPLOSION:
+			continue
+		kinds.append(kind)
+	return kinds
+
+
+func get_display_name() -> String:
+	if not display_name.is_empty():
+		return display_name
+	return String(name).capitalize()   # "HammerGun" -> "Hammer Gun"
+
+
+func get_rarity() -> int:
+	return roll.rarity if roll != null else Rarity.COMMON
+
+
+# Rolled bonus for one stat, as shown (12 = +12%). 0 when unrolled.
+func _bonus(kind: int) -> float:
+	return roll.get_value(kind) if roll != null else 0.0
+
+
+# Percent bonus as a multiplier: +25% -> 1.25.
+func _bonus_mult(kind: int) -> float:
+	return 1.0 + _bonus(kind) / 100.0
+
+
+## Magazine size after the Magazine Size roll. Any positive roll adds at least 1 round.
+func get_mag_size() -> int:
+	var bonus := _bonus(WeaponStat.Kind.MAGAZINE_SIZE)
+	if bonus <= 0.0:
+		return magSize
+	return maxi(roundi(magSize * (1.0 + bonus / 100.0)), magSize + 1)
+
+
 # ---------- Player stat helpers ----------
 
 func _get_stat(stat_name: StringName) -> float:
@@ -145,18 +211,19 @@ func _get_stat(stat_name: StringName) -> float:
 
 ## Player's final attack speed, floored so it's always safe to divide by.
 func get_attack_speed() -> float:
-	return maxf(_get_stat(&"attack_speed"), MIN_ATTACK_SPEED)
+	return maxf(_get_stat(&"attack_speed") * _bonus_mult(WeaponStat.Kind.ATTACK_SPEED), MIN_ATTACK_SPEED)
 
 
 ## Seconds this gun's reload actually takes, after the player's reload_speed stat.
 func get_reload_duration() -> float:
-	return maxf(reload_time, 0.0) / maxf(_get_stat(&"reload_speed"), MIN_RELOAD_SPEED)
+	var speed := _get_stat(&"reload_speed") * _bonus_mult(WeaponStat.Kind.RELOAD_SPEED)
+	return maxf(reload_time, 0.0) / maxf(speed, MIN_RELOAD_SPEED)
 
 
 ## Damage of one projectile: this gun's base damage scaled by the player's damage stat.
 ## Bullets should call source.get_damage() instead of reading source.damage.
 func get_damage() -> float:
-	return damage * _get_stat(&"damage")
+	return damage * _bonus_mult(WeaponStat.Kind.DAMAGE) * _get_stat(&"damage")
 
 ## Rolls one hit's damage including crits. Returns {"damage": float, "crit": bool}.
 ## Crit multiplier is 1 + crit_damage, so the default 1.0 gives 2x.
@@ -165,7 +232,7 @@ func roll_damage() -> Dictionary:
 
 ## Same as roll_damage, for this gun's explosion.
 func roll_explosion_damage() -> Dictionary:
-	return _roll_crit(explosion_damage * _get_stat(&"damage"))
+	return _roll_crit(explosion_damage * _bonus_mult(WeaponStat.Kind.AOE_DAMAGE) * _get_stat(&"damage"))
 
 func _roll_crit(dmg: float) -> Dictionary:
 	var is_crit := randf() < _get_stat(&"crit_chance")
@@ -173,36 +240,57 @@ func _roll_crit(dmg: float) -> Dictionary:
 		dmg *= 1.0 + _get_stat(&"crit_damage")
 	return {"damage": dmg, "crit": is_crit}
 
-## Blast radius in meters. One place to apply the future area_size stat, e.g.:
-##   return explosion_radius * _get_stat(&"area_size")
+## Blast radius in meters. One place to apply the future area_size player stat, e.g.:
+##   return explosion_radius * _bonus_mult(...) * _get_stat(&"area_size")
 func get_explosion_radius() -> float:
-	return explosion_radius
+	return explosion_radius * _bonus_mult(WeaponStat.Kind.AOE_SIZE)
+
+## Explosion push and pop after the Knockback roll.
+func get_explosion_knockback() -> float:
+	return explosion_knockback * _bonus_mult(WeaponStat.Kind.KNOCKBACK)
+
+func get_explosion_knockback_up() -> float:
+	return explosion_knockback_up * _bonus_mult(WeaponStat.Kind.KNOCKBACK)
+
+## Base projectile speed after the Projectile Speed roll (before any speed curve).
+func get_base_projectile_speed() -> float:
+	return projectile_speed * _bonus_mult(WeaponStat.Kind.PROJECTILE_SPEED)
 
 ## Projectile speed (m/s) at this point in its flight. One place for a future projectile speed stat.
 func get_projectile_speed(flight_time: float) -> float:
 	if speed_curve == null:
-		return projectile_speed
-	return projectile_speed * speed_curve.sample(flight_time / maxf(speed_curve_time, 0.001))
+		return get_base_projectile_speed()
+	return get_base_projectile_speed() * speed_curve.sample(flight_time / maxf(speed_curve_time, 0.001))
 
-## Projectiles per shot: the gun's own count multiplied by the player's
-## projectile_count stat rounded down (1.89 -> 1, 4.2 -> 4).
+## Projectiles per shot: the gun's own count (plus its Projectile Count roll) multiplied by
+## the player's projectile_count stat rounded down (1.89 -> 1, 4.2 -> 4).
+## The roll can be a decimal: the gun's count is a chance, rolled every shot.
+##   count 1 + 0.5 = 1 projectile, 50% chance of a 2nd.  1 + 1.2 = 2, 20% chance of a 3rd.
 func get_projectile_count() -> int:
 	# Small epsilon so float error from stacked modifiers (e.g. 2.9999999) doesn't floor a whole number down.
 	# maxi(..., 1) keeps a low stat from stopping the gun from firing at all.
 	var player_count := maxi(floori(_get_stat(&"projectile_count") + 0.0001), 1)
-	return projectile_count * player_count
+	var gun_count := float(projectile_count) + _bonus(WeaponStat.Kind.PROJECTILE_COUNT)
+	var whole := floori(gun_count + 0.0001)
+	if randf() < gun_count - whole:
+		whole += 1
+	return maxi(whole, 1) * player_count
 
 ## Chance (0.15 = 15%) that a bullet ricochets after its first enemy hit.
 func get_ricochet_chance() -> float:
-	return _get_stat(&"ricochet_chance")
+	return _get_stat(&"ricochet_chance") + _bonus(WeaponStat.Kind.RICOCHET_CHANCE) / 100.0
 
 
 ## How many times a ricocheting bullet can chain to another enemy.
 func get_ricochet_bounces() -> int:
-	return maxi(floori(_get_stat(&"ricochet_bounces") + 0.0001), 0)
+	var bounces := floori(_get_stat(&"ricochet_bounces") + _bonus(WeaponStat.Kind.RICOCHET_BOUNCES) + 0.0001)
+	# A Ricochet Chance roll always comes with at least one bounce, or it would do nothing.
+	if roll != null and roll.has(WeaponStat.Kind.RICOCHET_CHANCE):
+		bounces = maxi(bounces, 1)
+	return maxi(bounces, 0)
 
 func get_cone() -> float:
-	return true_cone / maxf(_get_stat(&"accuracy"), 0.1)
+	return true_cone / maxf(_get_stat(&"accuracy") * _bonus_mult(WeaponStat.Kind.ACCURACY), 0.1)
 
 # ---------- Pickup ----------
 
@@ -213,11 +301,18 @@ func interact(normal : Vector3):
 	if not GameManager.player.has_free_gun_slot():
 		return   # every slot is full: leave the gun on the floor
 
+	equip()
+
+
+## Puts this gun straight into the player's next gun slot (no floor pickup needed).
+## The gun must already be in the tree. Used by floor pickups and the gun store.
+func equip() -> void:
 	_held = true
 	_disable_world_pickup()
 	GameManager.player.pickup_gun(self)
 	model_anchor.transform = Transform3D.IDENTITY   # stop hovering, sit in the hand normally
 	animator.play("RESET")
+	GameManager.gun_equipped.emit(self)
 
 
 # Turns off the pickup area once the gun is held.
@@ -273,7 +368,7 @@ func _start_reload() -> void:
 func _finish_reload(id: int) -> void:
 	if id != _reload_id or not reloading:
 		return
-	shotsLeft = magSize
+	shotsLeft = get_mag_size()
 	reloading = false
 
 
@@ -347,7 +442,7 @@ func _apply_player_velocity(proj: Bullet) -> void:
 	var along := pv.dot(dir)
 	var lateral := pv - dir * along
 	var boost := maxf(along, 0.0)   # moving backward never makes shots slower than normal
-	var speed := maxf(projectile_speed + boost, 0.1)
+	var speed := maxf(get_base_projectile_speed() + boost, 0.1)
 
 	# Distance to the aim point along the shot (fallback if it's behind us or missing).
 	var aim_point := GameManager.player.get_gun_aim_point(self)

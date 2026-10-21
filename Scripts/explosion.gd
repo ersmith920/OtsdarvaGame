@@ -33,8 +33,8 @@ static func detonate(space: PhysicsDirectSpaceState3D, at: Vector3, radius: floa
 
 	# One damage roll per blast: the whole explosion crits or it doesn't.
 	var roll := src.roll_explosion_damage()
-	var push := src.explosion_knockback
-	var pop := src.explosion_knockback_up
+	var push := src.get_explosion_knockback()
+	var pop := src.get_explosion_knockback_up()
 	var has_knockback := push > 0.0 or pop > 0.0
 	var seen := {}
 

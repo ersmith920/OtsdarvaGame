@@ -15,10 +15,13 @@ var _stat_value_labels := {}   # stat name -> Label showing its value
 var _pause_toggle: CheckButton
 var _item_scroll: ScrollContainer
 var _item_grid: GridContainer
+var _weapon_scroll: ScrollContainer
+var _weapon_grid: GridContainer
 var _tip: PanelContainer
 var _tip_name: Label
 var _tip_desc: Label
-var _hovered_item: ItemData
+var _tip_extra: Label   # weapon base stats, dimmer than the description
+var _hovered: Object   # the ItemData or Gun under the cursor
 
 const ITEM_COLUMNS := 4
 const ITEM_TILE_SIZE := 72     # 32x32 icon at 2x (64) plus 4px padding on each side
@@ -43,6 +46,10 @@ var _box: Panel
 @export var tip_description_font_size := 15
 @export var tip_description_color := Color(0.85, 0.85, 0.85)
 @export var tip_box_color := Color(0.06, 0.06, 0.06, 0.95)
+@export var section_header_font_size := 18
+@export var section_header_color := Color(0.8, 0.8, 0.8)
+## Weapon tooltips: color of the base-stat lines under the rolled bonuses.
+@export var tip_base_stat_color := Color(0.6, 0.6, 0.6)
 
 func _ready() -> void:
 	# Register the action in code if it isn't in the Input Map yet.
@@ -245,24 +252,46 @@ func _on_clear_pickups_pressed() -> void:
 
 # ---------- Item list (left column) ----------
 
-# ---------- Item grid (left column) ----------
+# ---------- Item grid (top of left column) + weapon grid (bottom) ----------
 
 func _build_items_panel() -> void:
-	_item_scroll = ScrollContainer.new()
-	_item_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_item_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_item_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	left_column.add_child(_item_scroll)
+	var halves := VBoxContainer.new()
+	halves.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	halves.add_theme_constant_override("separation", 8)
+	left_column.add_child(halves)
 
-	_item_grid = GridContainer.new()
-	_item_grid.columns = ITEM_COLUMNS
-	_item_grid.add_theme_constant_override("h_separation", ITEM_TILE_GAP)
-	_item_grid.add_theme_constant_override("v_separation", ITEM_TILE_GAP)
+	_item_scroll = _add_grid_section(halves, "Items")
+	_item_grid = _item_scroll.get_meta(&"grid")
+	_weapon_scroll = _add_grid_section(halves, "Weapons")
+	_weapon_grid = _weapon_scroll.get_meta(&"grid")
+
+
+# A header plus a scrolling tile grid taking an equal share of the column's height.
+func _add_grid_section(parent: Control, title: String) -> ScrollContainer:
+	var header := Label.new()
+	header.text = title
+	header.add_theme_font_override("font", name_font)
+	header.add_theme_font_size_override("font_size", section_header_font_size)
+	header.add_theme_color_override("font_color", section_header_color)
+	parent.add_child(header)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	parent.add_child(scroll)
+
+	var grid := GridContainer.new()
+	grid.columns = ITEM_COLUMNS
+	grid.add_theme_constant_override("h_separation", ITEM_TILE_GAP)
+	grid.add_theme_constant_override("v_separation", ITEM_TILE_GAP)
 	var pad := MarginContainer.new()
 	for side in ["left", "top", "right", "bottom"]:
 		pad.add_theme_constant_override("margin_" + side, TILE_GLOW_SIZE)
-	_item_scroll.add_child(pad)
-	pad.add_child(_item_grid)
+	scroll.add_child(pad)
+	pad.add_child(grid)
+	scroll.set_meta(&"grid", grid)
+	return scroll
 
 
 # One tile per item the player owns. Rows are added automatically every 4 tiles.
@@ -270,7 +299,7 @@ func _rebuild_item_grid() -> void:
 	for child in _item_grid.get_children():
 		_item_grid.remove_child(child)
 		child.queue_free()
-	_hovered_item = null
+	_hovered = null
 
 	var inventory := GameManager.player.inventory
 	var items: Array = inventory.keys()
@@ -282,14 +311,47 @@ func _rebuild_item_grid() -> void:
 		_item_grid.add_child(_make_item_tile(item, inventory[item]))
 
 
-func _make_item_tile(item: ItemData, count: int) -> Control:
+# Every gun the player holds, in slot fill order.
+func _rebuild_weapon_grid() -> void:
+	for child in _weapon_grid.get_children():
+		_weapon_grid.remove_child(child)
+		child.queue_free()
+	for slot in GameManager.player.gun_slots:
+		if slot.get_child_count() == 0:
+			continue
+		var gun := slot.get_child(0) as Gun
+		if gun != null:
+			_weapon_grid.add_child(_make_weapon_tile(gun))
+
+
+func _make_weapon_tile(gun: Gun) -> Control:
+	var tile := _make_tile_frame(gun, Rarity.get_color(gun.get_rarity()))
+	if gun.icon != null:
+		var icon := TextureRect.new()
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon.texture = gun.icon
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tile.add_child(icon)
+		icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 4)
+	elif not gun.scene_file_path.is_empty():
+		# No icon: a still render of the model (drawn once, so it's cheap).
+		var px := ITEM_TILE_SIZE - 8
+		var preview := GunPreview.create(load(gun.scene_file_path), Vector2i(px, px), 0.0)
+		tile.add_child(preview)
+		preview.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 4)
+	return tile
+
+
+# Rarity/tier colored tile shared by items and weapons. `data` is what hovering shows.
+func _make_tile_frame(data: Object, tier_color: Color) -> Panel:
 	# Tiles ignore the mouse (hover is polled in _update_item_hover), so the
 	# scroll wheel still reaches the ScrollContainer underneath.
 	var tile := Panel.new()
 	tile.custom_minimum_size = Vector2(ITEM_TILE_SIZE, ITEM_TILE_SIZE)
 	tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	tile.set_meta(&"item", item)
-	var tier_color := item.get_tier_color()
+	tile.set_meta(&"data", data)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(tier_color.darkened(0.8), 0.5)   # faintly lit inside
 	style.set_corner_radius_all(4)
@@ -299,7 +361,11 @@ func _make_item_tile(item: ItemData, count: int) -> Control:
 	style.shadow_size = TILE_GLOW_SIZE
 	style.shadow_offset = Vector2.ZERO
 	tile.add_theme_stylebox_override("panel", style)
+	return tile
 
+
+func _make_item_tile(item: ItemData, count: int) -> Control:
+	var tile := _make_tile_frame(item, item.get_tier_color())
 	if item.icon != null:
 		var icon := TextureRect.new()
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -369,25 +435,34 @@ func _build_item_tooltip() -> void:
 	_tip_desc.add_theme_color_override("font_color", tip_description_color)
 	column.add_child(_tip_desc)
 
+	_tip_extra = Label.new()
+	_tip_extra.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tip_extra.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_tip_extra.add_theme_font_override("font", description_font)
+	_tip_extra.add_theme_font_size_override("font_size", tip_description_font_size)
+	_tip_extra.add_theme_color_override("font_color", tip_base_stat_color)
+	_tip_extra.visible = false
+	column.add_child(_tip_extra)
+
 
 # Polled every frame: also handles tiles scrolling under a stationary cursor.
 func _update_item_hover() -> void:
 	var mouse := get_global_mouse_position()
-	var hovered: ItemData = null
-	if _item_scroll.get_global_rect().has_point(mouse):
-		for tile in _item_grid.get_children():
-			if (tile as Control).get_global_rect().has_point(mouse):
-				hovered = tile.get_meta(&"item")
-				break
-
+	var hovered: Object = _tile_data_at(_item_scroll, _item_grid, mouse)
 	if hovered == null:
-		_hovered_item = null
+		hovered = _tile_data_at(_weapon_scroll, _weapon_grid, mouse)
+
+	if hovered == null or not is_instance_valid(hovered):
+		_hovered = null
 		_tip.visible = false
 		return
 
-	if hovered != _hovered_item:
-		_hovered_item = hovered
-		_fill_tooltip(hovered)
+	if hovered != _hovered:
+		_hovered = hovered
+		if hovered is Gun:
+			_fill_weapon_tooltip(hovered)
+		else:
+			_fill_tooltip(hovered)
 
 	# Follow the cursor, kept fully on screen.
 	var pos := get_local_mouse_position() + TIP_OFFSET
@@ -397,27 +472,69 @@ func _update_item_hover() -> void:
 	_tip.visible = true
 
 
+func _tile_data_at(scroll: ScrollContainer, grid: GridContainer, mouse: Vector2) -> Object:
+	if not scroll.get_global_rect().has_point(mouse):
+		return null
+	for tile in grid.get_children():
+		if (tile as Control).get_global_rect().has_point(mouse):
+			return tile.get_meta(&"data")
+	return null
+
+
 func _fill_tooltip(item: ItemData) -> void:
-	var tier_color := item.get_tier_color()
+	_fill_tip(item.display_name, item.get_tier_color(), item.description)
+
+
+# Name in its rarity color, then rarity, rolled bonuses, and the gun's own base stats.
+func _fill_weapon_tooltip(gun: Gun) -> void:
+	var color := Rarity.get_color(gun.get_rarity())
+	var lines := PackedStringArray()
+	lines.append(Rarity.name_of(gun.get_rarity()))
+	if gun.roll != null:
+		lines.append_array(gun.roll.describe())
+	var base := PackedStringArray()
+	base.append("Damage: %s" % _num(gun.damage))
+	if gun.explosion_enabled:
+		base.append("Explosion: %s dmg, %sm" % [_num(gun.explosion_damage), _num(gun.get_explosion_radius())])
+	base.append("Fire Rate: %s/s" % _num(1.0 / maxf(gun.fire_rate, 0.001)))
+	base.append("Magazine: %d" % gun.get_mag_size())
+	base.append("Reload: %ss" % _num(gun.reload_time))
+	if gun.projectile_count > 1:
+		base.append("Projectiles: %d" % gun.projectile_count)
+	_fill_tip(gun.get_display_name(), color, "\n".join(lines), "\n".join(base))
+
+
+func _num(v: float) -> String:
+	return str(int(round(v))) if is_equal_approx(v, round(v)) else str(snappedf(v, 0.01))
+
+
+func _fill_tip(title: String, tier_color: Color, description: String, extra := "") -> void:
 	_tip_name.add_theme_color_override("font_color", tier_color)
-	TextGlow.set_text(_tip_name, item.display_name, tier_color)
-	_tip_desc.text = item.description
-	_tip_desc.visible = not item.description.is_empty()
+	TextGlow.set_text(_tip_name, title, tier_color)
+	_tip_desc.text = description
+	_tip_desc.visible = not description.is_empty()
+	_tip_extra.text = extra
+	_tip_extra.visible = not extra.is_empty()
 
 	# Same sizing trick as the pickup popup: hug the text, wrap past a max width.
-	var width := minf(maxf(_text_width(_tip_name), _text_width(_tip_desc)), TIP_MAX_TEXT_WIDTH)
-	width = ceilf(width) + 2.0
+	var width := maxf(_text_width(_tip_name), maxf(_text_width(_tip_desc), _text_width(_tip_extra)))
+	width = ceilf(minf(width, TIP_MAX_TEXT_WIDTH)) + 2.0
 	_tip_name.custom_minimum_size.x = width
 	_tip_desc.custom_minimum_size.x = width
+	_tip_extra.custom_minimum_size.x = width
 	_tip.reset_size()   # containers grow on their own but never shrink back
 
 
+# Widest line of the label's text (tooltips can have several lines).
 func _text_width(label: Label) -> float:
 	if label.text.is_empty():
 		return 0.0
 	var font := label.get_theme_font("font")
 	var font_size := label.get_theme_font_size("font_size")
-	return font.get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var widest := 0.0
+	for line in label.text.split("\n"):
+		widest = maxf(widest, font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x)
+	return widest
 
 # ---------- Open / close ----------
 
@@ -469,6 +586,7 @@ func _open() -> void:
 	if GameManager.player != null:
 		GameManager.player.menu_open = true
 		_rebuild_item_grid()
+		_rebuild_weapon_grid()
 		# Stats are created in PlayerStats._ready(), so build rows on first open
 		# (or again if a stat is ever added later).
 		if _stat_value_labels.size() != GameManager.player.stats_node.stats.size():

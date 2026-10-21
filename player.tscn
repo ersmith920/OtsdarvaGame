@@ -27,6 +27,7 @@
 [ext_resource type="Script" uid="uid://cda6b0fycr7s5" path="res://Scripts/hit_sound.gd" id="24_jm5j8"]
 [ext_resource type="AudioStream" uid="uid://ji1lfawrb06k" path="res://Sounds/hitSound3D.wav" id="25_jm5j8"]
 [ext_resource type="Texture2D" uid="uid://c4ouwq3a62pco" path="res://Images/gold2.png" id="25_qtqh7"]
+[ext_resource type="Script" path="res://Scripts/choice_popup.gd" id="26_choice"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_jfb0n"]
 
@@ -204,6 +205,15 @@ offset_bottom = 15.0
 script = ExtResource("24_7hik5")
 font = ExtResource("11_606se")
 icon_texture = ExtResource("25_qtqh7")
+
+[node name="ChoicePopup" type="Control" parent="HUD" unique_id=1938274651]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("26_choice")
 
 [node name="HitSound" type="Node" parent="." unique_id=640338861]
 script = ExtResource("24_jm5j8")

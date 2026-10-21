@@ -88,28 +88,47 @@ var _shown_cost := -1
 var _deny_shake := 0.0
 
 
-## Current price, from base_cost and how many chests have been opened this run.
+## Current price, from base_cost and how many purchases of this kind were made this run.
 func get_cost() -> int:
 	if base_cost <= 0:
 		return 0
-	return roundi(base_cost * pow(1.0 + cost_increase_percent / 100.0, GameManager.chests_opened))
+	return roundi(base_cost * pow(1.0 + cost_increase_percent / 100.0, _get_purchase_count()))
+
+
+## How many purchases this price grows from. Chests count chests opened; a subclass
+## (like GunStore) can return its own counter so its prices rise separately.
+func _get_purchase_count() -> int:
+	return GameManager.chests_opened
+
+
+## Adds one to the counter _get_purchase_count() reads.
+func _count_purchase() -> void:
+	GameManager.chests_opened += 1
+	GameManager.chests_opened_changed.emit(GameManager.chests_opened)
+
+
+## Takes the price from the player. Returns false (and plays the deny effect) if they can't pay.
+func _try_pay() -> bool:
+	var cost := get_cost()
+	if cost <= 0:
+		return true
+	var player := GameManager.player
+	if player == null or player.gold < cost:
+		_deny()
+		return false
+	player.gold -= cost
+	GameManager.gold_changed.emit(player.gold)
+	return true
 
 
 func interact(normal : Vector3) -> void:
 	super(normal)
 	if open:
 		return
-	var cost := get_cost()
-	if cost > 0:
-		var player := GameManager.player
-		if player == null or player.gold < cost:
-			_deny()
-			return
-		player.gold -= cost
-		GameManager.gold_changed.emit(player.gold)
+	if not _try_pay():
+		return
 	if counts_toward_price:
-		GameManager.chests_opened += 1
-		GameManager.chests_opened_changed.emit(GameManager.chests_opened)
+		_count_purchase()
 	animator.play("open")
 	open = true
 	_refresh_cost_display()
@@ -187,6 +206,7 @@ func _build_cost_display() -> void:
 
 	# Method callables (not lambdas) so the connections drop cleanly when the chest is freed.
 	GameManager.chests_opened_changed.connect(_on_cost_inputs_changed)
+	GameManager.gun_stores_purchased_changed.connect(_on_cost_inputs_changed)
 	GameManager.gold_changed.connect(_on_cost_inputs_changed)
 	_refresh_cost_display()
 
@@ -362,6 +382,7 @@ func _play_sound(stream : AudioStream, volume_db : float) -> void:
 # _ready() (like ItemChest) don't need to call super().
 func _enter_tree() -> void:
 	add_to_group(&"chests")
+	add_to_group(&"interactables")   # the InteractableSpawner keeps new spawns spaced from these
 	if not _cost_built:
 		_build_cost_display.call_deferred()
 

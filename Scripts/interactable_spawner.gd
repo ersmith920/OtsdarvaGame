@@ -1,4 +1,6 @@
-# Scatters interactables (chests for now) across the level when the game starts.
+# Scatters interactables (chests, gun stores, ...) across the level when the game starts.
+# Total Count is shared out between the Entries by their weights, so the mix varies a little
+# each run (e.g. total 35, chests weight 25, gun stores weight 10).
 # Spawn region: a box centered on this node. Rays drop from the top of the box to its bottom,
 # like the enemy spawner, and each spot is checked for flat floor, open space and spacing.
 # The box is drawn in the editor (not in game) so you can see and size the region.
@@ -6,11 +8,11 @@
 extends Node3D
 class_name InteractableSpawner
 
-@export_group("Chests")
-## The chest to spawn (item_chest.tscn).
-@export var chest_scene : PackedScene
-## How many chests to place when the game starts.
-@export var chest_count := 10
+@export_group("Spawns")
+## How many interactables to place in total when the game starts.
+@export var total_count := 35
+## What can spawn and how often. Add a row per interactable type.
+@export var entries : Array[InteractableSpawnEntry]
 
 @export_group("Area")
 ## Size of the spawn region in meters, centered on this node.
@@ -28,21 +30,21 @@ class_name InteractableSpawner
 @export_group("Placement Rules")
 ## Surfaces flatter than this count as floor (same rule as the enemy spawner).
 @export_range(0.0, 1.0) var min_floor_normal_y := 0.8
-## Free space needed around a chest, in meters. Spots touching walls or props are skipped.
+## Free space needed around an interactable, in meters. Spots touching walls or props are skipped.
 @export var clearance_radius := 0.8
-## Chests (including hand-placed ones) won't spawn closer than this to each other.
+## Interactables (including hand-placed chests and stores) won't spawn closer than this to each other.
 @export var min_spacing := 8.0
-## Chests won't spawn closer than this to the player's starting position.
+## Nothing spawns closer than this to the player's starting position.
 @export var min_distance_from_player := 6.0
-## Random spots tried per chest before giving up on it.
-@export var max_attempts_per_chest := 30
+## Random spots tried per interactable before giving up on it.
+@export var max_attempts_per_spawn := 30
 
 @export_group("Look")
 ## Random tilt in degrees, in any direction. The lid side always stays facing up.
 @export_range(0.0, 30.0, 0.5) var max_tilt_degrees := 6.0
 ## 0 = chests stand straight up, 1 = they lean fully with the slope they sit on.
 @export_range(0.0, 1.0) var align_to_slope := 0.5
-## How far chests sink into the floor, so tilting never leaves a gap under one edge.
+## How far interactables sink into the floor, so tilting never leaves a gap under one edge.
 @export var sink_depth := 0.06
 
 var _preview : MeshInstance3D
@@ -57,25 +59,68 @@ func _ready() -> void:
 	spawn_all()
 
 
-## Places every chest. Safe to call again later (e.g. a new stage) to add another batch.
+## Places everything. Safe to call again later (e.g. a new stage) to add another batch.
 func spawn_all() -> void:
-	if chest_scene == null:
-		push_warning("%s: no chest_scene assigned" % name)
+	var plan := roll_counts()
+	if plan.is_empty():
+		push_warning("%s: no entries with a scene and weight assigned" % name)
 		return
 
-	# Start the spacing check with any chests already in the level (hand-placed ones).
+	# Start the spacing check with anything already in the level (hand-placed chests, stores).
 	var placed : Array[Vector3] = []
-	for chest in get_tree().get_nodes_in_group(&"chests"):
-		placed.append((chest as Node3D).global_position)
+	for node in get_tree().get_nodes_in_group(&"interactables"):
+		placed.append((node as Node3D).global_position)
 
-	var spawned := 0
-	for i in chest_count:
-		if _spawn_one(chest_scene, placed):
-			spawned += 1
-	print("InteractableSpawner: placed %d/%d chests" % [spawned, chest_count])
+	# Shuffle the order so a crowded map doesn't always run out of room on the last type.
+	var queue : Array[InteractableSpawnEntry] = []
+	for entry: InteractableSpawnEntry in plan:
+		for i in plan[entry]:
+			queue.append(entry)
+	queue.shuffle()
+
+	var spawned := {}
+	for entry in queue:
+		if _spawn_one(entry.scene, placed, entry.allow_tilt):
+			spawned[entry] = spawned.get(entry, 0) + 1
+	for entry: InteractableSpawnEntry in plan:
+		print("InteractableSpawner: placed %d/%d %s" % [spawned.get(entry, 0), plan[entry],
+				entry.scene.resource_path.get_file().get_basename()])
 
 
-func _spawn_one(scene: PackedScene, placed: Array[Vector3]) -> bool:
+## How many of each entry to place this time: minimums first, then the rest of
+## Total Count picked one at a time by weight (respecting max counts).
+func roll_counts() -> Dictionary:
+	var counts := {}
+	var valid : Array[InteractableSpawnEntry] = []
+	for entry in entries:
+		if entry != null and entry.scene != null:
+			valid.append(entry)
+			counts[entry] = mini(entry.min_count, entry.max_count) if entry.max_count > 0 else entry.min_count
+	if valid.is_empty():
+		return {}
+
+	var used := 0
+	for entry in valid:
+		used += counts[entry]
+	for i in maxi(total_count - used, 0):
+		var total_weight := 0.0
+		for entry in valid:
+			if entry.max_count <= 0 or counts[entry] < entry.max_count:
+				total_weight += entry.weight
+		if total_weight <= 0.0:
+			break
+		var r := randf() * total_weight
+		for entry in valid:
+			if entry.max_count > 0 and counts[entry] >= entry.max_count:
+				continue
+			r -= entry.weight
+			if r < 0.0:
+				counts[entry] += 1
+				break
+	return counts
+
+
+func _spawn_one(scene: PackedScene, placed: Array[Vector3], allow_tilt := true) -> bool:
 	var hit := _find_spot(placed)
 	if hit.is_empty():
 		return false
@@ -83,12 +128,12 @@ func _spawn_one(scene: PackedScene, placed: Array[Vector3]) -> bool:
 	var obj : Node3D = scene.instantiate()
 	add_child(obj)
 
-	# Lowest point of the model in its own space, so any chest model sits on the floor
+	# Lowest point of the model in its own space, so any model sits on the floor
 	# regardless of where its origin was exported.
 	var bounds := _get_local_bounds(obj)
 	var bottom := Vector3(bounds.get_center().x, bounds.position.y, bounds.get_center().z)
 
-	var rot := _random_basis(hit.normal)
+	var rot := _random_basis(hit.normal) if allow_tilt else Basis(Vector3.UP, randf() * TAU)
 	var origin : Vector3 = hit.position - rot * bottom - Vector3.UP * sink_depth
 	obj.global_transform = Transform3D(rot, origin)
 	if obj.has_method(&"reset_physics_interpolation"):
@@ -107,7 +152,7 @@ func _find_spot(placed: Array[Vector3]) -> Dictionary:
 		exclude.append(player.get_rid())
 
 	var half := area_size * 0.5
-	for attempt in max_attempts_per_chest:
+	for attempt in max_attempts_per_spawn:
 		var local := Vector3(randf_range(-half.x, half.x), half.y, randf_range(-half.z, half.z))
 		var from := to_global(local)
 		var to := to_global(Vector3(local.x, -half.y, local.z))
@@ -118,7 +163,7 @@ func _find_spot(placed: Array[Vector3]) -> Dictionary:
 		if hit.normal.y < min_floor_normal_y:
 			continue   # too steep
 		if hit.collider is Node and (hit.collider as Node).get_parent() is Interactable:
-			continue   # landed on another chest or pickup
+			continue   # landed on another interactable or pickup
 		if player != null and _flat_dist_sq(hit.position, player.global_position) < min_distance_from_player * min_distance_from_player:
 			continue
 		if _too_close(hit.position, placed):
