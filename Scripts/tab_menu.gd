@@ -572,7 +572,7 @@ func _update_item_hover() -> void:
 	if hovered == null and _weapon_scroll.get_global_rect().has_point(mouse) and not get_viewport().gui_is_dragging():
 		for tile in _weapon_tiles:
 			if tile.get_global_rect().has_point(mouse):
-				hovered = tile.get_meta(&"data", null)
+				hovered = tile.get_meta(&"data") if tile.has_meta(&"data") else null   # empty slots have none
 				break
 
 	if hovered == null or not is_instance_valid(hovered):
