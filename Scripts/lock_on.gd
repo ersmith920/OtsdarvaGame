@@ -7,9 +7,10 @@
 #   2 LEFT / RIGHT: the left guns and the right guns each get a crosshair.
 #   3 TOP / BOTTOM: the upper guns and the lower guns each get a crosshair.
 #   4 QUADRANTS:    every quadrant gets its own crosshair.
-# A split crosshair only picks enemies in its own half (or quarter) of the lock-on circle,
-# taking the one closest to its rest point. With nothing there it rests on that point,
-# halfway between the screen center and the edge of the circle.
+# A split crosshair goes for the enemy closest to the middle of its own half (or quarter) of
+# the lock-on circle: its rest point, halfway between the screen center and the circle's edge.
+# Enemies in its own region come first; if its region is empty it takes the closest one
+# anywhere in the circle. With nothing in the circle at all it rests on its point.
 class_name LockOn
 extends Node3D
 
@@ -20,10 +21,8 @@ const MIN_REST_DISTANCE := 8.0         # keeps guns from crossing sharply near w
 const REQUIRE_LINE_OF_SIGHT := true    # don't lock onto targets behind walls
 # Only used to project the crosshair's direction onto the screen; any positive number works.
 const SCREEN_PROJECT_DISTANCE := 10.0
-# Most-centered swarm enemies looked at each frame (split modes look at more, since each
-# crosshair wants the best one in its own area, not just the best overall).
+# Swarm enemies looked at per crosshair each frame (the ones nearest its rest point).
 const SWARM_CANDIDATES := 8
-const SWARM_CANDIDATES_SPLIT := 32
 ## How close (degrees) a crosshair must be to its locked enemy to count as on it.
 const ON_TARGET_ANGLE := 1.5
 ## How far out a split crosshair rests, as a fraction of the lock-on circle's radius.
@@ -234,17 +233,29 @@ func _build_exclude_list() -> Array[RID]:
 	return rids
 
 
-# Every lockable enemy inside the lock-on circle, as [camera-space direction, enemy].
+# Every lockable enemy inside the lock-on circle worth looking at, as
+# [camera-space direction, enemy]. Node enemies are all checked. Swarm enemies come from
+# the Swarm's nearest few around each crosshair's rest point, so a crosshair always sees the
+# enemies closest to the middle of its own region (not just the ones nearest the screen center).
 func _candidates(max_angle: float) -> Array:
 	var origin := camera.global_position
 	var forward := -camera.global_basis.z
 	var to_local := camera.global_basis.inverse()
 	var out := []
-	var count := SWARM_CANDIDATES if mode == Mode.SINGLE else SWARM_CANDIDATES_SPLIT
-	# Swarm enemies: the Swarm returns its most centered ones.
-	for c in Swarm.lock_candidates(origin, forward, max_angle, MAX_LOCK_RANGE, count):
-		var unit : Object = c[1]
-		out.append([(to_local * (_aim_point_of(unit) - origin)).normalized(), unit])
+	var seen := {}
+	for r in _reticles:
+		var rest := _rest_dir(r, max_angle)
+		var rest_world := camera.global_basis * rest
+		# A cone around the rest point wide enough to reach the far edge of the lock circle.
+		var reach := max_angle + forward.angle_to(rest_world)
+		for c in Swarm.lock_candidates(origin, rest_world, reach, MAX_LOCK_RANGE, SWARM_CANDIDATES):
+			var unit : Object = c[1]
+			if seen.has(unit):
+				continue
+			seen[unit] = true
+			var to_point := _aim_point_of(unit) - origin
+			if forward.angle_to(to_point) <= max_angle:   # only what's inside the lock circle
+				out.append([(to_local * to_point).normalized(), unit])
 	for node in get_tree().get_nodes_in_group(TARGET_GROUP):
 		var enemy := node as Node3D
 		if enemy == null:
@@ -258,26 +269,29 @@ func _candidates(max_angle: float) -> Array:
 	return out
 
 
-# The candidate in this crosshair's part of the circle closest to its rest point.
+# The enemy closest to this crosshair's rest point (the middle of its region).
+# Enemies inside its region come first; if its region is empty it takes the closest one
+# anywhere in the lock circle, so it never sits idle while there's something to shoot.
 func _pick_target(r: Reticle, candidates: Array, max_angle: float, los_cache: Dictionary) -> Object:
 	var rest := _rest_dir(r, max_angle)
 	var inside := []
+	var outside := []
 	for c in candidates:
 		var dir : Vector3 = c[0]
-		if r.region.x != 0.0 and signf(dir.x) != r.region.x:
-			continue
-		if r.region.y != 0.0 and signf(dir.y) != r.region.y:
-			continue
-		inside.append([rest.angle_to(dir), c[1]])
-	inside.sort_custom(func(a, b): return a[0] < b[0])
-	for c in inside:
-		var enemy : Object = c[1]
-		if not REQUIRE_LINE_OF_SIGHT:
-			return enemy
-		if not los_cache.has(enemy):
-			los_cache[enemy] = _has_line_of_sight(enemy)
-		if los_cache[enemy]:
-			return enemy
+		var entry := [rest.angle_to(dir), c[1]]
+		var in_region := (r.region.x == 0.0 or signf(dir.x) == r.region.x) \
+				and (r.region.y == 0.0 or signf(dir.y) == r.region.y)
+		(inside if in_region else outside).append(entry)
+	for group in [inside, outside]:
+		group.sort_custom(func(a, b): return a[0] < b[0])
+		for c in group:
+			var enemy : Object = c[1]
+			if not REQUIRE_LINE_OF_SIGHT:
+				return enemy
+			if not los_cache.has(enemy):
+				los_cache[enemy] = _has_line_of_sight(enemy)
+			if los_cache[enemy]:
+				return enemy
 	return null
 
 
