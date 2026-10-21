@@ -11,7 +11,7 @@
 [ext_resource type="AudioStream" uid="uid://drutty7dhha05" path="res://Sounds/tankDeath.wav" id="8_1d415"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_jfb0n"]
-size = Vector3(2.8, 1.7, 5.2000003)
+size = Vector3(2.8, 1.9, 5.2000003)
 
 [node name="Tank" type="CharacterBody3D" unique_id=1311286460]
 script = ExtResource("1_6lwfj")
@@ -36,6 +36,7 @@ attack_reach = 0.05
 hit_volume_db = -6.0
 
 [node name="Body" type="Node3D" parent="." unique_id=229190783]
+transform = Transform3D(1, 0, 0, 0, 1.2, 0, 0, 0, 1, 0, -2.2351742e-08, 0)
 
 [node name="enemy_tank" parent="Body" unique_id=2038009027 instance=ExtResource("2_1ealj")]
 
@@ -43,7 +44,7 @@ hit_volume_db = -6.0
 visible = false
 
 [node name="Turret" type="Node3D" parent="." unique_id=1552168319]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+transform = Transform3D(1, 0, 0, 0, 1.2, 0, 0, 0, 1, 0, 1.2, 0)
 
 [node name="enemy_tank" parent="Turret" unique_id=1961979555 instance=ExtResource("2_1ealj")]
 
@@ -58,7 +59,7 @@ transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0.0002452086, 0.40518856, -0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2943052, -3.2676964)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1483223193]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.9802322e-08, 0.85, -0.19999987)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.9802322e-08, 0.95, -0.19999987)
 shape = SubResource("BoxShape3D_jfb0n")
 
 [node name="AimPoint" type="Marker3D" parent="." unique_id=889848743]
