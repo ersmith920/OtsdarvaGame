@@ -196,7 +196,10 @@ func get_quadrant_slots(q: Quadrant) -> Array:
 
 ## Where a gun should aim. One shared lock-on target for now; this is where split
 ## targeting (per side, or per quadrant) will hook in later, using get_slot_quadrant().
-func get_gun_aim_point(_gun: Node3D) -> Vector3:
+func get_gun_aim_point(gun: Node3D) -> Vector3:
+	var slot := gun.get_parent() as Node3D
+	if _slot_quadrant.has(slot):
+		return lock_on.get_aim_point_for(_slot_quadrant[slot])   # its quadrant's crosshair (aim modes)
 	return lock_on.get_aim_point()
 
 
@@ -281,13 +284,17 @@ func _fire_side(right: bool, held: bool, held_since: int) -> int:
 		return is_right == right and not quadrant_auto[q], held, held_since)
 
 
-# Fires every gun in an Auto quadrant (either side) while the lock-on crosshair is on an
-# enemy, with the same staggered start as holding a mouse button.
+# Fires every gun in an Auto quadrant (either side) while that quadrant's lock-on crosshair
+# is on an enemy, with the same staggered start as holding a mouse button.
 func _fire_auto(held_since: int) -> int:
 	if not quadrant_auto.has(true):
 		return -1
-	return _fire_slots(func(q: Quadrant) -> bool: return quadrant_auto[q],
-			lock_on.is_on_target(), held_since)
+	var any_ready := false
+	for q in 4:
+		if quadrant_auto[q] and lock_on.is_on_target(q):
+			any_ready = true
+	return _fire_slots(func(q: Quadrant) -> bool: return quadrant_auto[q] and lock_on.is_on_target(q),
+			any_ready, held_since)
 
 
 # Shared by manual and auto firing. want(quadrant) picks which slots fire.
@@ -329,6 +336,12 @@ func _ready():
 func _unhandled_input(event):
 	if menu_open:
 		return
+	# Mouse wheel: aim mode (up = more crosshairs, 1-4).
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			lock_on.set_mode(lock_on.mode + 1)
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			lock_on.set_mode(lock_on.mode - 1)
 	if event is InputEventMouseMotion:
 		head.rotate_y(-event.relative.x * GameManager.mouse_sensitivity)
 		camera.rotate_x(-event.relative.y * GameManager.mouse_sensitivity)
