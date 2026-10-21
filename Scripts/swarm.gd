@@ -74,7 +74,6 @@ const MAX_DEATH_SOUNDS := 8
 const MAX_HIT_SOUNDS := 16
 const HIT_SOUND_MIN_GAP_MS := 30
 const ENEMY_SFX_BUS := &"EnemySFX"
-const GOLD_SCENE := preload("res://gold_pickup.tscn")
 const WORLD_MASK := 1
 
 const F_SPAWNING := 2
@@ -285,17 +284,7 @@ func _kill(s: int, drops: bool) -> void:
 
 
 func _drop_gold(origin: Vector3, value: int, coins: int) -> void:
-	if value <= 0 or coins <= 0:
-		return
-	var parent := get_tree().current_scene
-	var each := float(value) / coins
-	for i in coins:
-		var coin : GoldPickup = GOLD_SCENE.instantiate()
-		coin.value = each
-		parent.add_child(coin)
-		coin.global_position = origin
-		coin.burst()
-		coin.reset_physics_interpolation()
+	Coins.drop(origin, value, coins)
 
 
 func _play_sound(streams: Array[AudioStream], at: Vector3, volume_db: float, is_hit: bool) -> void:

@@ -270,6 +270,7 @@ func _on_toggle_swarm_pressed() -> void:
 		spawner.start_swarm()
 
 func _on_clear_pickups_pressed() -> void:
+	Coins.clear()
 	for node in get_tree().get_nodes_in_group(&"floor_pickups"):
 		var pickup := node as FloorPickup
 		if pickup != null and pickup.can_be_cleared():

@@ -71,7 +71,6 @@ const MAX_DEATH_SOUNDS := 8
 const HIT_SOUND_MIN_GAP_MS := 30
 const LAYER_ENEMY := 16        # physics layer 5
 const MAX_HIT_SOUNDS := 16
-const GOLD_SCENE := preload("res://gold_pickup.tscn")
 
 const FLASH_COLOR := Color(1.0, 0.1, 0.1, 0.25)   # alpha = how strong the red is
 
@@ -288,16 +287,7 @@ func get_aim_position() -> Vector3:
 func _drop_gold() -> void:
 	if gold_value <= 0 or gold_coins <= 0:
 		return
-	var origin := get_aim_position()
-	var each := float(gold_value) / gold_coins
-	var parent := get_tree().current_scene
-	for i in gold_coins:
-		var coin: GoldPickup = GOLD_SCENE.instantiate()
-		coin.value = each
-		parent.add_child(coin)
-		coin.global_position = origin
-		coin.burst()
-		coin.reset_physics_interpolation()
+	Coins.drop(get_aim_position(), gold_value, gold_coins)
 
 func _flash() -> void:
 	if flash_time <= 0.0:

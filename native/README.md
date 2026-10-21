@@ -1,8 +1,13 @@
 # Native swarm core (C++)
 
-`swarm_core` is a small GDExtension with one class, `SwarmCore`: the movement, crowd grid,
-terrain cache, drawing buffers and hit queries of the enemy swarm. The compiled libraries
-live in `res://bin/` and load automatically. You only need this folder if the C++ changes.
+`swarm_core` is a small GDExtension with two classes. The compiled libraries live in
+`res://bin/` and load automatically. You only need this folder if the C++ changes.
+
+- `SwarmCore`: the movement, crowd grid, terrain cache, drawing buffers and hit queries of
+  the enemy swarm (driven by `Scripts/swarm.gd`).
+- `GoldCore`: every gold coin on the map: flight, bounces, swirl collection, merging and
+  drawing buffers (driven by `Scripts/coins.gd`). Without the library, coins fall back to
+  the `GoldPickup` node coin, which behaves the same. Change both if you change one.
 
 `Scripts/swarm_core_gd.gd` is a line-for-line GDScript copy with the same functions. The
 game uses it automatically when the native library isn't loaded (it's much slower).

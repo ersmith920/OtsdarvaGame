@@ -1,4 +1,5 @@
 #include "swarm_core.h"
+#include "gold_core.h"
 
 #include <gdextension_interface.h>
 #include <godot_cpp/core/class_db.hpp>
@@ -12,6 +13,7 @@ static void initialize_swarm_module(ModuleInitializationLevel p_level) {
 		return;
 	}
 	GDREGISTER_CLASS(SwarmCore);
+	GDREGISTER_CLASS(GoldCore);
 }
 
 static void uninitialize_swarm_module(ModuleInitializationLevel p_level) {
