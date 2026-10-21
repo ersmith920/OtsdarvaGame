@@ -1,8 +1,9 @@
 # Global settings for rolled guns: how much each stat can roll at each rarity, and how many
 # stats a gun gets per rarity. Each gun picks WHICH stats it may roll (Gun > Rolls > Rollable Stats);
 # this table decides HOW MUCH.
-# Rarity odds are not here: gun stores and gun boxes use a LootTable's tier odds (the same
-# one item chests use), shifted by the player's luck stat.
+# Rarity odds are not here: gun stores and gun boxes use a LootTable's tier odds
+# (Items/gun_rarity_table.tres; item chests have their own, Items/loot_table.tres), shifted
+# by the player's luck stat.
 class_name WeaponRollTable
 extends Resource
 

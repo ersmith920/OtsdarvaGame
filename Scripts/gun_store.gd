@@ -14,7 +14,7 @@ class_name GunStore
 @export var allow_duplicate_guns := true
 ## How much each stat rolls (Items/weapon_roll_table.tres).
 @export var roll_table : WeaponRollTable
-## Rarity odds: this table's tier odds (Items/loot_table.tres, the same odds as item chests),
+## Rarity odds: this table's tier odds (Items/gun_rarity_table.tres; item chests have their own),
 ## shifted toward higher rarities by the player's luck stat.
 @export var rarity_table : LootTable
 @export var popup_title := "Gun Store"

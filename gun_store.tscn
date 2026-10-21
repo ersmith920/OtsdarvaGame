@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://bojefmceio81n" path="res://Rifle.tscn" id="4_rifle"]
 [ext_resource type="PackedScene" uid="uid://b0kb1vpk6sb2" path="res://Krsw.tscn" id="5_krsw"]
 [ext_resource type="Resource" uid="uid://dcjxvc8ebw4bx" path="res://Items/weapon_roll_table.tres" id="6_rolls"]
-[ext_resource type="Resource" uid="uid://c7rsmcadkj856" path="res://Items/loot_table.tres" id="7_odds"]
+[ext_resource type="Resource" path="res://Items/gun_rarity_table.tres" id="7_odds"]
 [ext_resource type="FontFile" uid="uid://krpi7jvgdvw0" path="res://Fonts/KHGummi.otf" id="8_font"]
 [ext_resource type="AudioStream" uid="uid://ebo0j5romtej" path="res://Sounds/ResetPylon.wav" id="8_vuggv"]
 [ext_resource type="Texture2D" uid="uid://c4ouwq3a62pco" path="res://Images/gold2.png" id="9_coin"]
