@@ -138,4 +138,5 @@ step = 0.1
 script = ExtResource("1_table")
 common_rolls = 1
 uncommon_rolls = 1
+legendary_rolls = 4
 stat_ranges = Array[ExtResource("2_range")]([SubResource("Range_damage"), SubResource("Range_attack_speed"), SubResource("Range_reload_speed"), SubResource("Range_projectile_count"), SubResource("Range_projectile_speed"), SubResource("Range_accuracy"), SubResource("Range_magazine_size"), SubResource("Range_aoe_size"), SubResource("Range_aoe_damage"), SubResource("Range_knockback"), SubResource("Range_ricochet_chance"), SubResource("Range_ricochet_bounces"), SubResource("Range_pierce_count")])

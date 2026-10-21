@@ -10,14 +10,14 @@
 script = ExtResource("1_kaje2")
 stat = &"attack_speed"
 type = 1
-amount_per_stack = 0.1
+amount_per_stack = 0.06
 metadata/_custom_type_script = "uid://5h1eu84vtblx"
 
 [resource]
 script = ExtResource("2_y3krv")
 id = &"item_attack_speed"
 display_name = "Trigger Finger"
-description = "Increase attack rate by 10%"
+description = "Increase attack rate by 6%"
 icon = ExtResource("1_a82gc")
 model = ExtResource("1_y3krv")
 modifiers = Array[ExtResource("1_kaje2")]([SubResource("Resource_a82gc")])

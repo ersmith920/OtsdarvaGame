@@ -9,7 +9,7 @@
 [ext_resource type="AudioStream" uid="uid://cfw35bxb18rbi" path="res://Sounds/jokeOpen.wav" id="6_h1q43"]
 [ext_resource type="AudioStream" uid="uid://biwftidvbum5v" path="res://Sounds/HeavyRumble1.wav" id="6_t8bfw"]
 [ext_resource type="AudioStream" uid="uid://dr4rew5co6gr6" path="res://Sounds/HeavyRumble2.wav" id="7_ebbj1"]
-[ext_resource type="Resource" path="res://Items/weapon_roll_table.tres" id="8_rolls"]
+[ext_resource type="Resource" uid="uid://dcjxvc8ebw4bx" path="res://Items/weapon_roll_table.tres" id="8_rolls"]
 [ext_resource type="Resource" path="res://Items/gun_rarity_table.tres" id="9_odds"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_jfb0n"]
@@ -168,13 +168,13 @@ _data = {
 [node name="gunBox" type="Node3D" unique_id=1802771475]
 script = ExtResource("1_vc7op")
 guns = Array[PackedScene]([ExtResource("2_x0xgw"), ExtResource("3_1y5t7"), ExtResource("4_kwsqr"), ExtResource("5_onhrv")])
+roll_table = ExtResource("8_rolls")
+rarity_table = ExtResource("9_odds")
 rumble_sounds = Array[AudioStream]([ExtResource("6_t8bfw"), ExtResource("7_ebbj1")])
 open_sound = ExtResource("6_h1q43")
 base_cost = 0
 cost_increase_percent = 0.0
 counts_toward_price = false
-roll_table = ExtResource("8_rolls")
-rarity_table = ExtResource("9_odds")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=55574681]
 collision_layer = 3
@@ -186,11 +186,11 @@ shape = SubResource("BoxShape3D_jfb0n")
 
 [node name="chest" parent="StaticBody3D" unique_id=1201964843 instance=ExtResource("4_1y5t7")]
 
-[node name="crate" parent="StaticBody3D/chest" index="0" unique_id=1222836455]
+[node name="crate" parent="StaticBody3D/chest" index="0" unique_id=1281973386]
 transform = Transform3D(1, 0, 0, 0, 1.0000001, 0, 0, 0, 0.99999994, 0, 0, 0)
 surface_material_override/0 = SubResource("StandardMaterial3D_ucb4d")
 
-[node name="lid" parent="StaticBody3D/chest" index="1" unique_id=1969208242]
+[node name="lid" parent="StaticBody3D/chest" index="1" unique_id=1052519416]
 transform = Transform3D(0.9999995, 0, 0, 0, 0.9999996, 0, 0, 0, 1.0000001, 0, 0, 0)
 surface_material_override/0 = SubResource("StandardMaterial3D_kwsqr")
 

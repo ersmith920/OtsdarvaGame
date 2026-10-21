@@ -9,21 +9,20 @@
 [sub_resource type="Resource" id="Resource_02vk2"]
 script = ExtResource("1_bhxjw")
 stat = &"lock_fov"
-amount_per_stack = 10.0
+amount_per_stack = 2.0
 metadata/_custom_type_script = "uid://5h1eu84vtblx"
 
 [sub_resource type="Resource" id="Resource_ch5uv"]
 script = ExtResource("1_bhxjw")
 stat = &"lock_strength"
-amount_per_stack = 3.0
+amount_per_stack = 1.2
 metadata/_custom_type_script = "uid://5h1eu84vtblx"
 
 [resource]
 script = ExtResource("2_gn7m5")
 id = &"item_targeting_pc"
 display_name = "Targeting PC"
-description = "Enhances lock on capabilties greatly"
-tier = 2
+description = "Enhances lock on capabilties"
 icon = ExtResource("1_02vk2")
 model = ExtResource("1_gn7m5")
 modifiers = Array[ExtResource("1_bhxjw")]([SubResource("Resource_02vk2"), SubResource("Resource_ch5uv")])
