@@ -16,7 +16,10 @@ const TICK := SLICES / 60.0
 
 
 class Bucket:
-	var enemy: Array[Enemy] = []
+	# Untyped on purpose: an enemy can be freed while it still has stacks here, and a
+	# typed Array[Enemy] refuses to hold (or move) a freed instance.
+	var enemy: Array = []
+	var id := PackedInt64Array()       # enemy instance id, still usable after it's freed
 	var key: Array[StringName] = []
 	var dmg := PackedFloat32Array()    # damage per tick
 	var ticks := PackedInt32Array()    # ticks left
@@ -25,7 +28,7 @@ class Bucket:
 
 
 var _buckets: Array[Bucket] = []
-var _counts := {}      # enemy -> {effect key: active stacks}
+var _counts := {}      # enemy instance id -> {effect key: active stacks}
 var _frame := 0
 var _total := 0        # stacks across all buckets
 
@@ -44,13 +47,14 @@ func add_dot(enemy: Enemy, key: StringName, damage_per_tick: float, duration: fl
 		return
 	var b := _bucket_of(enemy)
 	var tick_count := maxi(roundi(duration / TICK), 1)
-	var per_enemy: Dictionary = _counts.get(enemy, {})
+	var eid := enemy.get_instance_id()
+	var per_enemy: Dictionary = _counts.get(eid, {})
 	var count: int = per_enemy.get(key, 0)
 
 	if max_stacks > 0 and count >= max_stacks:
 		var weakest := -1
 		for i in b.enemy.size():
-			if b.enemy[i] == enemy and b.key[i] == key and (weakest == -1 or b.ticks[i] < b.ticks[weakest]):
+			if b.id[i] == eid and b.key[i] == key and (weakest == -1 or b.ticks[i] < b.ticks[weakest]):
 				weakest = i
 		if weakest != -1:
 			b.dmg[weakest] = damage_per_tick
@@ -60,19 +64,22 @@ func add_dot(enemy: Enemy, key: StringName, damage_per_tick: float, duration: fl
 			return
 
 	b.enemy.append(enemy)
+	b.id.append(eid)
 	b.key.append(key)
 	b.dmg.append(damage_per_tick)
 	b.ticks.append(tick_count)
 	b.source.append(source)
 	b.proc.append(proc)
 	per_enemy[key] = count + 1
-	_counts[enemy] = per_enemy
+	_counts[eid] = per_enemy
 	_total += 1
 
 
 ## How many stacks of a DoT an enemy has right now (e.g. for "more damage to burning enemies").
 func get_stacks(enemy: Enemy, key: StringName) -> int:
-	var per_enemy: Dictionary = _counts.get(enemy, {})
+	if not is_instance_valid(enemy):
+		return 0
+	var per_enemy: Dictionary = _counts.get(enemy.get_instance_id(), {})
 	return per_enemy.get(key, 0)
 
 
@@ -88,8 +95,8 @@ func _physics_process(delta: float) -> void:
 	var totals := {}
 	var i := b.enemy.size() - 1
 	while i >= 0:
-		var e := b.enemy[i]
-		if not is_instance_valid(e) or e.dead:
+		var e = b.enemy[i]
+		if not is_instance_valid(e) or (e as Enemy).dead:
 			_remove(b, i)
 			i -= 1
 			continue
@@ -124,27 +131,28 @@ func _bucket_of(e: Enemy) -> Bucket:
 
 
 # Swap-with-last removal, keeping the per-enemy counts right.
+# Counts are keyed by instance id, so they're cleaned up even if the enemy was already freed.
 func _remove(b: Bucket, i: int) -> void:
-	var e := b.enemy[i]
-	if is_instance_valid(e) and _counts.has(e):
-		var per_enemy: Dictionary = _counts[e]
+	var eid := b.id[i]
+	if _counts.has(eid):
+		var per_enemy: Dictionary = _counts[eid]
 		var c: int = per_enemy.get(b.key[i], 1) - 1
 		if c <= 0:
 			per_enemy.erase(b.key[i])
 		else:
 			per_enemy[b.key[i]] = c
 		if per_enemy.is_empty():
-			_counts.erase(e)
-	elif not is_instance_valid(e):
-		_counts.erase(e)
+			_counts.erase(eid)
 	var last := b.enemy.size() - 1
 	b.enemy[i] = b.enemy[last]
+	b.id[i] = b.id[last]
 	b.key[i] = b.key[last]
 	b.dmg[i] = b.dmg[last]
 	b.ticks[i] = b.ticks[last]
 	b.source[i] = b.source[last]
 	b.proc[i] = b.proc[last]
 	b.enemy.resize(last)
+	b.id.resize(last)
 	b.key.resize(last)
 	b.dmg.resize(last)
 	b.ticks.resize(last)

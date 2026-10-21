@@ -276,6 +276,34 @@ func get_projectile_count() -> int:
 		whole += 1
 	return maxi(whole, 1) * player_count
 
+## Average projectiles per shot (a 0.5 Projectile Count roll counts as half a projectile).
+func get_expected_projectile_count() -> float:
+	var player_count := maxi(floori(_get_stat(&"projectile_count") + 0.0001), 1)
+	var gun_count := maxf(float(projectile_count) + _bonus(WeaponStat.Kind.PROJECTILE_COUNT), 1.0)
+	return gun_count * player_count
+
+
+## This gun's damage per second right now, with everything that affects it: base damage,
+## rolls, the player's damage / attack speed / projectile count / reload speed stats.
+## Explosion damage counts once per projectile (as if every blast hits the target).
+## include_reload: true = sustained DPS (reload time spread across the mag),
+## false = DPS while actually firing. Crits are not included.
+func get_dps(include_reload := true) -> float:
+	var per_projectile := get_damage()
+	if explosion_enabled:
+		per_projectile += explosion_damage * _bonus_mult(WeaponStat.Kind.AOE_DAMAGE) * _get_stat(&"damage")
+	var per_shot := per_projectile * get_expected_projectile_count()
+	var shot_time := fire_rate / get_attack_speed()
+	if cone_size <= 0.0:
+		# Burst guns fire extra projectiles one fire_rate apart, so the shot takes that long.
+		shot_time *= get_expected_projectile_count()
+	shot_time = maxf(shot_time, 0.001)
+	if not include_reload:
+		return per_shot / shot_time
+	var mag := float(get_mag_size())
+	return per_shot * mag / (shot_time * mag + get_reload_duration())
+
+
 ## Chance (0.15 = 15%) that a bullet ricochets after its first enemy hit.
 func get_ricochet_chance() -> float:
 	return _get_stat(&"ricochet_chance") + _bonus(WeaponStat.Kind.RICOCHET_CHANCE) / 100.0
