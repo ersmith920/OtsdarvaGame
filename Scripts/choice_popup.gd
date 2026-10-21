@@ -165,6 +165,7 @@ func _wrap_card(content: Control, index: int) -> Button:
 	button.custom_minimum_size = card_size
 	button.focus_mode = Control.FOCUS_NONE   # keeps Space / Enter from picking a card
 	button.clip_contents = false
+	Rarity.paint(button, content.get_meta(&"rarity", -1))   # Legendary shine / Mythic rainbow frame
 	button.add_theme_stylebox_override("normal", _card_style(color, glow_size, 0.0))
 	button.add_theme_stylebox_override("hover", _card_style(color, hover_glow_size, 0.12))
 	button.add_theme_stylebox_override("pressed", _card_style(color, hover_glow_size, 0.22))

@@ -44,8 +44,37 @@ void fragment() {
 	COLOR = c;
 }
 """
-static var _rainbow_mix : ShaderMaterial
-static var _rainbow_add : ShaderMaterial
+
+## Legendary shine: a white sheen that rolls across its gold, like light sliding over metal.
+## Seconds between sheens passing a point.
+const SHINE_CYCLE := 2.4
+## Screen pixels from one sheen to the next.
+const SHINE_WIDTH := 520.0
+## How white the sheen gets at its peak (0 = no shine, 1 = pure white).
+const SHINE_STRENGTH := 0.8
+## How thin the sheen is (higher = a sharper, narrower glint).
+const SHINE_SHARPNESS := 10.0
+
+const _SHINE_SHADER := """
+shader_type canvas_item;
+render_mode BLEND;
+uniform float cycle = 2.4;
+uniform float width = 520.0;
+uniform float strength = 0.8;
+uniform float sharpness = 10.0;
+void fragment() {
+	vec4 c = COLOR * texture(TEXTURE, UV);
+	// Diagonal sheen bands in screen space, sliding across.
+	float t = (FRAGCOORD.x + FRAGCOORD.y * 0.6) / width - TIME / cycle;
+	float band = pow(0.5 + 0.5 * sin(t * 6.2831853), sharpness);
+	// A softer second glint trailing the main one.
+	band = max(band, 0.35 * pow(0.5 + 0.5 * sin(t * 6.2831853 - 0.9), sharpness * 2.0));
+	float bright = max(c.r, max(c.g, c.b));
+	c.rgb = mix(c.rgb, vec3(bright) * 1.15, band * strength);
+	COLOR = c;
+}
+"""
+static var _materials := {}   # [rarity, additive] -> ShaderMaterial
 
 
 static func to_tier(rarity: int) -> int:
@@ -76,33 +105,48 @@ static func is_animated(_rarity: int) -> bool:
 	return false
 
 
-## Gives a piece of UI the look of this rarity: the rainbow gradient for Mythic, nothing
-## extra for the others. Call it on everything drawn in the rarity's color (labels, frames,
-## tiles); a TextGlow label's glow layers are done too. Safe to call again with another
-## rarity (e.g. a reused tooltip), it switches back.
+## Gives a piece of UI the look of this rarity: the rolling rainbow for Mythic, the rolling
+## gold shine for Legendary, nothing extra for the others. Call it on everything drawn in the
+## rarity's color (labels, frames, tiles); a TextGlow label's glow layers are done too.
+## Safe to call again with another rarity (e.g. a reused tooltip), it switches back.
+## Pass -1 to just clear it.
 static func paint(item: CanvasItem, rarity: int) -> void:
-	var mythic := rarity >= MYTHIC
-	item.material = _rainbow_material(false) if mythic else null
+	item.material = _effect_material(rarity, false)
 	if item.has_meta(&"glow_layers"):
 		for glow in item.get_meta(&"glow_layers"):
-			(glow as CanvasItem).material = _rainbow_material(true) if mythic else TextGlow._additive
+			var mat := _effect_material(rarity, true)
+			(glow as CanvasItem).material = mat if mat != null else TextGlow._additive
 
 
-static func _rainbow_material(additive: bool) -> ShaderMaterial:
-	var mat := _rainbow_add if additive else _rainbow_mix
-	if mat == null:
-		var shader := Shader.new()
-		shader.code = _RAINBOW_SHADER.replace("BLEND", "blend_add" if additive else "blend_mix")
-		mat = ShaderMaterial.new()
+## Same for an item tier (tier 1 = Legendary shine).
+static func paint_tier(item: CanvasItem, tier: int) -> void:
+	paint(item, from_tier(tier))
+
+
+static func _effect_material(rarity: int, additive: bool) -> ShaderMaterial:
+	if rarity < LEGENDARY:
+		return null
+	var key := [mini(rarity, MYTHIC), additive]
+	if _materials.has(key):
+		return _materials[key]
+	var shader := Shader.new()
+	var mat := ShaderMaterial.new()
+	var blend := "blend_add" if additive else "blend_mix"
+	if rarity >= MYTHIC:
+		shader.code = _RAINBOW_SHADER.replace("BLEND", blend)
 		mat.shader = shader
 		mat.set_shader_parameter(&"cycle", RAINBOW_CYCLE)
 		mat.set_shader_parameter(&"saturation", RAINBOW_SATURATION)
 		mat.set_shader_parameter(&"width", RAINBOW_WIDTH)
 		mat.set_shader_parameter(&"shimmer", RAINBOW_SHIMMER)
-		if additive:
-			_rainbow_add = mat
-		else:
-			_rainbow_mix = mat
+	else:
+		shader.code = _SHINE_SHADER.replace("BLEND", blend)
+		mat.shader = shader
+		mat.set_shader_parameter(&"cycle", SHINE_CYCLE)
+		mat.set_shader_parameter(&"width", SHINE_WIDTH)
+		mat.set_shader_parameter(&"strength", SHINE_STRENGTH)
+		mat.set_shader_parameter(&"sharpness", SHINE_SHARPNESS)
+	_materials[key] = mat
 	return mat
 
 

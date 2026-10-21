@@ -96,6 +96,7 @@ func show_item(item: ItemData) -> void:
 	var tier_color := item.get_tier_color()
 	_name_label.add_theme_color_override("font_color", tier_color)
 	TextGlow.set_text(_name_label, item.display_name, tier_color)
+	Rarity.paint_tier(_name_label, item.tier)   # Legendary items shine
 	_desc_label.text = item.description
 	_desc_label.visible = not item.description.is_empty()
 

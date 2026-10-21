@@ -533,6 +533,7 @@ func _color_tile_style(style: StyleBoxFlat, tier_color: Color) -> void:
 
 func _make_item_tile(item: ItemData, count: int) -> Control:
 	var tile := _make_tile_frame(item, item.get_tier_color())
+	Rarity.paint_tier(tile, item.tier)   # Legendary items shine too
 	if item.icon != null:
 		var icon := TextureRect.new()
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -651,7 +652,7 @@ func _tile_data_at(scroll: ScrollContainer, grid: GridContainer, mouse: Vector2)
 
 func _fill_tooltip(item: ItemData) -> void:
 	_fill_tip(item.display_name, item.get_tier_color(), item.description)
-	Rarity.paint(_tip_name, -1)   # the tooltip is reused: clear a Mythic rainbow
+	Rarity.paint_tier(_tip_name, item.tier)   # Legendary shine (and clears a gun's effect: the tooltip is reused)
 
 
 # Name in its rarity color, then rarity, rolled bonuses, and the gun's own base stats.
