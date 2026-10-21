@@ -27,7 +27,7 @@
 [ext_resource type="Script" uid="uid://cda6b0fycr7s5" path="res://Scripts/hit_sound.gd" id="24_jm5j8"]
 [ext_resource type="AudioStream" uid="uid://ji1lfawrb06k" path="res://Sounds/hitSound3D.wav" id="25_jm5j8"]
 [ext_resource type="Texture2D" uid="uid://c4ouwq3a62pco" path="res://Images/gold2.png" id="25_qtqh7"]
-[ext_resource type="Script" path="res://Scripts/choice_popup.gd" id="26_choice"]
+[ext_resource type="Script" uid="uid://boby5oihnxo8k" path="res://Scripts/choice_popup.gd" id="26_choice"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_jfb0n"]
 
@@ -64,7 +64,7 @@ transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.3
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.5090783, -0.39638305, -0.31748298)
 
 [node name="slot4" type="Node3D" parent="Head/Camera3D/GunMounts/Lower" unique_id=1352996140]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0.509, -0.396, -0.317)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -0.509, -0.396, -0.317)
 
 [node name="Upper" type="Node3D" parent="Head/Camera3D/GunMounts" unique_id=702913847]
 
