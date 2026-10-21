@@ -16,7 +16,9 @@ const EPS := 0.05
 const MAX_NEIGHBORS := 30
 const SEPARATE_INTERVAL := 2
 const KNOCK_DECEL := 40.0         # m/s lost per second: a 10 m/s knock slides ~1.25 m in 0.25 s
-const MAX_KNOCK_SPEED := 40.0     # stacked blasts can't launch an enemy faster than this
+const MAX_KNOCK_SPEED := 40.0
+## Up to this many node enemies, find_nearest just checks each one instead of the grid.
+const BRUTE_FORCE_NEAREST := 64     # stacked blasts can't launch an enemy faster than this
 
 
 ## Node enemies only (tanks, hand-placed enemies...). Swarm enemies live in the Swarm autoload.
@@ -101,6 +103,18 @@ func find_nearest(from: Vector3, max_range: float, skip: Dictionary = {}) -> Obj
 func _find_nearest_node(from: Vector3, max_range: float, skip: Dictionary) -> Enemy:
 	var best: Enemy = null
 	var best_d := max_range * max_range
+	# Node enemies are now only the few big ones (tanks, bosses): checking each of them is
+	# far cheaper than walking the grid ring by ring (which, with nothing nearby, visits
+	# thousands of empty cells before giving up).
+	if enemies.size() <= BRUTE_FORCE_NEAREST:
+		for e in enemies:
+			if e.dead or e.spawning or skip.has(e):
+				continue
+			var d := from.distance_squared_to(e.pos + Vector3(0.0, e.height * 0.5, 0.0))
+			if d < best_d:
+				best_d = d
+				best = e
+		return best
 	var cx := floori(from.x / CELL_SIZE)
 	var cz := floori(from.z / CELL_SIZE)
 	var max_ring := ceili(max_range / CELL_SIZE)
