@@ -49,8 +49,10 @@ var is_dashing: bool:
 ## all go off on the same frame. Only applies when you start holding the button; after
 ## that each gun keeps its own fire rate.
 @export var fire_stagger := 0.04
-## Most guns the player can hold. 0 = no limit.
-@export var max_gun_slots := 0
+## Most guns the player can hold. All of them exist from the start (empty), so the Tab menu
+## can show every slot and guns can be dragged into any of them. 0 = no limit (slots are
+## then made one at a time as guns are picked up).
+@export var max_gun_slots := 8
 ## Spacing for a generated slot in a quadrant that has only one slot to copy the pattern
 ## from (x = outward, y = up, z = forward is negative).
 @export var fallback_slot_step := Vector3(0.13, 0.1, 0.0)
@@ -148,6 +150,27 @@ func pickup_gun(gun_node : Node3D, into_slot : Node3D = null) -> void:
 		slot = add_gun_slot()
 	gun_node.reparent(slot, false)
 	gun_node.global_transform = slot.global_transform
+
+
+## Swaps whatever is in two gun slots (either may be empty). Used by dragging in the Tab menu.
+## A gun moved to the other side then fires with that side's button.
+func swap_gun_slots(a: Node3D, b: Node3D) -> void:
+	if a == b:
+		return
+	var gun_a := a.get_child(0) if a.get_child_count() > 0 else null
+	var gun_b := b.get_child(0) if b.get_child_count() > 0 else null
+	for pair in [[gun_a, b], [gun_b, a]]:
+		var gun : Node3D = pair[0]
+		if gun == null:
+			continue
+		gun.reparent(pair[1], false)
+		gun.transform = Transform3D.IDENTITY
+		gun.reset_physics_interpolation()
+
+
+## Which quadrant a gun slot is in, as a short label ("Upper L.").
+static func quadrant_label(q: Quadrant) -> String:
+	return ["Lower R.", "Lower L.", "Upper R.", "Upper L."][q]
 
 
 func _get_free_slot() -> Node3D:
@@ -267,6 +290,8 @@ func _fire_side(right: bool, held: bool, held_since: int) -> int:
 			
 func _ready():
 	_collect_gun_mounts()
+	while gun_slots.size() < max_gun_slots:
+		add_gun_slot()
 	_base_fov = camera.fov
 	battery_charge = stats_node.get_value(&"battery_capacity")
 	health = stats_node.get_value(&"max_health")

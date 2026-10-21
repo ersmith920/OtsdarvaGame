@@ -16,7 +16,8 @@ var _pause_toggle: CheckButton
 var _item_scroll: ScrollContainer
 var _item_grid: GridContainer
 var _weapon_scroll: ScrollContainer
-var _weapon_grid: GridContainer
+var _weapon_quads: GridContainer   # 2 x 2: Upper L. / Upper R. / Lower L. / Lower R.
+var _weapon_tiles: Array[Control] = []   # one per gun slot (empty or not)
 var _tip: PanelContainer
 var _tip_name: Label
 var _tip_desc: Label
@@ -288,8 +289,18 @@ func _build_items_panel() -> void:
 
 	_item_scroll = _add_grid_section(halves, "Items")
 	_item_grid = _item_scroll.get_meta(&"grid")
-	_weapon_scroll = _add_grid_section(halves, "Weapons")
-	_weapon_grid = _weapon_scroll.get_meta(&"grid")
+	_weapon_scroll = _add_grid_section(halves, "Weapons  (drag to move)")
+	# Swap the plain grid for the four quadrants.
+	var grid : GridContainer = _weapon_scroll.get_meta(&"grid")
+	_weapon_quads = GridContainer.new()
+	_weapon_quads.columns = 2
+	_weapon_quads.add_theme_constant_override("h_separation", ITEM_TILE_GAP * 2)
+	_weapon_quads.add_theme_constant_override("v_separation", ITEM_TILE_GAP * 2)
+	grid.replace_by(_weapon_quads)
+	grid.free()
+	# Always tall enough for both rows of quadrants; the items list gets the rest.
+	_weapon_scroll.size_flags_vertical = Control.SIZE_FILL
+	_weapon_scroll.custom_minimum_size.y = 2 * (ITEM_TILE_SIZE + 22) + ITEM_TILE_GAP * 2 + TILE_GLOW_SIZE * 2 + 4
 
 
 # A header plus a scrolling tile grid taking an equal share of the column's height.
@@ -337,17 +348,97 @@ func _rebuild_item_grid() -> void:
 		_item_grid.add_child(_make_item_tile(item, inventory[item]))
 
 
-# Every gun the player holds, in slot fill order.
+# Every gun slot, laid out like they sit on screen: four quadrants (upper on top, left on
+# the left), each with its slots left to right in the order they appear on screen.
+# Guns can be dragged onto any slot; dropping on a gun swaps the two.
+const QUADRANT_ORDER := [Player.Quadrant.UPPER_LEFT, Player.Quadrant.UPPER_RIGHT,
+		Player.Quadrant.LOWER_LEFT, Player.Quadrant.LOWER_RIGHT]
+
 func _rebuild_weapon_grid() -> void:
-	for child in _weapon_grid.get_children():
-		_weapon_grid.remove_child(child)
+	for child in _weapon_quads.get_children():
+		_weapon_quads.remove_child(child)
 		child.queue_free()
-	for slot in GameManager.player.gun_slots:
-		if slot.get_child_count() == 0:
-			continue
-		var gun := slot.get_child(0) as Gun
-		if gun != null:
-			_weapon_grid.add_child(_make_weapon_tile(gun))
+	_weapon_tiles.clear()
+	var player := GameManager.player
+	for q in QUADRANT_ORDER:
+		var box := VBoxContainer.new()
+		box.add_theme_constant_override("separation", 4)
+		var label := Label.new()
+		label.text = Player.quadrant_label(q)
+		label.add_theme_font_override("font", name_font)
+		label.add_theme_font_size_override("font_size", 14)
+		label.add_theme_color_override("font_color", section_header_color)
+		box.add_child(label)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", ITEM_TILE_GAP)
+		box.add_child(row)
+		for slot in _slots_on_screen_order(player.get_quadrant_slots(q)):
+			var gun : Gun = slot.get_child(0) as Gun if slot.get_child_count() > 0 else null
+			var tile := _make_weapon_tile(gun) if gun != null else _make_empty_slot_tile()
+			tile.set_meta(&"slot", slot)
+			tile.mouse_filter = Control.MOUSE_FILTER_PASS   # needed for dragging; the wheel still scrolls
+			tile.set_drag_forwarding(_get_slot_drag.bind(tile), _can_drop_on_slot.bind(tile), _drop_on_slot.bind(tile))
+			row.add_child(tile)
+			_weapon_tiles.append(tile)
+		_weapon_quads.add_child(box)
+
+
+# Left to right as the player sees them (by where each slot lands on screen).
+func _slots_on_screen_order(slots: Array) -> Array:
+	var cam := get_viewport().get_camera_3d()
+	var sorted := slots.duplicate()
+	sorted.sort_custom(func(a: Node3D, b: Node3D) -> bool:
+		if cam != null:
+			return cam.unproject_position(a.global_position).x < cam.unproject_position(b.global_position).x
+		return a.position.x < b.position.x)
+	return sorted
+
+
+func _make_empty_slot_tile() -> Panel:
+	var tile := Panel.new()
+	tile.custom_minimum_size = Vector2(ITEM_TILE_SIZE, ITEM_TILE_SIZE)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.0, 0.0, 0.0, 0.35)
+	style.set_corner_radius_all(4)
+	style.set_border_width_all(TILE_BORDER)
+	style.border_color = Color(0.45, 0.45, 0.45, 0.6)
+	tile.add_theme_stylebox_override("panel", style)
+	return tile
+
+
+# ---- Drag and drop between slots ----
+
+func _get_slot_drag(_at: Vector2, tile: Control) -> Variant:
+	var slot : Node3D = tile.get_meta(&"slot")
+	if slot.get_child_count() == 0:
+		return null   # nothing to drag
+	var gun := slot.get_child(0) as Gun
+	var preview := _make_weapon_tile(gun)
+	preview.modulate = Color(1, 1, 1, 0.85)
+	var holder := Control.new()   # centers the preview on the cursor
+	holder.add_child(preview)
+	preview.position = -Vector2(ITEM_TILE_SIZE, ITEM_TILE_SIZE) * 0.5
+	tile.set_drag_preview(holder)
+	tile.modulate = Color(1, 1, 1, 0.35)   # dim the original while it's being moved
+	_tip.visible = false
+	return {"gun_slot": slot}
+
+
+func _can_drop_on_slot(_at: Vector2, data: Variant, _tile: Control) -> bool:
+	return data is Dictionary and data.has("gun_slot")
+
+
+func _drop_on_slot(_at: Vector2, data: Variant, tile: Control) -> void:
+	GameManager.player.swap_gun_slots(data.gun_slot, tile.get_meta(&"slot"))
+	_rebuild_weapon_grid.call_deferred()
+
+
+func _notification(what: int) -> void:
+	# A drag that ended anywhere else: undo the dimming.
+	if what == NOTIFICATION_DRAG_END and _weapon_quads != null:
+		for tile in _weapon_tiles:
+			if is_instance_valid(tile):
+				tile.modulate = Color.WHITE
 
 
 func _make_weapon_tile(gun: Gun) -> Control:
@@ -478,8 +569,11 @@ func _build_item_tooltip() -> void:
 func _update_item_hover() -> void:
 	var mouse := get_global_mouse_position()
 	var hovered: Object = _tile_data_at(_item_scroll, _item_grid, mouse)
-	if hovered == null:
-		hovered = _tile_data_at(_weapon_scroll, _weapon_grid, mouse)
+	if hovered == null and _weapon_scroll.get_global_rect().has_point(mouse) and not get_viewport().gui_is_dragging():
+		for tile in _weapon_tiles:
+			if tile.get_global_rect().has_point(mouse):
+				hovered = tile.get_meta(&"data", null)
+				break
 
 	if hovered == null or not is_instance_valid(hovered):
 		_hovered = null
