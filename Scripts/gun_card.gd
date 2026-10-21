@@ -74,13 +74,19 @@ static func build(scene: PackedScene, gun: Gun, note := "", scale := 1.0) -> Con
 
 	var rarity_label := Label.new()
 	rarity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	rarity_label.text = Rarity.name_of(rarity)
-	rarity_label.add_theme_font_override("font", BODY_FONT)
+	rarity_label.text = Rarity.name_of(rarity).to_upper()
+	rarity_label.add_theme_font_override("font", HudStyle.spaced(BODY_FONT, maxi(_px(3, scale), 1)))
 	rarity_label.add_theme_font_size_override("font_size", _px(RARITY_SIZE, scale))
 	column.add_child(rarity_label)
 
-	var divider := HSeparator.new()
-	divider.add_theme_constant_override("separation", _px(12, scale))
+	# Divider: a hairline with a short segment in the rarity color in the middle (HUD style).
+	var divider := Control.new()
+	divider.custom_minimum_size.y = _px(12, scale)
+	divider.draw.connect(func() -> void:
+		var y := roundf(divider.size.y * 0.5)
+		divider.draw_rect(Rect2(0, y, divider.size.x, 1), HudStyle.PANEL_EDGE)
+		var seg := divider.size.x * 0.22
+		divider.draw_rect(Rect2((divider.size.x - seg) * 0.5, y - 1, seg, 3), Color(color, 0.9)))
 	column.add_child(divider)
 
 	# The gun's stats with its rolls applied. Rolled stats are lit up in the rarity color,
@@ -105,7 +111,7 @@ static func build(scene: PackedScene, gun: Gun, note := "", scale := 1.0) -> Con
 	for label in lit:
 		label.add_theme_color_override("font_color", boost)
 	# Mythic: everything drawn in the rarity color gets the rolling rainbow.
-	for item in [name_label, rarity_label] + lit:
+	for item in [name_label, rarity_label, divider] + lit:
 		Rarity.paint(item, rarity)
 	return column
 

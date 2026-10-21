@@ -13,20 +13,24 @@
 # clickable frame in that card's color, so the content doesn't need to handle input.
 #
 # Feel (see UIJuice): the game behind blurs, the cards are dealt in, a reroll flips them,
-# cards lift on hover, and picking one flashes it with a burst of sparks (bigger for rarer
-# picks) before the popup closes.
+# cards lift, light up and glint on hover, and picking one flashes it with a burst of sparks
+# (bigger for rarer picks) before the popup closes.
+# Look: the HUD style (HudStyle): letter-spaced title over an accent rule, cards framed as
+# HUD panels in their rarity color with a soft glow, HUD command buttons.
 class_name ChoicePopup
 extends Control
 
 @export_group("Look")
 ## Tint over the frozen (blurred) game behind the cards; alpha = how dark.
 @export var dim_color := Color(0.0, 0.0, 0.0, 0.5)
+## Unused now: titles use HudStyle's font (kept so scenes that set it still load).
 @export var title_font : Font = preload("res://Fonts/KHMenu-Bold.otf")
 @export var title_font_size := 34
 ## Smallest a card's frame can be; cards with bigger content (gun cards) are as big as it.
 @export var card_size := Vector2(120, 160)
 @export var card_gap := 28
 @export var card_padding := 10
+## Unused now: card frames use HudStyle.card_style (kept so scenes that set them still load).
 @export var card_bg := Color(0.05, 0.05, 0.06, 0.94)
 @export var card_border := 3
 ## How far the colored glow spreads around a card (more on hover).
@@ -42,6 +46,7 @@ extends Control
 @export var volume_db := 0.0
 
 var _title : Label
+var _title_box : Control
 var _dim : ColorRect
 var _column : VBoxContainer
 var _closing := false
@@ -55,6 +60,7 @@ var _prev_mouse_mode := Input.MOUSE_MODE_CAPTURED
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS   # keeps working while the tree is paused
+	theme = HudStyle.menu_theme()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	visible = false
@@ -78,12 +84,9 @@ func _ready() -> void:
 	center.add_child(column)
 	_column = column
 
-	_title = Label.new()
-	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	if title_font != null:
-		_title.add_theme_font_override("font", title_font)
-	_title.add_theme_font_size_override("font_size", title_font_size)
-	column.add_child(_title)
+	_title_box = HudStyle.make_title("", title_font_size)
+	_title = _title_box.get_meta(&"label")
+	column.add_child(_title_box)
 
 	_row = HBoxContainer.new()
 	_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -113,8 +116,8 @@ func open(title: String, cards: Array[Control], on_pick: Callable, buttons: Arra
 	_closing = false
 	_column.modulate.a = 1.0
 	_column.scale = Vector2.ONE
-	_title.text = title
-	_title.visible = not title.is_empty()
+	_title.text = title.to_upper()
+	_title_box.visible = not title.is_empty()
 	for child in _buttons.get_children():
 		_buttons.remove_child(child)
 		child.queue_free()
@@ -126,7 +129,7 @@ func open(title: String, cards: Array[Control], on_pick: Callable, buttons: Arra
 	# Blur the game in, drop the title in, then the buttons after the cards.
 	(_dim.material as ShaderMaterial).set_shader_parameter(&"amount", 0.0)
 	UIJuice.fade_backdrop(_dim, 1.0, 0.2)
-	UIJuice.pop_in(_title, 0.0, 0.8)
+	UIJuice.pop_in(_title_box, 0.0, 0.8)
 	for i in _buttons.get_child_count():
 		UIJuice.pop_in(_buttons.get_child(i), 0.12 + cards.size() * UIJuice.DEAL_STAGGER + i * 0.04)
 	if open_sound == null:
@@ -164,25 +167,10 @@ func cancel() -> void:
 
 
 func _make_button(text: String, pressed: Callable) -> Button:
-	var button := Button.new()
-	button.text = text
-	button.focus_mode = Control.FOCUS_NONE
-	button.custom_minimum_size = Vector2(200, 48)
-	if title_font != null:
-		button.add_theme_font_override("font", title_font)
-	button.add_theme_font_size_override("font_size", 22)
-	for state in ["normal", "hover", "pressed"]:
-		var style := StyleBoxFlat.new()
-		style.set_corner_radius_all(6)
-		style.set_border_width_all(2)
-		style.bg_color = card_bg.lightened({"normal": 0.08, "hover": 0.2, "pressed": 0.32}[state])
-		style.border_color = Color(0.6, 0.6, 0.65).lerp(Color.WHITE, {"normal": 0.0, "hover": 0.5, "pressed": 1.0}[state])
-		button.add_theme_stylebox_override(state, style)
-	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	var button := HudStyle.make_button(text, Vector2(200, 46), 18)
 	button.pressed.connect(func() -> void:
 		if not _closing:
 			pressed.call())
-	UIJuice.hover_lift(button, hover_sound == null)
 	if hover_sound != null:
 		button.mouse_entered.connect(_play.bind(hover_sound))
 	return button
@@ -197,10 +185,10 @@ func _wrap_card(content: Control, index: int) -> Button:
 	button.focus_mode = Control.FOCUS_NONE   # keeps Space / Enter from picking a card
 	button.clip_contents = false
 	Rarity.paint(button, content.get_meta(&"rarity", -1))   # Legendary shine / Mythic rainbow frame
-	button.add_theme_stylebox_override("normal", _card_style(color, glow_size, 0.0))
-	button.add_theme_stylebox_override("hover", _card_style(color, hover_glow_size, 0.12))
-	button.add_theme_stylebox_override("pressed", _card_style(color, hover_glow_size, 0.22))
-	button.add_theme_stylebox_override("hover_pressed", _card_style(color, hover_glow_size, 0.22))
+	button.add_theme_stylebox_override("normal", _card_style(color, 0.0))
+	button.add_theme_stylebox_override("hover", _card_style(color, 0.55))
+	button.add_theme_stylebox_override("pressed", _card_style(color, 1.0))
+	button.add_theme_stylebox_override("hover_pressed", _card_style(color, 1.0))
 	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	button.pressed.connect(_pick.bind(index))
 	button.set_meta(&"rarity", content.get_meta(&"rarity", 0))
@@ -218,6 +206,9 @@ func _wrap_card(content: Control, index: int) -> Button:
 
 	_ignore_mouse(content)
 	margin.add_child(content)
+	# A glint sweeps across the card when it's hovered (drawn over its content).
+	var glint := HudStyle.add_glint(button, 1.0)
+	button.mouse_entered.connect(glint)
 	# Fixed-size content (GunCard) makes every card the same size; anything bigger than
 	# card_size just makes its card bigger. Set once: cards never resize while shown.
 	# (Uses the content's set minimum size: measuring it before it's on screen is unreliable.)
@@ -229,15 +220,10 @@ func _wrap_card(content: Control, index: int) -> Button:
 	return button
 
 
-func _card_style(color: Color, glow: int, lift: float) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = card_bg.lerp(color.darkened(0.6), 0.25 + lift)
-	style.set_corner_radius_all(8)
-	style.set_border_width_all(card_border)
-	style.border_color = color.lerp(Color.WHITE, 0.35 + lift)
-	style.shadow_color = Color(color, 0.55 + lift)
-	style.shadow_size = glow
-	style.shadow_offset = Vector2.ZERO
+# A card frame in the HUD style (HudStyle.card_style). lit: 0 resting, more when hovered.
+func _card_style(color: Color, lit: float) -> HudPanelStyle:
+	var style := HudStyle.card_style(color, lit)
+	style.glow_size = lerpf(glow_size, hover_glow_size, lit)
 	return style
 
 

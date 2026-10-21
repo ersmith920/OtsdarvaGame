@@ -1,4 +1,8 @@
 # Hold-Tab menu. Opens while the "menu" action is held, closes the instant it's released.
+# Look: the HUD style (HudStyle): one see-through HUD panel split into three columns by
+# hairlines, letter-spaced section headers, HUD tiles glowing in their tier color (they lift
+# when hovered), HUD buttons and toggles, and a tooltip framed in the hovered thing's color.
+# The columns deal in when it opens.
 extends Control
 
 const EDGE_MARGIN := 0.03   # fraction of the screen left clear on each side
@@ -35,19 +39,21 @@ const TIP_MAX_TEXT_WIDTH := 320.0
 const HUD_CLEARANCE := 16.0   # gap kept between the menu and the HUD elements it avoids
 const COLUMN_PADDING := 24   # horizontal padding inside the middle column (put with the other constants)
 
-const TILE_GLOW_SIZE := 10        # how far the glow spreads, in px
-const TILE_GLOW_ALPHA := 0.6
-const TILE_BORDER := 2
-const TILE_BORDER_WHITEN := 0.6   # 0 = border is the tier color, 1 = white
+const TILE_GLOW_SIZE := 6         # room around the tile grids for the tiles' glow and hover lift, in px
 
 
 var _box: Panel
+var _columns: HBoxContainer
+var _tip_style: HudPanelStyle
+var _hover_tile: Control       # item / weapon tile under the cursor (lifted)
+var _last_values := {}         # stat name -> last shown value (changes flash)
 
 @export var name_font: Font = preload("res://Fonts/KHMenu-Bold.otf")
 @export var description_font: Font = preload("res://Fonts/KHMenu.otf")
 @export var tip_name_font_size := 20
 @export var tip_description_font_size := 15
 @export var tip_description_color := Color(0.85, 0.85, 0.85)
+## Unused now: the tooltip and headers use HudStyle (kept so scenes that set them still load).
 @export var tip_box_color := Color(0.06, 0.06, 0.06, 0.95)
 @export var section_header_font_size := 18
 @export var section_header_color := Color(0.8, 0.8, 0.8)
@@ -65,6 +71,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
+	theme = HudStyle.menu_theme()
 
 	var box := Panel.new()
 	box.anchor_left = EDGE_MARGIN
@@ -75,22 +82,30 @@ func _ready() -> void:
 	box.offset_top = 0
 	box.offset_right = 0
 	box.offset_bottom = 0
-	# Shared "glass" look (UIJuice), kept see-through: the game keeps running behind the Tab menu.
-	var style := UIJuice.glass_style(10, Color(1, 1, 1, 0.1), Color(0.03, 0.035, 0.05, 0.45))
-	box.add_theme_stylebox_override("panel", style)
+	# HUD panel, kept see-through: the game keeps running behind the Tab menu.
+	box.add_theme_stylebox_override("panel", HudStyle.panel_style(HudStyle.CYAN, 0.0, 0.6))
 	add_child(box)
 	_box = box
 
 	content = MarginContainer.new()
 	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "top", "right", "bottom"]:
-		content.add_theme_constant_override("margin_" + side, 24)
+	for side in ["left", "right"]:
+		content.add_theme_constant_override("margin_" + side, 18)
+	for side in ["top", "bottom"]:
+		content.add_theme_constant_override("margin_" + side, 12)
 	box.add_child(content)
 
 	# Three equal-width columns.
 	var columns := HBoxContainer.new()
 	columns.add_theme_constant_override("separation", 0)
 	content.add_child(columns)
+	_columns = columns
+	# Hairlines between the columns.
+	columns.draw.connect(func() -> void:
+		for i in range(1, columns.get_child_count()):
+			var x := (columns.get_child(i) as Control).position.x
+			columns.draw_rect(Rect2(x, 0, 1, columns.size.y), HudStyle.PANEL_EDGE)
+			columns.draw_rect(Rect2(x - 1, 0, 3, 24), Color(HudStyle.CYAN, 0.7)))
 	left_column = _make_column(columns)
 	middle_column = _make_column(columns)
 	right_column = _make_column(columns)
@@ -114,15 +129,23 @@ func _make_column(parent: Control) -> Control:
 # ---------- Stats list (right column) ----------
 
 func _build_stats_panel() -> void:
+	var margin := MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", COLUMN_PADDING)
+	right_column.add_child(margin)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
+	margin.add_child(box)
+	box.add_child(HudStyle.make_header("Stats", 13))
 	var scroll := ScrollContainer.new()
-	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	right_column.add_child(scroll)
+	box.add_child(scroll)
 
 	_stat_list = VBoxContainer.new()
 	_stat_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_stat_list.add_theme_constant_override("separation", 6)
+	_stat_list.add_theme_constant_override("separation", 0)
 	scroll.add_child(_stat_list)
 
 
@@ -132,17 +155,29 @@ func _rebuild_stat_rows() -> void:
 		child.queue_free()
 	_stat_value_labels.clear()
 
+	_last_values.clear()
+	var index := 0
 	for stat_name in GameManager.player.stats_node.stats:
 		var row := HBoxContainer.new()
+		row.custom_minimum_size.y = 26
+		# Faint stripe on every other row, so long lists stay easy to read across.
+		if index % 2 == 0:
+			row.draw.connect(func() -> void: row.draw_rect(Rect2(Vector2.ZERO, row.size), Color(HudStyle.CYAN, 0.05)))
+		index += 1
 
-		var name_label := Label.new()
-		name_label.text = String(stat_name).capitalize()   # "max_health" -> "Max Health"
+		var name_label := HudStyle.make_label(String(stat_name).capitalize(), 15, Color(HudStyle.WHITE, 0.75))   # "max_health" -> "Max Health"
 		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		row.add_child(name_label)
 
-		var value_label := Label.new()
+		var value_label := HudStyle.make_label("", 16, HudStyle.WHITE, true)
 		value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		value_label.custom_minimum_size.x = 70
 		row.add_child(value_label)
+		var pad := Control.new()
+		pad.custom_minimum_size.x = 8
+		row.add_child(pad)
 
 		_stat_list.add_child(row)
 		_stat_value_labels[stat_name] = value_label
@@ -152,7 +187,18 @@ func _update_stat_values() -> void:
 	var stats_node := GameManager.player.stats_node
 	for stat_name in _stat_value_labels:
 		var value: float = stats_node.get_value(stat_name)
-		(_stat_value_labels[stat_name] as Label).text = str(snappedf(value, 0.01))
+		var label := _stat_value_labels[stat_name] as Label
+		label.text = str(snappedf(value, 0.01))
+		# A stat that changed while the menu is open pops and flashes (green up, red down).
+		if _last_values.has(stat_name) and not is_equal_approx(_last_values[stat_name], value):
+			var up : bool = value > _last_values[stat_name]
+			label.add_theme_color_override("font_color", Color(0.5, 1.0, 0.6) if up else HudStyle.RED)
+			label.pivot_offset = Vector2(label.size.x, label.size.y * 0.5)
+			UIJuice.punch(label, 0.2)
+			UIJuice.tween_of(label).tween_method(func(c: Color) -> void:
+				label.add_theme_color_override("font_color", c),
+				Color(0.5, 1.0, 0.6) if up else HudStyle.RED, HudStyle.WHITE, 0.6)
+		_last_values[stat_name] = value
 
 # ---------- Buttons (middle column) ----------
 
@@ -164,58 +210,40 @@ func _build_buttons_panel() -> void:
 	middle_column.add_child(margin)
 
 	var list := VBoxContainer.new()
-	list.add_theme_constant_override("separation", 12)
+	list.add_theme_constant_override("separation", 8)
 	margin.add_child(list)
+	list.add_child(HudStyle.make_header("Dev tools", 13))
 
 	_pause_toggle = CheckButton.new()
-	_pause_toggle.text = "Pause Timer"
+	_pause_toggle.text = "PAUSE TIMER"
+	_pause_toggle.add_theme_font_size_override("font_size", 13)
 	# No keyboard focus: otherwise clicking it once would make Space (your jump key)
 	# toggle it every time you jump. Mouse clicks still work.
 	_pause_toggle.focus_mode = Control.FOCUS_NONE
 	_pause_toggle.toggled.connect(_on_pause_toggled)
 	list.add_child(_pause_toggle)
 
-	var minor_button := Button.new()
-	minor_button.text = "Spawn 25 Minors"
-	minor_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
-	minor_button.pressed.connect(_on_spawn_minors_pressed)
-	list.add_child(minor_button)
+	list.add_child(_dev_button("Spawn 25 Minors", _on_spawn_minors_pressed))
 
-	var minor_1000_button := Button.new()
-	minor_1000_button.text = "Spawn 1000 Minors"
-	minor_1000_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
-	minor_1000_button.pressed.connect(_on_spawn_many_minors_pressed.bind(1000))
-	list.add_child(minor_1000_button)
+	list.add_child(_dev_button("Spawn 1000 Minors", _on_spawn_many_minors_pressed.bind(1000)))
 
-	var major_button := Button.new()
-	major_button.text = "Spawn 25 Majors"
-	major_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
-	major_button.pressed.connect(_on_spawn_majors_pressed)
-	list.add_child(major_button)
+	list.add_child(_dev_button("Spawn 25 Majors", _on_spawn_majors_pressed))
 
-	var elite_minor_button := Button.new()
-	elite_minor_button.text = "Spawn 5 Elite Minors"
-	elite_minor_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
-	elite_minor_button.pressed.connect(_on_spawn_elites_pressed.bind("Minor", 5))
-	list.add_child(elite_minor_button)
+	list.add_child(_dev_button("Spawn 5 Elite Minors", _on_spawn_elites_pressed.bind("Minor", 5)))
 
-	var elite_major_button := Button.new()
-	elite_major_button.text = "Spawn 3 Elite Majors"
-	elite_major_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
-	elite_major_button.pressed.connect(_on_spawn_elites_pressed.bind("Major", 3))
-	list.add_child(elite_major_button)
+	list.add_child(_dev_button("Spawn 3 Elite Majors", _on_spawn_elites_pressed.bind("Major", 3)))
 
-	var swarm_button := Button.new()
-	swarm_button.text = "Start / End Swarm"
-	swarm_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
-	swarm_button.pressed.connect(_on_toggle_swarm_pressed)
-	list.add_child(swarm_button)
+	list.add_child(_dev_button("Start / End Swarm", _on_toggle_swarm_pressed))
 
-	var clear_button := Button.new()
-	clear_button.text = "Clear Floor Pickups"
-	clear_button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
-	clear_button.pressed.connect(_on_clear_pickups_pressed)
-	list.add_child(clear_button)
+	list.add_child(_dev_button("Clear Floor Pickups", _on_clear_pickups_pressed))
+
+
+# A HUD command button for the dev tools list (left-aligned, nudges right on hover).
+func _dev_button(text: String, on_pressed: Callable) -> Button:
+	var button := HudStyle.make_button(text, Vector2(0, 34), 13, HudStyle.CYAN, true, HORIZONTAL_ALIGNMENT_LEFT)
+	button.size_flags_horizontal = Control.SIZE_FILL
+	button.pressed.connect(on_pressed)
+	return button
 
 
 func _on_pause_toggled(on: bool) -> void:
@@ -286,12 +314,14 @@ func _on_clear_pickups_pressed() -> void:
 func _build_items_panel() -> void:
 	var halves := VBoxContainer.new()
 	halves.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	halves.add_theme_constant_override("separation", 8)
+	halves.add_theme_constant_override("separation", 6)
 	left_column.add_child(halves)
 
 	_item_scroll = _add_grid_section(halves, "Items")
 	_item_grid = _item_scroll.get_meta(&"grid")
-	_weapon_scroll = _add_grid_section(halves, "Weapons  (drag to move)")
+	# Always room for at least one full row of items.
+	_item_scroll.custom_minimum_size.y = ITEM_TILE_SIZE + TILE_GLOW_SIZE * 2
+	_weapon_scroll = _add_grid_section(halves, "Weapons  /  drag to move")
 	# Swap the plain grid for the four quadrants.
 	var grid : GridContainer = _weapon_scroll.get_meta(&"grid")
 	_weapon_quads = GridContainer.new()
@@ -307,12 +337,7 @@ func _build_items_panel() -> void:
 
 # A header plus a scrolling tile grid taking an equal share of the column's height.
 func _add_grid_section(parent: Control, title: String) -> ScrollContainer:
-	var header := Label.new()
-	header.text = title
-	header.add_theme_font_override("font", name_font)
-	header.add_theme_font_size_override("font_size", section_header_font_size)
-	header.add_theme_color_override("font_color", section_header_color)
-	parent.add_child(header)
+	parent.add_child(HudStyle.make_header(title, 13))
 
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -365,11 +390,8 @@ func _rebuild_weapon_grid() -> void:
 	for q in QUADRANT_ORDER:
 		var box := VBoxContainer.new()
 		box.add_theme_constant_override("separation", 4)
-		var label := Label.new()
-		label.text = Player.quadrant_label(q)
-		label.add_theme_font_override("font", name_font)
-		label.add_theme_font_size_override("font_size", 14)
-		label.add_theme_color_override("font_color", section_header_color)
+		var label := HudStyle.make_caption(Player.quadrant_label(q), 11)
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		var header := HBoxContainer.new()
 		header.add_theme_constant_override("separation", 8)
 		header.add_child(label)
@@ -403,9 +425,9 @@ const AUTO_COLOR := Color(0.2, 0.45, 1.0)
 func _make_fire_mode_button(q: Player.Quadrant) -> Button:
 	var button := Button.new()
 	button.focus_mode = Control.FOCUS_NONE
-	button.custom_minimum_size = Vector2(62, 0)
-	button.add_theme_font_override("font", name_font)
-	button.add_theme_font_size_override("font_size", 11)
+	button.custom_minimum_size = Vector2(66, 20)
+	button.add_theme_font_override("font", HudStyle.spaced(HudStyle.MENU_FONT, 1))
+	button.add_theme_font_size_override("font_size", 10)
 	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	_style_fire_mode_button(button, GameManager.player.quadrant_auto[q])
 	button.pressed.connect(func() -> void:
@@ -419,14 +441,20 @@ func _make_fire_mode_button(q: Player.Quadrant) -> Button:
 
 
 func _style_fire_mode_button(button: Button, auto: bool) -> void:
-	button.text = "Auto" if auto else "Manual"
+	button.text = "AUTO" if auto else "MANUAL"
 	var color := AUTO_COLOR if auto else MANUAL_COLOR
-	for state in ["normal", "hover", "pressed"]:
-		var style := StyleBoxFlat.new()
-		style.bg_color = color.darkened({"normal": 0.25, "hover": 0.05, "pressed": 0.4}[state])
-		style.border_color = color.lightened(0.35)
-		style.set_border_width_all(1)
-		style.set_corner_radius_all(4)
+	for state in ["normal", "hover", "pressed", "hover_pressed"]:
+		var style := HudPanelStyle.new()
+		style.accent = color.lightened(0.3)
+		style.cut = 4.0
+		style.bracket = 5.0
+		style.bar = false
+		style.fill_top = Color(color.darkened(0.45), 0.9)
+		style.fill_bottom = Color(color.darkened(0.65), 0.9)
+		style.edge = Color(color.lightened(0.2), 0.8)
+		style.lit = {"normal": 0.0, "hover": 0.5, "pressed": 1.0, "hover_pressed": 1.0}[state]
+		style.glow = Color(color, 0.7)
+		style.glow_size = 4.0 + 4.0 * style.lit
 		style.content_margin_left = 6
 		style.content_margin_right = 6
 		style.content_margin_top = 1
@@ -450,12 +478,7 @@ func _slots_on_screen_order(slots: Array) -> Array:
 func _make_empty_slot_tile() -> Panel:
 	var tile := Panel.new()
 	tile.custom_minimum_size = Vector2(ITEM_TILE_SIZE, ITEM_TILE_SIZE)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.0, 0.0, 0.0, 0.35)
-	style.set_corner_radius_all(4)
-	style.set_border_width_all(TILE_BORDER)
-	style.border_color = Color(0.45, 0.45, 0.45, 0.6)
-	tile.add_theme_stylebox_override("panel", style)
+	tile.add_theme_stylebox_override("panel", HudStyle.empty_tile_style())
 	return tile
 
 
@@ -526,8 +549,8 @@ func _make_weapon_tile(gun: Gun) -> Control:
 	var tile := _make_tile_frame(gun, Rarity.get_color(gun.get_rarity()))
 	Rarity.paint(tile, gun.get_rarity())   # Mythic: rainbow frame and glow
 	if Rarity.is_animated(gun.get_rarity()):
-		var style := tile.get_theme_stylebox("panel") as StyleBoxFlat
-		RarityAnimator.attach(tile, gun.get_rarity(), func(c: Color) -> void: _color_tile_style(style, c))
+		var style := tile.get_theme_stylebox("panel") as HudPanelStyle
+		RarityAnimator.attach(tile, gun.get_rarity(), func(c: Color) -> void: HudStyle.color_tile(style, c))
 	if gun.icon != null:
 		var icon := TextureRect.new()
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -554,20 +577,8 @@ func _make_tile_frame(data: Object, tier_color: Color) -> Panel:
 	tile.custom_minimum_size = Vector2(ITEM_TILE_SIZE, ITEM_TILE_SIZE)
 	tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tile.set_meta(&"data", data)
-	var style := StyleBoxFlat.new()
-	style.set_corner_radius_all(4)
-	style.set_border_width_all(TILE_BORDER)
-	style.shadow_size = TILE_GLOW_SIZE
-	style.shadow_offset = Vector2.ZERO
-	_color_tile_style(style, tier_color)
-	tile.add_theme_stylebox_override("panel", style)
+	tile.add_theme_stylebox_override("panel", HudStyle.tile_style(tier_color))
 	return tile
-
-
-func _color_tile_style(style: StyleBoxFlat, tier_color: Color) -> void:
-	style.bg_color = Color(tier_color.darkened(0.8), 0.5)   # faintly lit inside
-	style.border_color = tier_color.lerp(Color.WHITE, TILE_BORDER_WHITEN)
-	style.shadow_color = Color(tier_color, TILE_GLOW_ALPHA)
 
 
 func _make_item_tile(item: ItemData, count: int) -> Control:
@@ -601,8 +612,10 @@ func _make_item_tile(item: ItemData, count: int) -> Control:
 	count_label.text = "x%d" % count
 	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	count_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-	count_label.add_theme_font_override("font", name_font)
-	count_label.add_theme_font_size_override("font_size", 16)
+	count_label.add_theme_font_override("font", HudStyle.NUMBER_FONT)
+	count_label.add_theme_font_size_override("font_size", 15)
+	count_label.add_theme_color_override("font_outline_color", Color(HudStyle.SHADOW, 0.9))
+	count_label.add_theme_constant_override("outline_size", 4)
 
 	tile.add_child(count_label)
 	count_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 4)
@@ -616,9 +629,10 @@ func _build_item_tooltip() -> void:
 	_tip = PanelContainer.new()
 	_tip.mouse_filter = Control.MOUSE_FILTER_IGNORE   # must not steal the hover it depends on
 	_tip.visible = false
-	var style := UIJuice.glass_style(6, Color(1, 1, 1, 0.14), tip_box_color)
-	style.set_content_margin_all(TIP_PADDING)
-	_tip.add_theme_stylebox_override("panel", style)
+	_tip_style = HudStyle.panel_style(HudStyle.CYAN, TIP_PADDING)
+	_tip_style.fill_top = Color(_tip_style.fill_top, 0.95)
+	_tip_style.fill_bottom = Color(_tip_style.fill_bottom, 0.95)
+	_tip.add_theme_stylebox_override("panel", _tip_style)
 	add_child(_tip)
 
 	var column := VBoxContainer.new()
@@ -656,6 +670,7 @@ func _update_item_hover() -> void:
 				hovered = tile.get_meta(&"data") if tile.has_meta(&"data") else null   # empty slots have none
 				break
 
+	_set_hover_tile(_tile_at(mouse) if hovered != null else null)
 	if hovered == null or not is_instance_valid(hovered):
 		_hovered = null
 		_tip.visible = false
@@ -663,6 +678,11 @@ func _update_item_hover() -> void:
 
 	if hovered != _hovered:
 		_hovered = hovered
+		# A new thing under the cursor: the tooltip pops in from the cursor.
+		_tip.pivot_offset = Vector2.ZERO
+		_tip.scale = Vector2.ONE * 0.92
+		UIJuice.tween_of(_tip).tween_property(_tip, "scale", Vector2.ONE, 0.12) \
+				.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		if hovered is Gun:
 			_fill_weapon_tooltip(hovered)
 		else:
@@ -676,6 +696,34 @@ func _update_item_hover() -> void:
 	pos.y = minf(pos.y, size.y - _tip.size.y - 8.0)
 	_tip.position = pos
 	_tip.visible = true
+
+
+# The item or weapon tile under the mouse, if any.
+func _tile_at(mouse: Vector2) -> Control:
+	if _item_scroll.get_global_rect().has_point(mouse):
+		for tile in _item_grid.get_children():
+			if (tile as Control).get_global_rect().has_point(mouse):
+				return tile
+	if _weapon_scroll.get_global_rect().has_point(mouse):
+		for tile in _weapon_tiles:
+			if is_instance_valid(tile) and tile.get_global_rect().has_point(mouse):
+				return tile
+	return null
+
+
+# Item tiles ignore the mouse (so the wheel scrolls), so their hover lift is done here.
+# (Weapon tiles lift on their own through UIJuice.hover_lift.)
+func _set_hover_tile(tile: Control) -> void:
+	if tile == _hover_tile:
+		return
+	if _hover_tile != null and is_instance_valid(_hover_tile) and not _hover_tile.has_meta(&"slot"):
+		UIJuice.tween_of(_hover_tile).tween_property(_hover_tile, "scale", Vector2.ONE, 0.12)
+	_hover_tile = tile
+	if tile != null and not tile.has_meta(&"slot"):
+		UIJuice.center_pivot(tile)
+		UIJuice.tween_of(tile).tween_property(tile, "scale", Vector2.ONE * 1.1, 0.14) \
+				.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		UIJuice.play(UIJuice.Sfx.HOVER)
 
 
 func _tile_data_at(scroll: ScrollContainer, grid: GridContainer, mouse: Vector2) -> Object:
@@ -728,6 +776,8 @@ func _num(v: float) -> String:
 
 ## stats: optional {text, color} lines shown under the description.
 func _fill_tip(title: String, tier_color: Color, description: String, stats: Array[Dictionary] = []) -> void:
+	_tip_style.accent = tier_color
+	_tip_style.edge = Color(tier_color, 0.45)
 	_tip_name.add_theme_color_override("font_color", tier_color)
 	TextGlow.set_text(_tip_name, title, tier_color)
 	# Line breaks are put in here instead of using Label autowrap: a wrapping Label works out
@@ -838,6 +888,13 @@ func _open() -> void:
 	visible = true
 	_fit_to_hud()
 	UIJuice.pop_in(_box, 0.0, 0.97, 0.12)
+	# The columns deal in one after another.
+	for i in _columns.get_child_count():
+		var column := _columns.get_child(i) as Control
+		column.modulate.a = 0.0
+		var t := UIJuice.tween_of(column)
+		t.tween_interval(0.03 + 0.05 * i)
+		t.tween_property(column, "modulate:a", 1.0, 0.14)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_pause_toggle.set_pressed_no_signal(GameManager.timer_paused)
 	if GameManager.player != null:
@@ -854,6 +911,7 @@ func _open() -> void:
 func _close() -> void:
 	visible = false
 	_tip.visible = false
+	_set_hover_tile(null)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	if GameManager.player != null:
 		GameManager.player.menu_open = false

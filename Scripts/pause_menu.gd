@@ -96,7 +96,7 @@ func _build_pages() -> void:
 		header.draw_rect(Rect2(60, 71, 80, 3), HudStyle.CYAN))
 	_header = header
 	_title = HudStyle.make_label("PAUSE", 34, HudStyle.WHITE, true)
-	_title.add_theme_font_override("font", _spaced(HudStyle.MENU_FONT, 8))
+	_title.add_theme_font_override("font", HudStyle.spaced(HudStyle.MENU_FONT, 8))
 	_title.position = Vector2(60, 24)
 	header.add_child(_title)
 
@@ -167,56 +167,18 @@ func _make_window(panel := false) -> VBoxContainer:
 	return page
 
 
-# A command button: a HUD panel with letter-spaced text on the left. Hovered, it fills with
-# the accent color, its accent bar grows and it slides right a little.
+# A command button (HudStyle.make_button): left-aligned, nudges right when hovered.
 func _make_button(text: String, on_pressed: Callable) -> Button:
-	var button := Button.new()
-	button.text = text.to_upper()
-	button.custom_minimum_size = button_size
+	var button := HudStyle.make_button(text, Vector2(button_size.x, minf(button_size.y, 46.0)),
+			roundi(font_size * 0.75), HudStyle.CYAN, true, HORIZONTAL_ALIGNMENT_LEFT)
 	button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
-	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	for st in ["normal", "hover", "pressed", "disabled", "focus", "hover_pressed"]:
-		var box := StyleBoxEmpty.new()
-		box.content_margin_left = 24
-		button.add_theme_stylebox_override(st, box)
-	button.add_theme_font_override("font", _spaced(HudStyle.MENU_FONT, 3))
-	button.add_theme_font_size_override("font_size", roundi(font_size * 0.75))
-	button.custom_minimum_size.y = minf(button_size.y, 46.0)
-	for c in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
-		button.add_theme_color_override(c, HudStyle.WHITE)
-	button.add_theme_color_override("font_outline_color", Color(HudStyle.SHADOW, 0.8))
-	button.add_theme_constant_override("outline_size", 3)
-	button.set_meta(&"lit", 0.0)
-	# The panel is drawn by a child shown behind the button, so the text stays on top.
-	var plate := Control.new()
-	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	plate.show_behind_parent = true
-	button.add_child(plate)
-	plate.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	plate.draw.connect(func() -> void:
-		var lit : float = button.get_meta(&"lit")
-		var r := Rect2(Vector2(lit * 8.0, 0), button.size)
-		HudStyle.draw_panel(plate, r, HudStyle.CYAN, lit))
-	var light := func(to: float) -> void:
-		var t := UIJuice.tween_of(button)
-		t.tween_method(func(v: float) -> void:
-			button.set_meta(&"lit", v)
-			plate.queue_redraw(), button.get_meta(&"lit"), to, 0.12)
-	button.mouse_entered.connect(func() -> void:
-		light.call(1.0)
-		UIJuice.play(UIJuice.Sfx.HOVER))
-	button.mouse_exited.connect(func() -> void: light.call(0.0))
-	button.button_down.connect(func() -> void:
-		UIJuice.play(UIJuice.Sfx.CLICK)
-		UIJuice.punch(button, -0.06))
 	button.pressed.connect(on_pressed)
 	return button
 
 
 func _make_label(text: String) -> Label:
 	var l := HudStyle.make_label(text.to_upper(), roundi(font_size * 0.6), HudStyle.WHITE)
-	l.add_theme_font_override("font", _spaced(HudStyle.LABEL_FONT, 2))
+	l.add_theme_font_override("font", HudStyle.spaced(HudStyle.LABEL_FONT, 2))
 	return l
 
 
@@ -227,12 +189,6 @@ static func _grabber_texture() -> Texture2D:
 	return ImageTexture.create_from_image(img)
 
 
-# A font with extra space between letters.
-static func _spaced(base: Font, spacing: int) -> FontVariation:
-	var f := FontVariation.new()
-	f.base_font = base
-	f.spacing_glyph = spacing
-	return f
 
 
 # ---------- Input ----------

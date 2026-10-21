@@ -8,6 +8,8 @@
 # Feel (see UIJuice): the game blurs behind it, it pops in and out, tiles lift on hover, a
 # picked gun flies from its tile into its slot, the result flips in, Combine pulses while it's
 # ready, and combining bursts the result (a bigger jackpot burst for a Mythic).
+# Look: the HUD style (HudStyle): HUD panels with headers, card frames in the rarity color
+# with a glow (a glint sweeps a slot as a gun lands in it), HUD tiles and buttons.
 class_name CombinerMenu
 extends Control
 
@@ -35,12 +37,9 @@ const PANEL_GAP := 16
 const PANEL_PADDING := 14
 const PLUS_WIDTH := 30
 const EMPTY_TEXT_SIZE := 14
-const PANEL_BG := Color(0.05, 0.05, 0.06, 0.94)
-const EMPTY_BORDER := Color(0.4, 0.4, 0.42)
-const HINT_COLOR := Color(0.65, 0.65, 0.68)
+const HINT_COLOR := Color(0.6, 0.72, 0.85, 0.8)
 const GRAYED := Color(0.3, 0.3, 0.3, 0.8)
 const DIM_COLOR := Color(0, 0, 0, 0.55)
-const BUTTON_BG := Color(0.13, 0.13, 0.16, 0.95)
 
 var combiner : Combiner
 
@@ -70,6 +69,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	theme = HudStyle.menu_theme()
 	_build()
 	_refresh()
 	_fit.call_deferred()   # the layout's size never changes after this (only on window resize)
@@ -106,8 +106,7 @@ func _build() -> void:
 	_content.add_theme_constant_override("separation", 14)
 	_holder.add_child(_content)
 
-	var title := _label(combiner.title if combiner != null else "Combiner", TITLE_SIZE, Color.WHITE, TITLE_FONT)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var title := HudStyle.make_title(combiner.title if combiner != null else "Combiner", TITLE_SIZE)
 	_content.add_child(title)
 
 	# Three panels side by side, all the same height, so their headers and their contents
@@ -140,7 +139,7 @@ func _build() -> void:
 	middle.add_child(pair)
 	for i in 2:
 		if i == 1:
-			var plus := _label("+", 26, Color(1, 1, 1, 0.7), TITLE_FONT)
+			var plus := _label("+", 26, Color(HudStyle.CYAN, 0.8), TITLE_FONT)
 			plus.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			plus.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			plus.custom_minimum_size = Vector2(PLUS_WIDTH, CARD_SIZE.y)
@@ -149,12 +148,14 @@ func _build() -> void:
 		slot.mouse_filter = Control.MOUSE_FILTER_STOP
 		slot.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		slot.gui_input.connect(_on_slot_input.bind(i))
+		slot.set_meta(&"glint", HudStyle.add_glint(slot))
 		pair.add_child(slot)
 		_slots.append(slot)
 
 	# ---- Right: the result ----
 	var right := _panel(columns, "Result")
 	_result = _card_frame()
+	_result.set_meta(&"glint", HudStyle.add_glint(_result))
 	right.add_child(_result)
 
 	# ---- Footer: the hint, then Cancel and Combine side by side ----
@@ -188,20 +189,16 @@ func _build() -> void:
 	add_child(_tip)
 
 
-# A glass panel with a small header; returns the box its content goes in.
+# A HUD panel with a header; returns the box its content goes in.
 func _panel(parent: Control, header: String) -> VBoxContainer:
 	var panel := PanelContainer.new()
-	var style := UIJuice.glass_style(10, Color(1, 1, 1, 0.1), Color(0.03, 0.035, 0.05, 0.7))
-	style.set_content_margin_all(PANEL_PADDING)
-	panel.add_theme_stylebox_override("panel", style)
+	panel.add_theme_stylebox_override("panel", HudStyle.panel_style(HudStyle.CYAN, PANEL_PADDING))
 	panel.size_flags_vertical = Control.SIZE_FILL
 	parent.add_child(panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
 	panel.add_child(box)
-	var label := _label(header.to_upper(), HEADER_SIZE, Color(0.78, 0.8, 0.86), TITLE_FONT)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(label)
+	box.add_child(HudStyle.make_header(header, HEADER_SIZE - 2, HudStyle.CYAN_DIM, HORIZONTAL_ALIGNMENT_CENTER))
 	return box
 
 
@@ -216,70 +213,30 @@ func _label(text: String, size_px: int, color: Color, font: Font = BODY_FONT) ->
 
 
 func _button(text: String) -> Button:
-	var button := Button.new()
-	button.text = text
-	button.focus_mode = Control.FOCUS_NONE
-	button.custom_minimum_size = BUTTON_SIZE
-	button.add_theme_font_override("font", TITLE_FONT)
-	button.add_theme_font_size_override("font_size", BUTTON_FONT_SIZE)
-	button.add_theme_color_override("font_disabled_color", Color(0.4, 0.4, 0.42))
-	for state in ["normal", "hover", "pressed", "disabled"]:
-		var style := StyleBoxFlat.new()
-		style.set_corner_radius_all(6)
-		style.set_border_width_all(2)
-		style.set_content_margin_all(6)
-		match state:
-			"normal":
-				style.bg_color = BUTTON_BG
-				style.border_color = Color(0.55, 0.55, 0.6)
-			"hover":
-				style.bg_color = BUTTON_BG.lightened(0.15)
-				style.border_color = Color(0.85, 0.85, 0.9)
-			"pressed":
-				style.bg_color = BUTTON_BG.lightened(0.3)
-				style.border_color = Color.WHITE
-			"disabled":
-				style.bg_color = Color(BUTTON_BG.darkened(0.4), 0.8)
-				style.border_color = Color(0.25, 0.25, 0.27)
-		button.add_theme_stylebox_override(state, style)
-	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	UIJuice.hover_lift(button)
-	return button
+	return HudStyle.make_button(text, BUTTON_SIZE, BUTTON_FONT_SIZE)
 
 
-# A card-sized frame (slot or result). Its border is set by _color_frame.
+# A card-sized frame (slot or result). Its look is set by _color_frame.
 func _card_frame() -> PanelContainer:
 	var frame := PanelContainer.new()
 	frame.custom_minimum_size = CARD_SIZE
-	var style := StyleBoxFlat.new()
-	style.bg_color = PANEL_BG
-	style.set_corner_radius_all(8)
-	style.set_border_width_all(3)
-	style.set_content_margin_all(CARD_PADDING)
-	style.shadow_offset = Vector2.ZERO
-	frame.add_theme_stylebox_override("panel", style)
 	_color_frame(frame, -1)
 	return frame
 
 
-# rarity -1 = empty (gray, no glow). Mythic frames keep cycling through an animator.
+# rarity -1 = empty (dim, no glow). Mythic frames keep cycling through an animator.
 func _color_frame(frame: PanelContainer, rarity: int) -> void:
 	for child in frame.get_children():
 		if child is RarityAnimator:
 			(child as RarityAnimator).apply = Callable()   # stop it before it's freed
 			child.queue_free()
-	var style := frame.get_theme_stylebox("panel") as StyleBoxFlat
-	Rarity.paint(frame, rarity)   # Mythic: rainbow border and glow (-1 clears it)
+	Rarity.paint(frame, rarity)   # Legendary shine / Mythic rainbow frame (-1 clears it)
 	if rarity < 0:
-		style.border_color = EMPTY_BORDER
-		style.bg_color = PANEL_BG
-		style.shadow_size = 0
+		frame.add_theme_stylebox_override("panel", HudStyle.empty_card_style(CARD_PADDING))
 		return
-	style.shadow_size = 14
-	RarityAnimator.attach(frame, rarity, func(c: Color) -> void:
-		style.border_color = c.lerp(Color.WHITE, 0.35)
-		style.bg_color = PANEL_BG.lerp(c.darkened(0.6), 0.25)
-		style.shadow_color = Color(c, 0.55))
+	var style := HudStyle.card_style(Rarity.get_color(rarity), 0.0, CARD_PADDING)
+	frame.add_theme_stylebox_override("panel", style)
+	RarityAnimator.attach(frame, rarity, func(c: Color) -> void: HudStyle.color_card(style, c))
 
 
 # ======================================================================
@@ -342,16 +299,9 @@ func _make_tile(gun: Gun) -> Control:
 	var rarity := gun.get_rarity()
 	var tile := Panel.new()
 	tile.custom_minimum_size = Vector2(TILE_SIZE, TILE_SIZE)
-	var style := StyleBoxFlat.new()
-	style.set_corner_radius_all(4)
-	style.set_border_width_all(2)
-	style.shadow_size = 10
-	style.shadow_offset = Vector2.ZERO
+	var style := HudStyle.tile_style(Rarity.get_color(rarity))
 	tile.add_theme_stylebox_override("panel", style)
-	RarityAnimator.attach(tile, rarity, func(c: Color) -> void:
-		style.bg_color = Color(c.darkened(0.8), 0.5)
-		style.border_color = c.lerp(Color.WHITE, 0.6)
-		style.shadow_color = Color(c, 0.6))
+	RarityAnimator.attach(tile, rarity, func(c: Color) -> void: HudStyle.color_tile(style, c))
 	Rarity.paint(tile, rarity)
 
 	if gun.icon != null:
@@ -371,12 +321,13 @@ func _make_tile(gun: Gun) -> Control:
 	# Picked guns show which slot they're in; guns that can't be picked are grayed out.
 	var pick := 1 if gun == _first else (2 if gun == _second else 0)
 	if pick > 0:
-		var badge := _label(str(pick), 16, Color.WHITE, TITLE_FONT)
+		var badge := HudStyle.make_label(str(pick), 16, HudStyle.WHITE, true)
 		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		badge.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 		tile.add_child(badge)
 		badge.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 4)
-		style.set_border_width_all(4)
+		style.edge_width = 2.5
+		style.lit = 0.7
 	elif not _pickable(gun):
 		tile.modulate = GRAYED
 
@@ -394,7 +345,7 @@ func _make_tile(gun: Gun) -> Control:
 # Puts a gun card in a frame, or the empty text.
 func _fill_frame(frame: PanelContainer, gun: Gun, note: String, empty_text: String) -> void:
 	for child in frame.get_children():
-		if not (child is RarityAnimator):
+		if not (child is RarityAnimator) and not child.has_meta(&"glint_overlay"):
 			frame.remove_child(child)
 			child.queue_free()
 	if gun == null:
@@ -470,6 +421,7 @@ func _on_tile_input(event: InputEvent, gun: Gun) -> void:
 		_fly_into_slot(gun, from_rect, fly_to)
 	if not had_both and _first != null and _second != null:
 		UIJuice.flip_in(_result, 0.22)   # both picked: the result turns over
+		get_tree().create_timer(0.2, true, false, true).timeout.connect(_result.get_meta(&"glint"))
 		UIJuice.play(UIJuice.Sfx.PICK, 0.9)
 
 
@@ -517,7 +469,9 @@ func _fly_into_slot(gun: Gun, from_rect: Rect2, slot_index: int) -> void:
 	t.tween_property(ghost, "modulate:a", 0.0, 0.12).set_delay(0.12)
 	t.chain().tween_callback(func() -> void:
 		ghost.queue_free()
-		UIJuice.flash(slot, 0.5))
+		UIJuice.flash(slot, 0.5)
+		if slot.has_meta(&"glint"):
+			(slot.get_meta(&"glint") as Callable).call())
 
 
 # Takes a pick back out. Taking out the first moves the second up into its place.
@@ -631,7 +585,10 @@ func _show_tip(gun: Gun) -> void:
 	for child in _tip.get_children():
 		_tip.remove_child(child)
 		child.queue_free()
-	_tip.add_theme_stylebox_override("panel", UIJuice.glass_style(6, Color(1, 1, 1, 0.14), Color(0.04, 0.045, 0.06, 0.94)))
+	var tip_style := HudStyle.panel_style(Rarity.get_color(gun.get_rarity()), 10.0)
+	tip_style.fill_top = Color(tip_style.fill_top, 0.95)
+	tip_style.fill_bottom = Color(tip_style.fill_bottom, 0.95)
+	_tip.add_theme_stylebox_override("panel", tip_style)
 
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 2)
