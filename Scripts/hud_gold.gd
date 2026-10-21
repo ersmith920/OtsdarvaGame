@@ -60,11 +60,11 @@ func _ready() -> void:
 	vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	# Inside the mission panel: the coin at the row's left edge, the number on the right.
 	set_anchors_preset(Control.PRESET_TOP_LEFT)
-	var left := 16.0 + icon_size + icon_gap
+	var left := 14.0 + icon_size + icon_gap
 	position = HudStyle.MISSION_POS + Vector2(left, HudStyle.MISSION_ROW_SCRAP + 3)
-	size = Vector2(HudStyle.MISSION_SIZE.x - left - 16.0, 22)
-	add_theme_color_override("font_outline_color", Color(0.02, 0.04, 0.1, 0.95))
-	add_theme_constant_override("outline_size", 5)
+	size = Vector2(HudStyle.MISSION_SIZE.x - left - 14.0, 22)
+	add_theme_color_override("font_outline_color", Color(HudStyle.SHADOW, 0.8))
+	add_theme_constant_override("outline_size", 3)
 	add_theme_font_override("font", HudStyle.NUMBER_FONT)
 	add_theme_font_size_override("font_size", FONT_SIZE)
 	add_theme_color_override("font_color", HudStyle.GOLD)

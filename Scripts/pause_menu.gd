@@ -79,29 +79,33 @@ func _build_background() -> void:
 
 
 func _build_pages() -> void:
-	# KH2-style layout: a big "PAUSE" header across the top left, a stack of glossy command
-	# plates down the left side, and a mission info plate (time, scrap) bottom right.
+	# KH2-style layout: a "PAUSE" header across the top left, a column of command buttons
+	# down the left side, and a mission info panel (time, scrap) bottom right.
 	var header := Control.new()
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(header)
 	header.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	header.offset_bottom = 90
 	header.draw.connect(func() -> void:
-		# A dark band with a thin blue line under it, the KH menu header.
-		header.draw_rect(Rect2(0, 18, header.size.x, 56), Color(0.02, 0.04, 0.12, 0.7))
-		header.draw_rect(Rect2(0, 74, header.size.x, 2), Color(HudStyle.CYAN, 0.8))
-		header.draw_rect(Rect2(0, 77, header.size.x * 0.4, 1), Color(HudStyle.CYAN, 0.35)))
+		# A dark band fading out to the right, with a hairline under it.
+		var w := header.size.x
+		header.draw_polygon(PackedVector2Array([Vector2(0, 20), Vector2(w, 20), Vector2(w, 72), Vector2(0, 72)]),
+				PackedColorArray([Color(HudStyle.PANEL_TOP, 0.85), Color(HudStyle.PANEL_TOP, 0.0),
+				Color(HudStyle.PANEL_BOTTOM, 0.0), Color(HudStyle.PANEL_BOTTOM, 0.85)]))
+		header.draw_rect(Rect2(0, 72, w * 0.6, 1), Color(HudStyle.CYAN, 0.6))
+		header.draw_rect(Rect2(60, 71, 80, 3), HudStyle.CYAN))
 	_header = header
-	_title = HudStyle.make_label("PAUSE", 44, HudStyle.WHITE, true)
-	_title.position = Vector2(60, 16)
+	_title = HudStyle.make_label("PAUSE", 34, HudStyle.WHITE, true)
+	_title.add_theme_font_override("font", _spaced(HudStyle.MENU_FONT, 8))
+	_title.position = Vector2(60, 24)
 	header.add_child(_title)
 
-	_main_page = _make_window("COMMAND")
+	_main_page = _make_window()
 	_main_page.add_child(_make_button("Resume", _resume))
 	_main_page.add_child(_make_button("Settings", func(): _show_settings(true)))
 	_main_page.add_child(_make_button("Exit", _on_exit_pressed))
 
-	_settings_page = _make_window("CONFIG")
+	_settings_page = _make_window(true)
 	_settings_page.visible = false
 	_add_slider_row("Mouse Sensitivity", SENS_DISPLAY_MIN, SENS_DISPLAY_MAX, SENS_DISPLAY_STEP,
 		GameManager.mouse_sensitivity * SENS_DISPLAY_SCALE, _on_sensitivity_changed, "%.1f")
@@ -109,7 +113,7 @@ func _build_pages() -> void:
 		GameManager.master_volume * 100.0, _on_volume_changed, "%d%%")
 	_settings_page.add_child(_make_button("Back", func(): _show_settings(false)))
 
-	# Mission info, bottom right (like KH's time / munny box).
+	# Mission info, bottom right (like KH's time / munny box): one panel, two rows.
 	_info = Control.new()
 	_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_info)
@@ -120,12 +124,11 @@ func _build_pages() -> void:
 	_info.offset_bottom = -50
 	_info.draw.connect(func() -> void:
 		var r := Rect2(Vector2.ZERO, INFO_SIZE)
-		HudStyle.draw_backing(_info, r.grow(4.0))
-		HudStyle.draw_plate(_info, Rect2(4, 4, r.size.x - 8, 30), HudStyle.PLATE_TOP, HudStyle.PLATE_BOTTOM, HudStyle.PLATE_RIM, 15.0)
-		HudStyle.draw_plate(_info, Rect2(4, 40, r.size.x - 8, 30), HudStyle.PLATE_TOP, HudStyle.PLATE_BOTTOM, HudStyle.PLATE_RIM, 15.0))
+		HudStyle.draw_panel(_info, r)
+		HudStyle.draw_divider(_info, Vector2(12, r.size.y * 0.5), r.size.x - 24))
 	for i in 2:
-		var cap := HudStyle.make_label(["TIME", "SCRAP"][i], 13, HudStyle.WHITE)
-		cap.position = Vector2(18, 10 + 36 * i)
+		var cap := HudStyle.make_caption(["TIME", "SCRAP"][i], 11)
+		cap.position = Vector2(18, 12 + 37 * i)
 		_info.add_child(cap)
 		var num := HudStyle.make_label("0", 20, HudStyle.GOLD if i == 1 else HudStyle.WHITE, true)
 		num.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -138,8 +141,9 @@ func _build_pages() -> void:
 			_info_scrap = num
 
 
-# The command window: a metal frame down the left side holding a column of plates.
-func _make_window(tab_text: String) -> VBoxContainer:
+# A column of buttons down the left side, centered vertically. panel: draws a HUD panel
+# behind the column (the settings page, whose rows would otherwise float).
+func _make_window(panel := false) -> VBoxContainer:
 	# Full-screen holder that keeps the window centered vertically, a fixed gap from the left.
 	var holder := MarginContainer.new()
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -152,17 +156,10 @@ func _make_window(tab_text: String) -> VBoxContainer:
 	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	for side in ["left", "right", "top", "bottom"]:
 		frame.add_theme_constant_override("margin_" + side, 14)
-	frame.add_theme_constant_override("margin_top", 22)
-	frame.add_theme_constant_override("margin_right", 26)   # room for a lit plate's slide
+	frame.add_theme_constant_override("margin_right", 26)   # room for a lit button's slide
 	holder.add_child(frame)
-	frame.draw.connect(func() -> void:
-		var r := Rect2(Vector2.ZERO, frame.size)
-		HudStyle.draw_backing(frame, r)
-		# "COMMAND" tab on the top edge.
-		var tab := Rect2(14, -10, 110, 20)
-		HudStyle.draw_plate(frame, tab, Color(1, 1, 1, 0.98), Color(0.75, 0.82, 0.95, 0.98), Color(0.1, 0.2, 0.45), 10.0)
-		frame.draw_string(HudStyle.MENU_FONT, Vector2(tab.position.x, tab.end.y - 5.0), tab_text,
-				HORIZONTAL_ALIGNMENT_CENTER, tab.size.x, 13, Color(0.08, 0.16, 0.42)))
+	if panel:
+		frame.draw.connect(func() -> void: HudStyle.draw_panel(frame, Rect2(Vector2.ZERO, frame.size)))
 	var page := VBoxContainer.new()
 	page.add_theme_constant_override("separation", button_gap)
 	frame.add_child(page)
@@ -170,8 +167,8 @@ func _make_window(tab_text: String) -> VBoxContainer:
 	return page
 
 
-# A KH2 command plate: glossy blue, white rim, text on the left. Hovered, it lights up,
-# slides right a little and a pointer appears beside it.
+# A command button: a HUD panel with letter-spaced text on the left. Hovered, it fills with
+# the accent color, its accent bar grows and it slides right a little.
 func _make_button(text: String, on_pressed: Callable) -> Button:
 	var button := Button.new()
 	button.text = text.to_upper()
@@ -181,16 +178,17 @@ func _make_button(text: String, on_pressed: Callable) -> Button:
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	for st in ["normal", "hover", "pressed", "disabled", "focus", "hover_pressed"]:
 		var box := StyleBoxEmpty.new()
-		box.content_margin_left = 30
+		box.content_margin_left = 24
 		button.add_theme_stylebox_override(st, box)
-	button.add_theme_font_override("font", HudStyle.MENU_FONT)
-	button.add_theme_font_size_override("font_size", font_size)
+	button.add_theme_font_override("font", _spaced(HudStyle.MENU_FONT, 3))
+	button.add_theme_font_size_override("font_size", roundi(font_size * 0.75))
+	button.custom_minimum_size.y = minf(button_size.y, 46.0)
 	for c in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
 		button.add_theme_color_override(c, HudStyle.WHITE)
-	button.add_theme_color_override("font_outline_color", Color(0.02, 0.04, 0.12, 0.95))
-	button.add_theme_constant_override("outline_size", 6)
+	button.add_theme_color_override("font_outline_color", Color(HudStyle.SHADOW, 0.8))
+	button.add_theme_constant_override("outline_size", 3)
 	button.set_meta(&"lit", 0.0)
-	# The plate is drawn by a child shown behind the button, so the text stays on top.
+	# The panel is drawn by a child shown behind the button, so the text stays on top.
 	var plate := Control.new()
 	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	plate.show_behind_parent = true
@@ -198,17 +196,8 @@ func _make_button(text: String, on_pressed: Callable) -> Button:
 	plate.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	plate.draw.connect(func() -> void:
 		var lit : float = button.get_meta(&"lit")
-		var r := Rect2(Vector2(lit * 10.0, 0), button.size)
-		var top := HudStyle.PLATE_TOP.lerp(Color(0.55, 0.8, 1.0, 0.95), lit)
-		var bottom := HudStyle.PLATE_BOTTOM.lerp(Color(0.12, 0.3, 0.7, 0.95), lit)
-		HudStyle.draw_plate(plate, r, top, bottom, HudStyle.PLATE_RIM, r.size.y * 0.5)
-		if lit > 0.01:
-			# Pointer: a white arrowhead left of the plate.
-			var y := r.get_center().y
-			var x := r.position.x - 6.0
-			var pts := PackedVector2Array([Vector2(x - 18, y - 9), Vector2(x, y), Vector2(x - 18, y + 9), Vector2(x - 13, y)])
-			plate.draw_colored_polygon(pts, Color(1, 1, 1, lit))
-			plate.draw_polyline(pts + PackedVector2Array([pts[0]]), Color(0.05, 0.1, 0.3, lit), 1.5, true))
+		var r := Rect2(Vector2(lit * 8.0, 0), button.size)
+		HudStyle.draw_panel(plate, r, HudStyle.CYAN, lit))
 	var light := func(to: float) -> void:
 		var t := UIJuice.tween_of(button)
 		t.tween_method(func(v: float) -> void:
@@ -226,7 +215,24 @@ func _make_button(text: String, on_pressed: Callable) -> Button:
 
 
 func _make_label(text: String) -> Label:
-	return HudStyle.make_label(text.to_upper(), roundi(font_size * 0.75), HudStyle.WHITE)
+	var l := HudStyle.make_label(text.to_upper(), roundi(font_size * 0.6), HudStyle.WHITE)
+	l.add_theme_font_override("font", _spaced(HudStyle.LABEL_FONT, 2))
+	return l
+
+
+# A small white square for the slider grabbers.
+static func _grabber_texture() -> Texture2D:
+	var img := Image.create(10, 14, false, Image.FORMAT_RGBA8)
+	img.fill(HudStyle.WHITE)
+	return ImageTexture.create_from_image(img)
+
+
+# A font with extra space between letters.
+static func _spaced(base: Font, spacing: int) -> FontVariation:
+	var f := FontVariation.new()
+	f.base_font = base
+	f.spacing_glyph = spacing
+	return f
 
 
 # ---------- Input ----------
@@ -318,6 +324,21 @@ func _add_slider_row(label_text: String, min_v: float, max_v: float, step: float
 	slider.custom_minimum_size = Vector2(260, 0)
 	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	slider.focus_mode = Control.FOCUS_NONE
+	# Thin track, accent fill, small square grabber.
+	var track := StyleBoxFlat.new()
+	track.bg_color = Color(0.0, 0.01, 0.03, 0.8)
+	track.content_margin_top = 2
+	track.content_margin_bottom = 2
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = HudStyle.CYAN
+	fill.content_margin_top = 2
+	fill.content_margin_bottom = 2
+	slider.add_theme_stylebox_override("slider", track)
+	slider.add_theme_stylebox_override("grabber_area", fill)
+	slider.add_theme_stylebox_override("grabber_area_highlight", fill)
+	var grab := _grabber_texture()
+	slider.add_theme_icon_override("grabber", grab)
+	slider.add_theme_icon_override("grabber_highlight", grab)
 	row.add_child(slider)
 
 	var value_label := _make_label("")
