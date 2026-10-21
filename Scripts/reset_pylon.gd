@@ -24,6 +24,8 @@ var _vacuum_id := 0   # bumped every use, so an older use's timer can't end a ne
 func _on_interact() -> void:
 	for chest in get_tree().get_nodes_in_group(&"chests"):
 		(chest as Chest).reset()
+	for node in get_tree().get_nodes_in_group(&"resettable"):   # e.g. single-use Combiners
+		node.reset()
 	if vacuum_pickups:
 		_start_vacuum()
 	_flash_until_ms = Time.get_ticks_msec() + int(flash_time * 1000.0)

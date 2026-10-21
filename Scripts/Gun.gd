@@ -410,10 +410,11 @@ func interact(normal : Vector3):
 
 ## Puts this gun straight into the player's next gun slot (no floor pickup needed).
 ## The gun must already be in the tree. Used by floor pickups and the gun store.
-func equip() -> void:
+## into_slot: a specific empty gun slot (the Combiner uses this). null = the next free one.
+func equip(into_slot : Node3D = null) -> void:
 	_held = true
 	_disable_world_pickup()
-	GameManager.player.pickup_gun(self)
+	GameManager.player.pickup_gun(self, into_slot)
 	model_anchor.transform = Transform3D.IDENTITY   # stop hovering, sit in the hand normally
 	animator.play("RESET")
 	GameManager.gun_equipped.emit(self)

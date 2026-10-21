@@ -352,6 +352,9 @@ func _rebuild_weapon_grid() -> void:
 
 func _make_weapon_tile(gun: Gun) -> Control:
 	var tile := _make_tile_frame(gun, Rarity.get_color(gun.get_rarity()))
+	if Rarity.is_animated(gun.get_rarity()):   # Mythic: keep the frame cycling
+		var style := tile.get_theme_stylebox("panel") as StyleBoxFlat
+		RarityAnimator.attach(tile, gun.get_rarity(), func(c: Color) -> void: _color_tile_style(style, c))
 	if gun.icon != null:
 		var icon := TextureRect.new()
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -379,15 +382,19 @@ func _make_tile_frame(data: Object, tier_color: Color) -> Panel:
 	tile.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tile.set_meta(&"data", data)
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(tier_color.darkened(0.8), 0.5)   # faintly lit inside
 	style.set_corner_radius_all(4)
 	style.set_border_width_all(TILE_BORDER)
-	style.border_color = tier_color.lerp(Color.WHITE, TILE_BORDER_WHITEN)
-	style.shadow_color = Color(tier_color, TILE_GLOW_ALPHA)
 	style.shadow_size = TILE_GLOW_SIZE
 	style.shadow_offset = Vector2.ZERO
+	_color_tile_style(style, tier_color)
 	tile.add_theme_stylebox_override("panel", style)
 	return tile
+
+
+func _color_tile_style(style: StyleBoxFlat, tier_color: Color) -> void:
+	style.bg_color = Color(tier_color.darkened(0.8), 0.5)   # faintly lit inside
+	style.border_color = tier_color.lerp(Color.WHITE, TILE_BORDER_WHITEN)
+	style.shadow_color = Color(tier_color, TILE_GLOW_ALPHA)
 
 
 func _make_item_tile(item: ItemData, count: int) -> Control:
@@ -485,6 +492,8 @@ func _update_item_hover() -> void:
 			_fill_weapon_tooltip(hovered)
 		else:
 			_fill_tooltip(hovered)
+	elif hovered is Gun and Rarity.is_animated((hovered as Gun).get_rarity()):
+		_color_weapon_tooltip(hovered)   # Mythic: keep the rainbow moving
 
 	# Follow the cursor, kept fully on screen.
 	var pos := get_local_mouse_position() + TIP_OFFSET
@@ -518,8 +527,18 @@ func _fill_weapon_tooltip(gun: Gun) -> void:
 		var line : String = "%s: %s" % [stat.name, stat.value]
 		if not stat.bonus.is_empty():
 			line += "  (%s)" % stat.bonus
-		stats.append({"text": line, "color": boost_color if stat.boosted else tip_base_stat_color})
+		stats.append({"text": line, "color": boost_color if stat.boosted else tip_base_stat_color, "boosted": stat.boosted})
 	_fill_tip(gun.get_display_name(), color, Rarity.name_of(gun.get_rarity()), stats)
+
+
+# Re-tints a weapon tooltip that's already showing (for animated rarity colors).
+func _color_weapon_tooltip(gun: Gun) -> void:
+	var color := Rarity.get_color(gun.get_rarity())
+	TextGlow.set_text(_tip_name, gun.get_display_name(), color)
+	var boost_color := color.lerp(Color.WHITE, 0.45)
+	for label in _tip_stats.get_children():
+		if label.get_meta(&"boosted", false):
+			(label as Label).add_theme_color_override("font_color", boost_color)
 
 
 func _num(v: float) -> String:
@@ -546,6 +565,7 @@ func _fill_tip(title: String, tier_color: Color, description: String, stats: Arr
 		label.add_theme_font_size_override("font_size", tip_description_font_size)
 		label.add_theme_color_override("font_color", stat.color)
 		label.text = _wrap(stat.text, label, TIP_MAX_TEXT_WIDTH)
+		label.set_meta(&"boosted", stat.get("boosted", false))
 		_tip_stats.add_child(label)
 	_tip_stats.visible = not stats.is_empty()
 

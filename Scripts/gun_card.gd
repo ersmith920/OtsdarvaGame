@@ -17,15 +17,19 @@ const NO_ROLLS_COLOR := Color(0.6, 0.6, 0.6)
 
 
 ## scene: the gun's .tscn. gun: an instance of it (needed for its name; doesn't need to be in the tree).
-static func build(scene: PackedScene, gun: Gun) -> Control:
+## note: an extra line under the stats (the Combiner uses it for "+ 1 random new stat").
+## preview_px: size of the spinning model (smaller cards pass a smaller one).
+static func build(scene: PackedScene, gun: Gun, note := "", preview_px := PREVIEW_PX) -> Control:
 	var roll := gun.roll
-	var color := roll.get_color() if roll != null else Rarity.get_color(Rarity.COMMON)
+	var rarity := gun.get_rarity()
+	var color := Rarity.get_color(rarity)
 
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 6)
 	column.set_meta(&"color", color)   # the popup colors the card frame with this
+	column.set_meta(&"rarity", rarity)
 
-	column.add_child(GunPreview.create(scene, PREVIEW_PX, 0.6))
+	column.add_child(GunPreview.create(scene, preview_px, 0.6))
 
 	var name_label := Label.new()
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -33,14 +37,12 @@ static func build(scene: PackedScene, gun: Gun) -> Control:
 	name_label.add_theme_font_override("font", NAME_FONT)
 	name_label.add_theme_font_size_override("font_size", NAME_SIZE)
 	column.add_child(name_label)
-	TextGlow.set_text(name_label, gun.get_display_name(), color)
 
 	var rarity_label := Label.new()
 	rarity_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	rarity_label.text = roll.get_rarity_name() if roll != null else "Common"
+	rarity_label.text = Rarity.name_of(rarity)
 	rarity_label.add_theme_font_override("font", BODY_FONT)
 	rarity_label.add_theme_font_size_override("font_size", RARITY_SIZE)
-	rarity_label.add_theme_color_override("font_color", color.lerp(Color.WHITE, 0.25))
 	column.add_child(rarity_label)
 
 	var divider := HSeparator.new()
@@ -49,32 +51,48 @@ static func build(scene: PackedScene, gun: Gun) -> Control:
 
 	# The gun's stats with its rolls applied. Rolled stats are lit up in the rarity color,
 	# with the roll next to them.
-	var boost_color := color.lerp(Color.WHITE, 0.45)
+	var lit : Array[Label] = []   # labels drawn in the rarity color
 	for stat in gun.get_stat_summary():
-		column.add_child(_stat_line(stat, boost_color))
+		column.add_child(_stat_line(stat, lit))
 	if roll == null or roll.bonuses.is_empty():
 		column.add_child(_stat_row("No bonuses", NO_ROLLS_COLOR))
+	if not note.is_empty():
+		var note_label := _stat_row(note, NO_ROLLS_COLOR)
+		lit.append(note_label)
+		column.add_child(note_label)
+
+	# Colors go on through an animator, so a Mythic card keeps cycling its rainbow.
+	var display_name := gun.get_display_name()
+	RarityAnimator.attach(column, rarity, func(c: Color) -> void:
+		TextGlow.set_text(name_label, display_name, c)
+		rarity_label.add_theme_color_override("font_color", c.lerp(Color.WHITE, 0.25))
+		var boost := c.lerp(Color.WHITE, 0.45)
+		for label in lit:
+			label.add_theme_color_override("font_color", boost))
 	return column
 
 
 # "Damage            230 (+15%)": name on the left, total (and roll) on the right.
-static func _stat_line(stat: Dictionary, boost_color: Color) -> Control:
+static func _stat_line(stat: Dictionary, lit: Array[Label]) -> Control:
 	var row := HBoxContainer.new()
-	var color := boost_color if stat.boosted else BASE_STAT_COLOR
 	var left := Label.new()
 	left.text = stat.name
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_theme_font_override("font", BODY_FONT)
 	left.add_theme_font_size_override("font_size", STAT_SIZE)
-	left.add_theme_color_override("font_color", color)
 	row.add_child(left)
 	var right := Label.new()
 	right.text = stat.value + ("  (%s)" % stat.bonus if not stat.bonus.is_empty() else "")
 	right.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	right.add_theme_font_override("font", BODY_FONT)
 	right.add_theme_font_size_override("font_size", STAT_SIZE)
-	right.add_theme_color_override("font_color", color)
 	row.add_child(right)
+	if stat.boosted:
+		lit.append(left)
+		lit.append(right)
+	else:
+		left.add_theme_color_override("font_color", BASE_STAT_COLOR)
+		right.add_theme_color_override("font_color", BASE_STAT_COLOR)
 	return row
 
 

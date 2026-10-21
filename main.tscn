@@ -60,7 +60,8 @@
 [ext_resource type="Script" uid="uid://jobdhj44kgue" path="res://Scripts/interactable_spawner.gd" id="58_vke2r"]
 [ext_resource type="PackedScene" uid="uid://dpfdkl8uephex" path="res://gun_store.tscn" id="59_store"]
 [ext_resource type="Script" uid="uid://carmys8n66qb1" path="res://Scripts/interactable_spawn_entry.gd" id="60_entry"]
-[ext_resource type="Resource" uid="uid://dcaftbof8gtdq" path="res://Items/incendiary_rounds.tres" id="61_rm4vd"]
+[ext_resource type="Resource" uid="uid://dcaftbof8gtdq" path="res://incendiary_rounds.tres" id="61_rm4vd"]
+[ext_resource type="PackedScene" path="res://combiner.tscn" id="62_pjyto"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_j3pel"]
 panorama = ExtResource("1_efxa6")
@@ -1964,6 +1965,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28.3, -3.2, -5.1)
 
 [node name="ResetPylon" parent="." unique_id=921388520 instance=ExtResource("8_5vw27")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -11.412815, -3.1311004, -6.9808426)
+vacuum_pickups = true
+vacuum_range = 10000.0
+vacuum_time = 1.0
 
 [node name="gunBox" parent="." unique_id=1802771475 instance=ExtResource("3_h2yge")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28.4, -2.7, -2.7)
@@ -2198,5 +2202,8 @@ item = ExtResource("58_uit24")
 [node name="ItemPickup14" parent="." unique_id=1141658423 instance=ExtResource("3_1bvp3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, -3.2, 32.9)
 item = ExtResource("61_rm4vd")
+
+[node name="Combiner" parent="." unique_id=761182013 instance=ExtResource("62_pjyto")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, -3.2, -7.3)
 
 [editable path="Buildings"]

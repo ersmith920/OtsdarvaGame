@@ -12,6 +12,8 @@ extends Resource
 @export var rare := Vector2(15, 25)
 @export var epic := Vector2(25, 35)
 @export var legendary := Vector2(35, 50)
+## Only from the Combiner (two Legendaries make a Mythic, which gets one of these on every stat).
+@export var mythic := Vector2(50, 70)
 
 @export_group("")
 ## Rolls are rounded to this. 1 = whole numbers, 0.1 = one decimal (good for Projectile Count).
@@ -26,7 +28,8 @@ func get_range(rarity: int) -> Vector2:
 		Rarity.UNCOMMON: return uncommon
 		Rarity.RARE: return rare
 		Rarity.EPIC: return epic
-		_: return legendary
+		Rarity.LEGENDARY: return legendary
+		_: return mythic
 
 
 func roll(rarity: int) -> float:

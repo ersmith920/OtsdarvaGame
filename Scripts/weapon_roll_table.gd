@@ -66,6 +66,97 @@ func roll_for(gun: Gun, rarity: int) -> GunRoll:
 	return result
 
 
+# ---------- Combiner ----------
+
+## What combining two guns of the same kind makes (their rolls a and b; null = an unrolled
+## Common gun). Both guns' bonuses are added together, then:
+##   different rarities: the result takes the higher one.
+##   same rarity, below Legendary: one rarity up, plus one new stat the gun doesn't have yet,
+##     rolled at the new rarity's values.
+##   two Legendaries: Mythic, plus a Mythic-range roll added to every stat the gun can roll.
+## roll_new = false leaves out the random part (for a preview before the player commits).
+## Mythic guns can't be combined (see can_combine).
+func combine(gun: Gun, a: GunRoll, b: GunRoll, roll_new := true) -> GunRoll:
+	var ra := a.rarity if a != null else Rarity.COMMON
+	var rb := b.rarity if b != null else Rarity.COMMON
+	var result := GunRoll.new()
+	for r in [a, b]:
+		if r == null:
+			continue
+		for kind in r.bonuses:
+			result.bonuses[kind] = result.bonuses.get(kind, 0.0) + r.bonuses[kind]
+
+	if ra != rb:
+		result.rarity = maxi(ra, rb)
+		return result
+	result.rarity = mini(ra + 1, Rarity.MYTHIC)
+	if not roll_new:
+		return result
+
+	if result.rarity == Rarity.MYTHIC:
+		_add_mythic_rolls(gun, result)
+	else:
+		_add_new_stat(gun, result)
+	return result
+
+
+## What combine() will add on top of the summed stats, for the preview. "" = nothing.
+static func combine_note(a: GunRoll, b: GunRoll) -> String:
+	var ra := a.rarity if a != null else Rarity.COMMON
+	var rb := b.rarity if b != null else Rarity.COMMON
+	if ra != rb:
+		return ""
+	if ra == Rarity.LEGENDARY:
+		return "+ a Mythic roll on every stat"
+	return "+ 1 random new stat"
+
+
+## Mythic guns are already at the top and can't go in the Combiner.
+static func can_combine(gun: Gun) -> bool:
+	return gun != null and gun.get_rarity() < Rarity.MYTHIC
+
+
+# One stat the result doesn't have yet (any stat if it already has them all), at its rarity.
+func _add_new_stat(gun: Gun, result: GunRoll) -> void:
+	var pool : Array[WeaponStatRange] = []
+	var any : Array[WeaponStatRange] = []
+	for kind in gun.get_rollable_kinds():
+		var r := get_stat_range(kind)
+		if r == null or r.weight <= 0.0:
+			continue
+		# Bounces do nothing without a ricochet chance.
+		if kind == WeaponStat.Kind.RICOCHET_BOUNCES and not result.has(WeaponStat.Kind.RICOCHET_CHANCE):
+			continue
+		any.append(r)
+		if not result.has(kind):
+			pool.append(r)
+	if pool.is_empty():
+		pool = any
+	if pool.is_empty():
+		return
+	var pick := _pick_weighted(pool)
+	var value := pick.roll(result.rarity)
+	if value != 0.0:
+		result.bonuses[pick.stat] = result.bonuses.get(pick.stat, 0.0) + value
+
+
+# A Mythic roll on every stat the gun can roll.
+func _add_mythic_rolls(gun: Gun, result: GunRoll) -> void:
+	var kinds := gun.get_rollable_kinds()
+	# Ricochet Chance first, so Bounces knows whether the gun ends up with a chance.
+	kinds.sort_custom(func(x: int, y: int) -> bool:
+		return x == WeaponStat.Kind.RICOCHET_CHANCE and y != WeaponStat.Kind.RICOCHET_CHANCE)
+	for kind in kinds:
+		var r := get_stat_range(kind)
+		if r == null or r.weight <= 0.0:
+			continue
+		if kind == WeaponStat.Kind.RICOCHET_BOUNCES and not result.has(WeaponStat.Kind.RICOCHET_CHANCE):
+			continue
+		var value := r.roll(Rarity.MYTHIC)
+		if value != 0.0:
+			result.bonuses[kind] = result.bonuses.get(kind, 0.0) + value
+
+
 static func _pick_weighted(pool: Array[WeaponStatRange]) -> WeaponStatRange:
 	var total := 0.0
 	for r in pool:

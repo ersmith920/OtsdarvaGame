@@ -139,8 +139,9 @@ func has_free_gun_slot() -> bool:
 
 
 #Gun pickup: first empty slot in fill order, or the next new slot if all are full.
-func pickup_gun(gun_node : Node3D) -> void:
-	var slot := _get_free_slot()
+## into_slot: put it in this (empty) slot instead, e.g. the Combiner's result.
+func pickup_gun(gun_node : Node3D, into_slot : Node3D = null) -> void:
+	var slot := into_slot if into_slot != null and into_slot.get_child_count() == 0 else _get_free_slot()
 	if slot == null:
 		if max_gun_slots > 0 and gun_slots.size() >= max_gun_slots:
 			return
