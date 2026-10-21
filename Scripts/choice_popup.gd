@@ -11,12 +11,16 @@
 #
 # Each card is any Control you build (see GunCard). The popup wraps each one in a
 # clickable frame in that card's color, so the content doesn't need to handle input.
+#
+# Feel (see UIJuice): the game behind blurs, the cards are dealt in, a reroll flips them,
+# cards lift on hover, and picking one flashes it with a burst of sparks (bigger for rarer
+# picks) before the popup closes.
 class_name ChoicePopup
 extends Control
 
 @export_group("Look")
-## Color over the frozen game behind the cards.
-@export var dim_color := Color(0.0, 0.0, 0.0, 0.55)
+## Tint over the frozen (blurred) game behind the cards; alpha = how dark.
+@export var dim_color := Color(0.0, 0.0, 0.0, 0.5)
 @export var title_font : Font = preload("res://Fonts/KHMenu-Bold.otf")
 @export var title_font_size := 34
 ## Smallest a card's frame can be; cards with bigger content (gun cards) are as big as it.
@@ -38,6 +42,9 @@ extends Control
 @export var volume_db := 0.0
 
 var _title : Label
+var _dim : ColorRect
+var _column : VBoxContainer
+var _closing := false
 var _row : HBoxContainer
 var _buttons : HBoxContainer
 var _on_pick : Callable
@@ -53,11 +60,12 @@ func _ready() -> void:
 	visible = false
 	GameManager.choice_popup = self
 
-	var dim := ColorRect.new()
-	dim.color = dim_color
-	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(dim)
-	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_dim = ColorRect.new()
+	_dim.color = dim_color
+	_dim.material = UIJuice.blur_material()
+	_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_dim)
+	_dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var center := CenterContainer.new()
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -68,6 +76,7 @@ func _ready() -> void:
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_theme_constant_override("separation", 24)
 	center.add_child(column)
+	_column = column
 
 	_title = Label.new()
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -101,16 +110,27 @@ func open(title: String, cards: Array[Control], on_pick: Callable, buttons: Arra
 		push_warning("ChoicePopup is already open")
 		return
 	_on_pick = on_pick
+	_closing = false
+	_column.modulate.a = 1.0
+	_column.scale = Vector2.ONE
 	_title.text = title
 	_title.visible = not title.is_empty()
-	set_cards(cards)
-
 	for child in _buttons.get_children():
 		_buttons.remove_child(child)
 		child.queue_free()
 	for b in buttons:
 		_buttons.add_child(_make_button(b.text, b.pressed))
 	_buttons.visible = not buttons.is_empty()
+	set_cards(cards, 0.08)
+
+	# Blur the game in, drop the title in, then the buttons after the cards.
+	(_dim.material as ShaderMaterial).set_shader_parameter(&"amount", 0.0)
+	UIJuice.fade_backdrop(_dim, 1.0, 0.2)
+	UIJuice.pop_in(_title, 0.0, 0.8)
+	for i in _buttons.get_child_count():
+		UIJuice.pop_in(_buttons.get_child(i), 0.12 + cards.size() * UIJuice.DEAL_STAGGER + i * 0.04)
+	if open_sound == null:
+		UIJuice.play(UIJuice.Sfx.OPEN)
 
 	_was_paused = get_tree().paused
 	_prev_mouse_mode = Input.mouse_mode
@@ -122,19 +142,25 @@ func open(title: String, cards: Array[Control], on_pick: Callable, buttons: Arra
 	_play(open_sound)
 
 
-## Replaces the cards shown (e.g. a reroll) without closing.
-func set_cards(cards: Array[Control]) -> void:
+## Replaces the cards shown (e.g. a reroll) without closing. They flip in one by one.
+func set_cards(cards: Array[Control], start_delay := 0.0) -> void:
 	for child in _row.get_children():
 		_row.remove_child(child)
 		child.queue_free()
+	var frames := []
 	for i in cards.size():
-		_row.add_child(_wrap_card(cards[i], i))
+		var frame := _wrap_card(cards[i], i)
+		_row.add_child(frame)
+		frames.append(frame)
+	UIJuice.deal_in(frames, start_delay)
+	if visible:
+		UIJuice.play(UIJuice.Sfx.CLICK, 1.2)
 
 
 ## Closes without picking anything; on_pick gets -1.
 func cancel() -> void:
-	if visible:
-		_finish(-1)
+	if visible and not _closing:
+		_close(-1)
 
 
 func _make_button(text: String, pressed: Callable) -> Button:
@@ -153,8 +179,12 @@ func _make_button(text: String, pressed: Callable) -> Button:
 		style.border_color = Color(0.6, 0.6, 0.65).lerp(Color.WHITE, {"normal": 0.0, "hover": 0.5, "pressed": 1.0}[state])
 		button.add_theme_stylebox_override(state, style)
 	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	button.pressed.connect(pressed)
-	button.mouse_entered.connect(_play.bind(hover_sound))
+	button.pressed.connect(func() -> void:
+		if not _closing:
+			pressed.call())
+	UIJuice.hover_lift(button, hover_sound == null)
+	if hover_sound != null:
+		button.mouse_entered.connect(_play.bind(hover_sound))
 	return button
 
 
@@ -173,7 +203,11 @@ func _wrap_card(content: Control, index: int) -> Button:
 	button.add_theme_stylebox_override("hover_pressed", _card_style(color, hover_glow_size, 0.22))
 	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	button.pressed.connect(_pick.bind(index))
-	button.mouse_entered.connect(_play.bind(hover_sound))
+	button.set_meta(&"rarity", content.get_meta(&"rarity", 0))
+	button.set_meta(&"color", color)
+	UIJuice.hover_lift(button, hover_sound == null)
+	if hover_sound != null:
+		button.mouse_entered.connect(_play.bind(hover_sound))
 
 	var margin := MarginContainer.new()
 	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -216,13 +250,38 @@ func _ignore_mouse(node: Node) -> void:
 
 
 func _pick(index: int) -> void:
-	if not visible or Time.get_ticks_msec() - _opened_at_ms < int(input_delay * 1000.0):
+	if not visible or _closing or Time.get_ticks_msec() - _opened_at_ms < int(input_delay * 1000.0):
 		return
-	_play(pick_sound)
-	_finish(index)
+	_closing = true
+	# Payoff: the picked card flashes and bursts (bigger for rarer picks), the rest fall away.
+	var picked : Control = _row.get_child(index)
+	var rarity : int = picked.get_meta(&"rarity", 0)
+	UIJuice.flash(picked, 0.6 + rarity * 0.15)
+	UIJuice.punch(picked, 0.08)
+	UIJuice.burst(self, picked.get_global_rect().get_center(), picked.get_meta(&"color", Color.WHITE), rarity)
+	for card in _row.get_children():
+		if card != picked:
+			UIJuice.pop_out(card)
+	if pick_sound != null:
+		_play(pick_sound)
+	else:
+		UIJuice.play(UIJuice.Sfx.JACKPOT if rarity >= Rarity.MYTHIC else
+				(UIJuice.Sfx.REWARD if rarity >= Rarity.EPIC else UIJuice.Sfx.PICK))
+	var hold := 0.35 + 0.1 * maxi(rarity - Rarity.RARE, 0)
+	get_tree().create_timer(hold, true, false, true).timeout.connect(_close.bind(index))
+
+
+# Fades everything out, then hands over the pick.
+func _close(index: int) -> void:
+	_closing = true
+	UIJuice.fade_backdrop(_dim, 0.0, 0.18)
+	UIJuice.pop_out(_column, _finish.bind(index))
+	if index < 0:
+		UIJuice.play(UIJuice.Sfx.CLOSE)
 
 
 func _finish(index: int) -> void:
+	_closing = false
 	visible = false
 	GameManager.choice_open = false
 	get_tree().paused = _was_paused

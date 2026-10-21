@@ -4,6 +4,10 @@
 #   Middle: the two picks (click a pick to take it back out).
 #   Right:  the gun they'll make, and the Combine button.
 # Cancel (or Escape) closes it without combining.
+#
+# Feel (see UIJuice): the game blurs behind it, it pops in and out, tiles lift on hover, a
+# picked gun flies from its tile into its slot, the result flips in, Combine pulses while it's
+# ready, and combining bursts the result (a bigger jackpot burst for a Mythic).
 class_name CombinerMenu
 extends Control
 
@@ -25,7 +29,7 @@ const PANEL_BG := Color(0.05, 0.05, 0.06, 0.94)
 const EMPTY_BORDER := Color(0.4, 0.4, 0.42)
 const HINT_COLOR := Color(0.65, 0.65, 0.68)
 const GRAYED := Color(0.3, 0.3, 0.3, 0.8)
-const DIM_COLOR := Color(0, 0, 0, 0.7)
+const DIM_COLOR := Color(0, 0, 0, 0.55)
 const BUTTON_BG := Color(0.13, 0.13, 0.16, 0.95)
 
 var combiner : Combiner
@@ -35,6 +39,9 @@ var _second : Gun
 var _preview_gun : Gun   # the result shown on the right (not in the tree)
 
 var _holder : Control
+var _dim : ColorRect
+var _closing := false        # input is ignored (combining or closing)
+var _close_started := false
 var _content : VBoxContainer
 var _grid : GridContainer
 var _slots : Array[PanelContainer] = []
@@ -56,6 +63,7 @@ func _ready() -> void:
 	_build()
 	_refresh()
 	_fit.call_deferred()   # the layout's size never changes after this (only on window resize)
+	_open_anim.call_deferred()
 
 	_was_paused = get_tree().paused
 	_prev_mouse_mode = Input.mouse_mode
@@ -73,11 +81,12 @@ func _ready() -> void:
 # ======================================================================
 
 func _build() -> void:
-	var dim := ColorRect.new()
-	dim.color = DIM_COLOR
-	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(dim)
-	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_dim = ColorRect.new()
+	_dim.color = DIM_COLOR
+	_dim.material = UIJuice.blur_material()
+	_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_dim)
+	_dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	# Everything sits in one holder that's centered and scaled down to fit small screens.
 	_holder = Control.new()
@@ -152,7 +161,9 @@ func _build() -> void:
 	var cancel := _button("Cancel")
 	cancel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	cancel.custom_minimum_size.x = 220
-	cancel.pressed.connect(_close)
+	cancel.pressed.connect(func() -> void:
+		if not _closing:
+			_close())
 	_content.add_child(cancel)
 
 	# Hover popup for the gun tiles.
@@ -211,6 +222,7 @@ func _button(text: String) -> Button:
 				style.border_color = Color(0.25, 0.25, 0.27)
 		button.add_theme_stylebox_override(state, style)
 	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	UIJuice.hover_lift(button)
 	return button
 
 
@@ -289,7 +301,12 @@ func _refresh() -> void:
 		_hint.text = ("Pick another %s" if any else "You have no other %s to combine") % _first.get_display_name()
 	else:
 		_hint.text = "Click a weapon to take it back out"
-	_combine_button.disabled = _first == null or _second == null
+	var ready := _first != null and _second != null
+	if ready and _combine_button.disabled:
+		UIJuice.pulse(_combine_button)   # waiting to be pressed
+	elif not ready:
+		UIJuice.stop_pulse(_combine_button)
+	_combine_button.disabled = not ready
 
 
 func _rebuild_grid() -> void:
@@ -343,8 +360,10 @@ func _make_tile(gun: Gun) -> Control:
 		tile.modulate = GRAYED
 
 	tile.mouse_filter = Control.MOUSE_FILTER_PASS   # PASS so the scroll wheel still reaches the list
-	if _pickable(gun):
+	if _pickable(gun) or pick > 0:
 		tile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		UIJuice.hover_lift(tile)
+	tile.set_meta(&"gun", gun)
 	tile.gui_input.connect(_on_tile_input.bind(gun))
 	tile.mouse_entered.connect(_show_tip.bind(gun))
 	tile.mouse_exited.connect(_hide_tip.bind(gun))
@@ -410,23 +429,74 @@ func _notification(what: int) -> void:
 # ======================================================================
 
 func _on_tile_input(event: InputEvent, gun: Gun) -> void:
-	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+	if _closing or not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 		return
+	var had_both := _first != null and _second != null
+	var fly_to := -1
+	var from_rect := Rect2()
 	if gun == _first or gun == _second:
 		_unpick(gun)
 	elif _pickable(gun):
+		fly_to = 0 if _first == null else 1
+		from_rect = _tile_rect(gun)
 		if _first == null:
 			_first = gun
 		else:
 			_second = gun
 	_hide_tip(_tip_gun)
 	_refresh()
+	if fly_to >= 0:
+		_fly_into_slot(gun, from_rect, fly_to)
+	if not had_both and _first != null and _second != null:
+		UIJuice.flip_in(_result, 0.22)   # both picked: the result turns over
+		UIJuice.play(UIJuice.Sfx.PICK, 0.9)
 
 
 func _on_slot_input(event: InputEvent, index: int) -> void:
+	if _closing:
+		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if (_first if index == 0 else _second) == null:
+			return
 		_unpick(_first if index == 0 else _second)
 		_refresh()
+		UIJuice.punch(_slots[index], -0.05)
+		UIJuice.play(UIJuice.Sfx.CLOSE, 1.3)
+
+
+# Where a gun's tile is on screen right now.
+func _tile_rect(gun: Gun) -> Rect2:
+	for tile in _grid.get_children():
+		if tile.get_meta(&"gun", null) == gun:
+			return (tile as Control).get_global_rect()
+	return Rect2()
+
+
+# A copy of the gun's tile flies from where it was into the slot, then the slot's card pops in.
+func _fly_into_slot(gun: Gun, from_rect: Rect2, slot_index: int) -> void:
+	var slot := _slots[slot_index]
+	var card := slot.get_child(slot.get_child_count() - 1) as Control
+	if card != null:
+		UIJuice.pop_in(card, 0.16, 0.85)
+	if from_rect.size == Vector2.ZERO:
+		return
+	var ghost := _make_tile(gun)
+	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ghost.top_level = true
+	ghost.modulate = Color.WHITE
+	add_child(ghost)
+	ghost.global_position = from_rect.position
+	ghost.scale = _holder.scale
+	var to_rect := slot.get_global_rect()
+	var target := to_rect.get_center() - from_rect.size * 0.5
+	var t := UIJuice.tween_of(ghost)
+	t.set_parallel(true)
+	t.tween_property(ghost, "global_position", target, 0.2).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	t.tween_property(ghost, "scale", _holder.scale * 1.5, 0.2)
+	t.tween_property(ghost, "modulate:a", 0.0, 0.12).set_delay(0.12)
+	t.chain().tween_callback(func() -> void:
+		ghost.queue_free()
+		UIJuice.flash(slot, 0.5))
 
 
 # Takes a pick back out. Taking out the first moves the second up into its place.
@@ -441,21 +511,47 @@ func _unpick(gun: Gun) -> void:
 
 
 func _on_combine() -> void:
-	if _first == null or _second == null:
+	if _closing or _first == null or _second == null:
 		return
 	var a := _first
 	var b := _second
-	_first = null
-	_second = null
-	_close()
-	combiner.combine(a, b)
+	_closing = true
+	UIJuice.stop_pulse(_combine_button)
+	# Payoff: the result flashes and bursts; a Mythic gets a jackpot (bigger, longer, sparks
+	# from both inputs too, and the card swells as it's revealed).
+	var rarity := _preview_gun.get_rarity() if _preview_gun != null else Rarity.COMMON
+	var color := Rarity.get_color(rarity)
+	var center := _result.get_global_rect().get_center()
+	UIJuice.flash(_result, 0.8 + rarity * 0.2)
+	var hold := 0.5
+	if rarity >= Rarity.MYTHIC:
+		hold = 1.1
+		UIJuice.play(UIJuice.Sfx.JACKPOT)
+		for slot in _slots:
+			UIJuice.burst(self, slot.get_global_rect().get_center(), color, Rarity.LEGENDARY, 0.8)
+		var t := UIJuice.tween_of(_result)
+		UIJuice.center_pivot(_result)
+		t.tween_property(_result, "scale", Vector2.ONE * 1.12, 0.5).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		t.tween_callback(UIJuice.burst.bind(self, center, color, Rarity.MYTHIC, 1.6))
+		t.tween_property(_result, "scale", Vector2.ONE, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	else:
+		UIJuice.play(UIJuice.Sfx.REWARD if rarity >= Rarity.EPIC else UIJuice.Sfx.PICK)
+		UIJuice.punch(_result, 0.1)
+		UIJuice.burst(self, center, color, rarity, 1.2)
+	for slot in _slots:
+		UIJuice.pop_out(slot)
+	get_tree().create_timer(hold, true, false, true).timeout.connect(func() -> void:
+		_first = null
+		_second = null
+		_close(func() -> void: combiner.combine(a, b)))
 
 
 func _input(event: InputEvent) -> void:
 	# Escape cancels; Tab and the pause menu stay shut while this is open.
 	if event.is_action_pressed(&"pause"):
 		get_viewport().set_input_as_handled()
-		_close()
+		if not _closing:
+			_close()
 	elif event.is_action_pressed(&"menu"):
 		get_viewport().set_input_as_handled()
 
@@ -465,7 +561,30 @@ func _process(_delta: float) -> void:
 		_place_tip()
 
 
-func _close() -> void:
+func _open_anim() -> void:
+	(_dim.material as ShaderMaterial).set_shader_parameter(&"amount", 0.0)
+	UIJuice.fade_backdrop(_dim, 1.0, 0.2)
+	UIJuice.pop_in(_content, 0.0, 0.92, 0.22)
+	UIJuice.play(UIJuice.Sfx.OPEN)
+
+
+# Animates out, then closes (and runs after_close, e.g. the actual combine).
+func _close(after_close := Callable()) -> void:
+	if not is_inside_tree() or _close_started:
+		return
+	_close_started = true
+	_closing = true
+	_tip.visible = false
+	UIJuice.fade_backdrop(_dim, 0.0, 0.16)
+	if not after_close.is_valid():
+		UIJuice.play(UIJuice.Sfx.CLOSE)
+	UIJuice.pop_out(_content, func() -> void:
+		_finish_close()
+		if after_close.is_valid():
+			after_close.call())
+
+
+func _finish_close() -> void:
 	if not is_inside_tree():
 		return
 	if _preview_gun != null:
@@ -491,11 +610,7 @@ func _show_tip(gun: Gun) -> void:
 	for child in _tip.get_children():
 		_tip.remove_child(child)
 		child.queue_free()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.06, 0.06, 0.06, 0.95)
-	style.set_corner_radius_all(6)
-	style.set_content_margin_all(12)
-	_tip.add_theme_stylebox_override("panel", style)
+	_tip.add_theme_stylebox_override("panel", UIJuice.glass_style(6, Color(1, 1, 1, 0.14), Color(0.04, 0.045, 0.06, 0.94)))
 
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 2)

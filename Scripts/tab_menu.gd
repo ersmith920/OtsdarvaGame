@@ -18,6 +18,8 @@ var _item_grid: GridContainer
 var _weapon_scroll: ScrollContainer
 var _weapon_quads: GridContainer   # 2 x 2: Upper L. / Upper R. / Lower L. / Lower R.
 var _weapon_tiles: Array[Control] = []   # one per gun slot (empty or not)
+var _swapped_slots: Array = []   # slots just changed by a drop (their tiles pop when rebuilt)
+var _drop_target: Control        # tile lit up under a dragged gun
 var _tip: PanelContainer
 var _tip_name: Label
 var _tip_desc: Label
@@ -73,8 +75,8 @@ func _ready() -> void:
 	box.offset_top = 0
 	box.offset_right = 0
 	box.offset_bottom = 0
-	var style := StyleBoxFlat.new()
-	style.bg_color = BOX_COLOR
+	# Shared "glass" look (UIJuice), kept see-through: the game keeps running behind the Tab menu.
+	var style := UIJuice.glass_style(10, Color(1, 1, 1, 0.1), Color(0.03, 0.035, 0.05, 0.45))
 	box.add_theme_stylebox_override("panel", style)
 	add_child(box)
 	_box = box
@@ -384,7 +386,13 @@ func _rebuild_weapon_grid() -> void:
 			tile.set_drag_forwarding(_get_slot_drag.bind(tile), _can_drop_on_slot.bind(tile), _drop_on_slot.bind(tile))
 			row.add_child(tile)
 			_weapon_tiles.append(tile)
+			UIJuice.hover_lift(tile, false)
+			if slot in _swapped_slots:   # just dropped here: pop in
+				UIJuice.pop_in(tile, 0.0, 0.7)
+				if gun != null:
+					UIJuice.flash(tile, 0.6)
 		_weapon_quads.add_child(box)
+	_swapped_slots.clear()
 
 
 # ---- Manual / Auto toggle per quadrant ----
@@ -403,7 +411,10 @@ func _make_fire_mode_button(q: Player.Quadrant) -> Button:
 	button.pressed.connect(func() -> void:
 		var auto : bool = not GameManager.player.quadrant_auto[q]
 		GameManager.player.set_quadrant_auto(q, auto)
-		_style_fire_mode_button(button, auto))
+		_style_fire_mode_button(button, auto)
+		UIJuice.punch(button, 0.2)
+		UIJuice.flash(button, 0.5)
+		UIJuice.play(UIJuice.Sfx.CLICK, 1.25 if auto else 0.85))
 	return button
 
 
@@ -471,8 +482,33 @@ func _can_drop_on_slot(_at: Vector2, data: Variant, _tile: Control) -> bool:
 
 
 func _drop_on_slot(_at: Vector2, data: Variant, tile: Control) -> void:
-	GameManager.player.swap_gun_slots(data.gun_slot, tile.get_meta(&"slot"))
+	var target : Node3D = tile.get_meta(&"slot")
+	GameManager.player.swap_gun_slots(data.gun_slot, target)
+	_swapped_slots = [data.gun_slot, target]
+	UIJuice.play(UIJuice.Sfx.PICK, 1.2)
 	_rebuild_weapon_grid.call_deferred()
+
+
+# While dragging a gun: the slot under the cursor lights up and grows a little.
+func _update_drop_target() -> void:
+	var target : Control = null
+	if get_viewport().gui_is_dragging():
+		var mouse := get_global_mouse_position()
+		for tile in _weapon_tiles:
+			if is_instance_valid(tile) and tile.get_global_rect().has_point(mouse):
+				target = tile
+				break
+	if target == _drop_target:
+		return
+	if _drop_target != null and is_instance_valid(_drop_target):
+		_drop_target.self_modulate = Color.WHITE
+		_drop_target.scale = Vector2.ONE
+	_drop_target = target
+	if target != null:
+		UIJuice.center_pivot(target)
+		target.self_modulate = Color(1.6, 1.6, 1.6)
+		target.scale = Vector2.ONE * 1.08
+		UIJuice.play(UIJuice.Sfx.HOVER)
 
 
 func _notification(what: int) -> void:
@@ -481,6 +517,9 @@ func _notification(what: int) -> void:
 		for tile in _weapon_tiles:
 			if is_instance_valid(tile):
 				tile.modulate = Color.WHITE
+				tile.self_modulate = Color.WHITE
+				tile.scale = Vector2.ONE
+		_drop_target = null
 
 
 func _make_weapon_tile(gun: Gun) -> Control:
@@ -577,9 +616,7 @@ func _build_item_tooltip() -> void:
 	_tip = PanelContainer.new()
 	_tip.mouse_filter = Control.MOUSE_FILTER_IGNORE   # must not steal the hover it depends on
 	_tip.visible = false
-	var style := StyleBoxFlat.new()
-	style.bg_color = tip_box_color
-	style.set_corner_radius_all(6)
+	var style := UIJuice.glass_style(6, Color(1, 1, 1, 0.14), tip_box_color)
 	style.set_content_margin_all(TIP_PADDING)
 	_tip.add_theme_stylebox_override("panel", style)
 	add_child(_tip)
@@ -772,6 +809,7 @@ func _process(_delta: float) -> void:
 		return
 	_update_stat_values()   # keeps values live if a stat changes while open
 	_update_item_hover()
+	_update_drop_target()
 
 # Sizes the panel so it stops short of the timer and enemy count (top) and the
 # health/energy bars (bottom right). Measured on open, so font or size changes
@@ -799,6 +837,7 @@ func _fit_to_hud() -> void:
 func _open() -> void:
 	visible = true
 	_fit_to_hud()
+	UIJuice.pop_in(_box, 0.0, 0.97, 0.12)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_pause_toggle.set_pressed_no_signal(GameManager.timer_paused)
 	if GameManager.player != null:

@@ -57,6 +57,7 @@ class Reticle:
 	var desired_distance := 100.0
 	var aim_point := Vector3.ZERO
 	var crosshair: Control
+	var snap := 0.0   # 1 right after locking a new target, fading to 0 (the crosshair squeezes in)
 
 	func is_on_target() -> bool:
 		if target == null or not is_instance_valid(target) or (target is SwarmUnit and target.dead):
@@ -215,7 +216,10 @@ func _physics_process(_delta: float) -> void:
 	var candidates := _candidates(max_angle)
 	var los_cache := {}
 	for r in _reticles:
+		var was : Object = r.target
 		r.target = _pick_target(r, candidates, max_angle, los_cache)
+		if r.target != null and r.target != was:
+			r.snap = 1.0
 		if r.target != null:
 			var point := _aim_point_of(r.target)
 			r.desired_local_dir = camera.to_local(point).normalized()
@@ -380,6 +384,12 @@ func _update_crosshair(r: Reticle) -> void:
 	c.visible = true
 	c.position = camera.unproject_position(probe) - c.size * 0.5
 	c.modulate = locked_color if r.target != null else idle_color
+	# Locking on: the crosshair starts wide and squeezes in onto the target.
+	c.pivot_offset = c.size * 0.5
+	c.scale = Vector2.ONE * (1.0 + 0.7 * r.snap * r.snap)
+	if r.snap > 0.0:
+		c.modulate = c.modulate.lerp(Color.WHITE, r.snap * 0.6)
+		r.snap = maxf(r.snap - get_process_delta_time() * 6.0, 0.0)
 
 ## Radius, in screen pixels, of the lock-on cone around the center of the screen.
 func get_fov_screen_radius() -> float:

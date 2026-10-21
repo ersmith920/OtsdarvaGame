@@ -112,6 +112,7 @@ func _make_button(text: String, on_pressed: Callable) -> Button:
 		button.add_theme_font_override("font", font)
 	button.add_theme_font_size_override("font_size", font_size)
 	button.pressed.connect(on_pressed)
+	UIJuice.hover_lift(button)
 	return button
 
 
@@ -151,11 +152,16 @@ func _input(event: InputEvent) -> void:
 func _pause() -> void:
 	_show_settings(false)
 	visible = true
+	UIJuice.pop_in(_main_page, 0.0, 0.9)
+	for i in _main_page.get_child_count():
+		UIJuice.pop_in(_main_page.get_child(i), 0.04 * i, 0.8)
+	UIJuice.play(UIJuice.Sfx.OPEN)
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
 func _resume() -> void:
+	UIJuice.play(UIJuice.Sfx.CLOSE)
 	visible = false
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED

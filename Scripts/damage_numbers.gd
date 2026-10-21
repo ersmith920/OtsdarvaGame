@@ -13,6 +13,8 @@ const FONT_SIZE := 48
 const PIXEL_SIZE := 0.0005       # on-screen size (numbers keep the same size at any distance)
 const CRIT_SCALE := 1.3          # crits are a little bigger
 const OUTLINE_SIZE := 10         # border thickness
+const POP_TIME := 0.12           # seconds a new number takes to pop down to its size
+const POP_SCALE := 1.5           # how big it starts (crits start bigger still)
 
 const COLOR := Color(1, 1, 1)
 const OUTLINE := Color(0.08, 0.08, 0.08)
@@ -22,6 +24,8 @@ const CRIT_OUTLINE := Color(0.35, 0.0, 0.0)
 var _labels: Array[Label3D] = []
 var _age := PackedFloat32Array()
 var _start := PackedVector3Array()
+var _base_px := PackedFloat32Array()   # each number's settled pixel size
+var _pop := PackedFloat32Array()       # each number's starting size multiplier
 var _next := 0                   # next pool slot to use (oldest when the pool is full)
 var _spawned_this_frame := 0
 
@@ -37,7 +41,9 @@ func spawn(at: Vector3, amount: float, crit: bool) -> void:
 	label.text = _format(amount)
 	label.modulate = CRIT_COLOR if crit else COLOR
 	label.outline_modulate = CRIT_OUTLINE if crit else OUTLINE
-	label.pixel_size = PIXEL_SIZE * (CRIT_SCALE if crit else 1.0)
+	_base_px[i] = PIXEL_SIZE * (CRIT_SCALE if crit else 1.0)
+	_pop[i] = POP_SCALE * (1.25 if crit else 1.0)
+	label.pixel_size = _base_px[i] * _pop[i]
 	var offset := Vector3(randf_range(-JITTER, JITTER), randf_range(0.0, JITTER), randf_range(-JITTER, JITTER))
 	_start[i] = at + offset
 	label.global_position = _start[i]
@@ -62,6 +68,14 @@ func _process(delta: float) -> void:
 		var alpha := clampf((1.0 - t) / 0.4, 0.0, 1.0)
 		label.modulate.a = alpha
 		label.outline_modulate.a = alpha
+		# Pops in: starts big, snaps down to its size with a little overshoot.
+		var age := _age[i]
+		if age < POP_TIME * 1.6:
+			var p := clampf(age / POP_TIME, 0.0, 1.0)
+			var size := lerpf(_pop[i], 1.0, 1.0 - pow(1.0 - p, 3.0))
+			if age > POP_TIME:   # small undershoot and back
+				size = 1.0 - 0.08 * sin((age - POP_TIME) / (POP_TIME * 0.6) * PI)
+			label.pixel_size = _base_px[i] * size
 
 
 # Index of the pool label to use next, or -1 if there's no scene to put it in.
@@ -74,6 +88,8 @@ func _get_label_index() -> int:
 		_labels.clear()
 		_age.clear()
 		_start.clear()
+		_base_px.clear()
+		_pop.clear()
 		_next = 0
 
 	if _labels.size() < MAX_ACTIVE:
@@ -82,6 +98,8 @@ func _get_label_index() -> int:
 		_labels.append(label)
 		_age.append(0.0)
 		_start.append(Vector3.ZERO)
+		_base_px.append(PIXEL_SIZE)
+		_pop.append(1.0)
 		return _labels.size() - 1
 
 	# Pool full: prefer a hidden label, otherwise reuse the oldest (round robin).

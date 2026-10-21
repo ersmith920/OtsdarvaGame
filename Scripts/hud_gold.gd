@@ -50,6 +50,9 @@ var _icon: TextureRect
 var _halo: TextureRect
 var _kick := 0.0
 var _last_total := 0
+## How fast the shown number catches up to the real total (it rolls up instead of jumping).
+@export var roll_speed := 12.0
+var _shown := 0.0   # the number on screen, counting toward _last_total
 var _base_pos := Vector2.ZERO
 
 
@@ -78,7 +81,9 @@ func _ready() -> void:
 
 
 func _on_gold_changed(total: int) -> void:
-	text = "%s%d" % [prefix, total]
+	if total < _last_total:
+		_shown = total   # spent gold: drop straight down
+		text = "%s%d" % [prefix, total]
 	var gained := total - _last_total
 	_last_total = total
 	if gained > 0:
@@ -86,6 +91,11 @@ func _on_gold_changed(total: int) -> void:
 
 
 func _process(delta: float) -> void:
+	# Roll the number up toward the real total (always at least 1 per frame while behind).
+	if int(_shown) != _last_total:
+		var step := maxf((_last_total - _shown) * (1.0 - exp(-roll_speed * delta)), 1.0)
+		_shown = minf(_shown + step, _last_total)
+		text = "%s%d" % [prefix, int(_shown)]
 	if _kick <= 0.001:
 		if _kick != 0.0:
 			_kick = 0.0

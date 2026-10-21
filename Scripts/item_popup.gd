@@ -41,9 +41,7 @@ func _ready() -> void:
 
 	var panel := PanelContainer.new()
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var style := StyleBoxFlat.new()
-	style.bg_color = box_color
-	style.set_corner_radius_all(6)
+	var style := UIJuice.glass_style(6, Color(1, 1, 1, 0.14), box_color)   # shared menu look
 	style.set_content_margin_all(BOX_PADDING)
 	panel.add_theme_stylebox_override("panel", style)
 	_root.add_child(panel)
@@ -114,6 +112,13 @@ func show_item(item: ItemData) -> void:
 	_root.visible = true
 	_tween = create_tween()
 	_tween.tween_property(_root, "modulate:a", 1.0, FADE_IN)
+	# Pops in with a little overshoot; rarer items punch harder.
+	UIJuice.center_pivot.call_deferred(_root)
+	_root.scale = Vector2.ONE * (0.8 - 0.04 * (5 - item.tier))
+	var pop := create_tween()
+	pop.tween_property(_root, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if item.tier <= 2:
+		UIJuice.flash(_name_label, 1.0, 0.5)
 	_tween.tween_interval(HOLD_TIME)
 	_tween.tween_property(_root, "modulate:a", 0.0, FADE_OUT)
 	_tween.tween_callback(func(): _root.visible = false)
