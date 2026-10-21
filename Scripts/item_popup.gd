@@ -31,6 +31,7 @@ var _desc_label: Label
 var _tween: Tween
 var _panel: PanelContainer
 var _accent := HudStyle.CYAN
+var _glint := 0.0
 
 
 func _ready() -> void:
@@ -56,7 +57,10 @@ func _ready() -> void:
 	style.content_margin_left = BOX_PADDING + 4
 	style.content_margin_right = BOX_PADDING + 6
 	panel.add_theme_stylebox_override("panel", style)
-	panel.draw.connect(func() -> void: HudStyle.draw_panel(panel, Rect2(Vector2.ZERO, panel.size), _accent))
+	panel.draw.connect(func() -> void:
+		var r := Rect2(Vector2.ZERO, panel.size)
+		HudStyle.draw_panel(panel, r, _accent)
+		HudStyle.draw_glint(panel, r, _glint, 1.5))
 	_root.add_child(panel)
 	_panel = panel
 
@@ -122,6 +126,14 @@ func show_item(item: ItemData) -> void:
 	# Slides in from the right edge and settles.
 	_tween.tween_property(_root, "modulate:a", 1.0, FADE_IN)
 	_tween.parallel().tween_method(_slide, SLIDE, 0.0, 0.35).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+	# A glint sweeps across as it lands, and the icon pops.
+	var fx := create_tween()
+	fx.tween_interval(0.15)
+	fx.tween_method(func(v: float) -> void:
+		_glint = v
+		_panel.queue_redraw(), 0.0, 1.0, 0.45).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+	_icon.pivot_offset = _icon.custom_minimum_size * 0.5
+	UIJuice.pop_in(_icon, 0.12, 0.6)
 	if item.tier <= 2:
 		UIJuice.flash(_name_label, 1.0, 0.5)
 	_tween.tween_interval(HOLD_TIME)

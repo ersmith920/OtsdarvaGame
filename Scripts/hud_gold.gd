@@ -1,4 +1,6 @@
 # Scrap (gold) counter, in the mission panel (top left, see hud_timer.gd): [glowing coin] 123
+# The number glows gold (TextGlow) with the Legendary gold shine sweeping across it, and
+# flares brighter on pickups.
 # The coin mimics the floor coins: brightened by the same tint x strength, plus a soft
 # additive halo standing in for the 3D bloom (the HUD layer doesn't get the scene's Glow).
 extends Label
@@ -44,6 +46,12 @@ const FONT_SIZE := 18
 ## Extra halo brightness per unit of kick.
 @export var flash_amount := 0.5
 
+## Glow color of the number, its normal strength, and how much a pickup kick adds.
+const GLOW_COLOR := Color(1.0, 0.72, 0.15)
+const CORE_COLOR := Color(1.0, 0.9, 0.5)
+const GLOW_STRENGTH := 1.6
+const GLOW_FLARE := 1.2
+
 var _icon: TextureRect
 var _halo: TextureRect
 var _kick := 0.0
@@ -63,17 +71,18 @@ func _ready() -> void:
 	var left := 14.0 + icon_size + icon_gap
 	position = HudStyle.MISSION_POS + Vector2(left, HudStyle.MISSION_ROW_SCRAP + 3)
 	size = Vector2(HudStyle.MISSION_SIZE.x - left - 14.0, 22)
-	add_theme_color_override("font_outline_color", Color(HudStyle.SHADOW, 0.8))
-	add_theme_constant_override("outline_size", 3)
+	add_theme_constant_override("outline_size", 0)   # the glow layers do the outlining
 	add_theme_font_override("font", HudStyle.NUMBER_FONT)
 	add_theme_font_size_override("font_size", FONT_SIZE)
-	add_theme_color_override("font_color", HudStyle.GOLD)
+	# Glowing gold number with the Legendary gold shine sliding across it.
+	set_meta(&"glow_scale", 0.8)
+	_set_number(0)
+	Rarity.paint(self, Rarity.LEGENDARY)
 
 	_build_icon()
 	resized.connect(_place_icon)
 	_place_icon()
 
-	text = "%s%d" % [prefix, 0]
 	GameManager.gold_changed.connect(_on_gold_changed)
 	_base_pos = position
 
@@ -81,7 +90,7 @@ func _ready() -> void:
 func _on_gold_changed(total: int) -> void:
 	if total < _last_total:
 		_shown = total   # spent gold: drop straight down
-		text = "%s%d" % [prefix, total]
+		_set_number(total)
 	var gained := total - _last_total
 	_last_total = total
 	if gained > 0:
@@ -93,7 +102,7 @@ func _process(delta: float) -> void:
 	if int(_shown) != _last_total:
 		var step := maxf((_last_total - _shown) * (1.0 - exp(-roll_speed * delta)), 1.0)
 		_shown = minf(_shown + step, _last_total)
-		text = "%s%d" % [prefix, int(_shown)]
+		_set_number(int(_shown))
 	if _kick <= 0.001:
 		if _kick != 0.0:
 			_kick = 0.0
@@ -101,6 +110,7 @@ func _process(delta: float) -> void:
 			position = _base_pos
 			if _halo != null:
 				_halo.self_modulate = Color.WHITE
+			_set_number(int(_shown))
 		return
 	_kick *= exp(-pulse_decay * delta)
 	# Grow from the right end (where the number is), so it swells in place.
@@ -110,6 +120,14 @@ func _process(delta: float) -> void:
 	if _halo != null:
 		var bright := 1.0 + flash_amount * _kick
 		_halo.self_modulate = Color(bright, bright, bright, 1.0)
+	_set_number(int(_shown))   # the glow flares with the kick
+
+
+# The number, glowing gold; brighter while a pickup kick is going.
+func _set_number(amount: int) -> void:
+	TextGlow.set_text(self, "%s%d" % [prefix, amount], GLOW_COLOR, GLOW_STRENGTH + GLOW_FLARE * _kick)
+	# A richer core than TextGlow's default (which leans white), so it reads as gold.
+	add_theme_color_override("font_color", CORE_COLOR.lerp(Color.WHITE, 0.35 * minf(_kick, 1.0)))
 
 
 func _build_icon() -> void:

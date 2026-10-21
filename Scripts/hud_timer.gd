@@ -8,6 +8,7 @@ const FONT_SIZE := 24
 var _last_second := -1
 var _time_panel : Control
 var _mission_panel : Control
+var _glint := 0.0
 
 @export var font: Font   # unused now: the HUD uses HudStyle's fonts (kept so the scene still loads)
 
@@ -73,6 +74,8 @@ func _make_panel(panel_size: Vector2, divided: bool) -> Control:
 	panel.size = panel_size
 	panel.draw.connect(func() -> void:
 		HudStyle.draw_panel(panel, Rect2(Vector2.ZERO, panel_size))
+		if not divided:
+			HudStyle.draw_glint(panel, Rect2(Vector2.ZERO, panel_size), _glint)
 		if divided:
 			HudStyle.draw_divider(panel, Vector2(10, HudStyle.MISSION_ROW_SCRAP - 1), panel_size.x - 20))
 	get_parent().add_child.call_deferred(panel)
@@ -93,6 +96,16 @@ func _process(_delta: float) -> void:
 
 
 func _update_text() -> void:
+	@warning_ignore("integer_division")
+	var minute_turned := _last_second >= 0 and int(GameManager.levelTime) / 60 != _last_second / 60
 	_last_second = int(GameManager.levelTime)
+	# Each new minute: a glint across the panel and a little punch on the digits.
+	if minute_turned:
+		var t := create_tween()
+		t.tween_method(func(v: float) -> void:
+			_glint = v
+			_time_panel.queue_redraw(), 0.0, 1.0, 0.6).set_trans(Tween.TRANS_SINE)
+		pivot_offset = size * 0.5
+		UIJuice.punch(self, 0.15)
 	@warning_ignore("integer_division")
 	text = "%02d:%02d" % [_last_second / 60, _last_second % 60]

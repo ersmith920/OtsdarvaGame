@@ -104,7 +104,12 @@ static func rounded_points(r: Rect2, radius: float, steps := 6) -> PackedVector2
 	for c in corners:
 		for i in steps + 1:
 			var a : float = c[1] + PI * 0.5 * i / steps
-			pts.append(c[0] + Vector2(cos(a), sin(a)) * radius)
+			var p : Vector2 = c[0] + Vector2(cos(a), sin(a)) * radius
+			# Skip repeats (zero-length sides), which break triangulation.
+			if pts.is_empty() or not p.is_equal_approx(pts[pts.size() - 1]):
+				pts.append(p)
+	if pts.size() > 1 and pts[0].is_equal_approx(pts[pts.size() - 1]):
+		pts.remove_at(pts.size() - 1)
 	return pts
 
 
@@ -185,3 +190,19 @@ static func draw_gauge_arc(ci: CanvasItem, center: Vector2, radius: float, from_
 		return
 	ci.draw_arc(center, radius, from_angle, to_angle, 40, color.darkened(0.15), width, true)
 	ci.draw_arc(center, radius + width * 0.3, from_angle, to_angle, 40, Color(color.lerp(Color.WHITE, 0.3), 0.9), width * 0.35, true)
+
+
+## A light glint sweeping across a panel: a slanted white band at progress t (0-1, left to
+## right), clipped to the panel's shape. Tween t to play it.
+static func draw_glint(ci: CanvasItem, r: Rect2, t: float, strength := 1.0) -> void:
+	if t <= 0.0 or t >= 1.0:
+		return
+	var slant := r.size.y * 0.6
+	var x := lerpf(r.position.x - slant - 30.0, r.end.x + 10.0, t)
+	var shape := chamfer_points(r)
+	for band in [[30.0, 0.06], [14.0, 0.1], [5.0, 0.16]]:
+		var w : float = band[0]
+		var poly := PackedVector2Array([Vector2(x + slant, r.position.y), Vector2(x + slant + w, r.position.y),
+				Vector2(x + w, r.end.y), Vector2(x, r.end.y)])
+		for piece in Geometry2D.intersect_polygons(poly, shape):
+			ci.draw_colored_polygon(piece, Color(1, 1, 1, band[1] * strength))
