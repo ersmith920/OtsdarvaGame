@@ -1,127 +1,168 @@
-# HUD bars: red health bar stacked above a blue battery bar, bottom right.
+# Status block, bottom left: armor (health) and energy (battery) as segmented mech gauges
+# on an angled HUD panel (see HudStyle).
 #
-# Feel: when a bar drops, a pale "ghost" chunk stays behind and drains away a moment later
-# (so you can see how much a hit took), the health bar flashes on damage, and it pulses
-# when health is low.
+#   ARMOR                    0100
+#   ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▱▱▱▱▱
+#   ENERGY                     72
+#   ▰▰▰▰▰▰▰▰▰▰▰▰▱▱▱
+#
+# Feel: when a gauge drops, the lost segments stay as a pale trail that drains a moment later;
+# armor flashes and the panel jolts on hits; armor turns amber at half and red when critical,
+# with a blinking warning above the panel. It slides in when the level starts.
 extends Control
 
-const PADDING := 24
-const BAR_SIZE := Vector2(260, 22)
-const BAR_GAP := 8
-## Seconds the ghost chunk waits before draining.
+const PADDING := 18
+const BLOCK_SIZE := Vector2(292, 82)
+const ARMOR_SEGMENTS := 40
+const ENERGY_SEGMENTS := 40
+## Seconds the lost segments wait before draining away.
 const GHOST_DELAY := 0.35
-## How fast the ghost drains (fraction of the gap per second, roughly).
+## How fast that trail drains (fraction of the gap per second, roughly).
 const GHOST_SPEED := 4.0
-## Below this fraction of max health the bar pulses.
-const LOW_HEALTH := 0.3
+## Armor turns amber below this fraction, red (and warns) below LOW.
+const CAUTION := 0.5
+const LOW := 0.25
+const ENERGY_COLOR := Color(0.4, 0.7, 1.0)
 
-var _health_bar: ProgressBar
-var _energy_bar: ProgressBar
-var _health_ghost: ProgressBar
-var _energy_ghost: ProgressBar
-var _health_fill: StyleBoxFlat
-var _ghost_wait := {}      # ghost bar -> seconds left before it drains
+var _block : Control          # the panel (first child: the Tab menu keeps clear of it)
+var _armor_num : Label
+var _energy_num : Label
+var _warning : Label
+var _armor := 1.0
+var _armor_ghost := 1.0
+var _energy := 1.0
+var _energy_ghost := 1.0
+var _armor_wait := 0.0
+var _energy_wait := 0.0
 var _last_health := -1.0
 var _flash := 0.0
-var _pulse_time := 0.0
-
-const HEALTH_COLOR := Color(0.85, 0.15, 0.15)
-const ENERGY_COLOR := Color(0.2, 0.5, 1.0)
+var _jolt := 0.0
+var _time := 0.0
+var _jolting := false
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
-	var box := VBoxContainer.new()
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.add_theme_constant_override("separation", BAR_GAP)
-	add_child(box)
+	_block = Control.new()
+	_block.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_block.custom_minimum_size = BLOCK_SIZE
+	add_child(_block)
+	_block.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_block.offset_left = PADDING
+	_block.offset_right = PADDING + BLOCK_SIZE.x
+	_block.offset_top = -PADDING - BLOCK_SIZE.y
+	_block.offset_bottom = -PADDING
+	_block.draw.connect(_draw_block)
 
-	var health := _make_bar_pair(HEALTH_COLOR)
-	_health_bar = health[0]
-	_health_ghost = health[1]
-	_health_fill = _health_bar.get_theme_stylebox("fill") as StyleBoxFlat
-	var energy := _make_bar_pair(ENERGY_COLOR)
-	_energy_bar = energy[0]
-	_energy_ghost = energy[1]
-	box.add_child(health[2])   # first child = on top
-	box.add_child(energy[2])
+	_block.add_child(_caption("ARMOR", Vector2(14, 10)))
+	_armor_num = HudStyle.make_label("0100", 20, HudStyle.CYAN, true)
+	_armor_num.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_armor_num.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+	_armor_num.position = Vector2(BLOCK_SIZE.x - 14 - 120, 4)
+	_armor_num.size = Vector2(120, 24)
+	_block.add_child(_armor_num)
 
-	# Pin to the bottom right and grow up/left so PADDING stays from the edges.
-	box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, PADDING)
-	box.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	box.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_block.add_child(_caption("ENERGY", Vector2(14, 48)))
+	_energy_num = HudStyle.make_label("100", 13, ENERGY_COLOR, true)
+	_energy_num.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_energy_num.position = Vector2(BLOCK_SIZE.x - 14 - 80, 46)
+	_energy_num.size = Vector2(80, 16)
+	_block.add_child(_energy_num)
+
+	_warning = HudStyle.make_label("ARMOR CRITICAL", 13, HudStyle.RED, true)
+	_warning.position = Vector2(4, -22)
+	_warning.visible = false
+	_block.add_child(_warning)
+
+	# Boot-up: slides in from the left.
+	_block.modulate.a = 0.0
+	var t := create_tween()
+	t.tween_interval(0.25)
+	t.tween_property(_block, "modulate:a", 1.0, 0.15)
+	t.parallel().tween_property(_block, "position:x", _block.position.x, 0.35).from(_block.position.x - 60.0) \
+			.set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
 
 
-# [bar, ghost bar behind it, holder]. The ghost is a pale copy that lags behind the real bar.
-func _make_bar_pair(fill_color: Color) -> Array:
-	var holder := Control.new()
-	holder.custom_minimum_size = BAR_SIZE
-	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var ghost := _make_bar(fill_color.lerp(Color.WHITE, 0.65), Color(0.0, 0.0, 0.0, 0.5))
-	var bar := _make_bar(fill_color, Color(0, 0, 0, 0))
-	for b in [ghost, bar]:
-		holder.add_child(b)
-		b.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	return [bar, ghost, holder]
-
-
-func _make_bar(fill_color: Color, back_color: Color) -> ProgressBar:
-	var bar := ProgressBar.new()
-	bar.custom_minimum_size = BAR_SIZE
-	bar.show_percentage = false
-	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bar.step = 0.0   # smooth, not whole numbers
-	var fill := StyleBoxFlat.new()
-	fill.bg_color = fill_color
-	var back := StyleBoxFlat.new()
-	back.bg_color = back_color
-	bar.add_theme_stylebox_override("fill", fill)
-	bar.add_theme_stylebox_override("background", back)
-	return bar
+func _caption(text: String, at: Vector2) -> Label:
+	var l := HudStyle.make_label(HudStyle.caption(text), 10, HudStyle.CYAN_DIM)
+	l.position = at
+	return l
 
 
 func _process(delta: float) -> void:
 	var player := GameManager.player
 	if player == null:
 		return
-
+	_time += delta
 	var stats := player.stats_node
-	var max_health := stats.get_value(&"max_health")
-	_set_bar(_health_bar, _health_ghost, max_health, player.health, delta)
-	_set_bar(_energy_bar, _energy_ghost, stats.get_value(&"battery_capacity"), player.battery_charge, delta)
+	var max_health := maxf(stats.get_value(&"max_health"), 0.001)
+	var max_energy := maxf(stats.get_value(&"battery_capacity"), 0.001)
+	var armor := clampf(player.health / max_health, 0.0, 1.0)
+	var energy := clampf(player.battery_charge / max_energy, 0.0, 1.0)
 
-	# Flash white on damage.
+	# Hits: flash and jolt, harder for bigger hits.
 	if _last_health >= 0.0 and player.health < _last_health - 0.01:
+		var lost := (_last_health - player.health) / max_health
 		_flash = 1.0
+		_jolt = minf(_jolt + 0.4 + lost * 4.0, 1.5)
 	_last_health = player.health
+
+	var a := _trail(armor, _armor, _armor_ghost, _armor_wait, delta)
+	_armor = a[0]; _armor_ghost = a[1]; _armor_wait = a[2]
+	var e := _trail(energy, _energy, _energy_ghost, _energy_wait, delta)
+	_energy = e[0]; _energy_ghost = e[1]; _energy_wait = e[2]
+
 	_flash = maxf(_flash - delta * 5.0, 0.0)
+	_jolt = maxf(_jolt - delta * 6.0, 0.0)
 
-	# Pulse when low.
-	var color := HEALTH_COLOR
-	if max_health > 0.0 and player.health / max_health <= LOW_HEALTH and player.health > 0.0:
-		_pulse_time += delta
-		var p := 0.5 + 0.5 * sin(_pulse_time * TAU * 1.6)
-		color = HEALTH_COLOR.lerp(Color(1.0, 0.45, 0.4), p * 0.6)
-	else:
-		_pulse_time = 0.0
-	_health_fill.bg_color = color.lerp(Color.WHITE, _flash * 0.8)
+	var color := _armor_color()
+	_armor_num.text = "%04d" % ceili(player.health)
+	_armor_num.add_theme_color_override("font_color", color.lerp(Color.WHITE, _flash * 0.7))
+	_energy_num.text = "%d" % roundi(energy * 100.0)
+	_energy_num.add_theme_color_override("font_color", HudStyle.AMBER if energy < 0.2 else ENERGY_COLOR)
+
+	var critical := armor <= LOW and player.health > 0.0
+	_warning.visible = critical and fmod(_time, 0.6) < 0.4
+	if _jolt > 0.0:
+		_block.position.x = PADDING + randf_range(-1.0, 1.0) * 4.0 * _jolt
+		_jolting = true
+	elif _jolting:
+		_block.position.x = PADDING
+		_jolting = false
+	_block.queue_redraw()
 
 
-# The real bar jumps to the value; the ghost holds, then drains down after it.
-# (Gaining goes the other way: the ghost jumps up with it, so only losses leave a trail.)
-func _set_bar(bar: ProgressBar, ghost: ProgressBar, max_value: float, value: float, delta: float) -> void:
-	bar.max_value = max_value
-	ghost.max_value = max_value
-	if value < bar.value - 0.001:
-		_ghost_wait[ghost] = GHOST_DELAY   # a new drop: hold the ghost a moment
-	bar.value = value
-	if ghost.value < value:
-		ghost.value = value
-		return
-	var wait : float = _ghost_wait.get(ghost, 0.0)
+# [shown fill, trail, trail wait]: the fill jumps, the trail holds then drains after it.
+func _trail(value: float, shown: float, ghost: float, wait: float, delta: float) -> Array:
+	if value < shown - 0.0001:
+		wait = GHOST_DELAY
+	shown = value
+	if ghost < value:
+		return [shown, value, 0.0]
 	if wait > 0.0:
-		_ghost_wait[ghost] = wait - delta
-		return
-	ghost.value = maxf(lerpf(ghost.value, value, 1.0 - exp(-GHOST_SPEED * delta)) - max_value * 0.05 * delta, value)
+		return [shown, ghost, wait - delta]
+	ghost = maxf(lerpf(ghost, value, 1.0 - exp(-GHOST_SPEED * delta)) - 0.05 * delta, value)
+	return [shown, ghost, 0.0]
+
+
+func _armor_color() -> Color:
+	var c := HudStyle.CYAN
+	if _armor <= LOW:
+		c = HudStyle.RED.lerp(Color(1, 0.6, 0.55), 0.5 + 0.5 * sin(_time * TAU * 1.6))   # pulsing
+	elif _armor <= CAUTION:
+		c = HudStyle.AMBER
+	return c
+
+
+func _draw_block() -> void:
+	var color := _armor_color()
+	var accent := color if _armor <= CAUTION else HudStyle.CYAN
+	HudStyle.draw_panel(_block, Rect2(Vector2.ZERO, BLOCK_SIZE), accent)
+	var bar_color := color.lerp(Color.WHITE, _flash * 0.8)
+	HudStyle.draw_segment_bar(_block, Rect2(14, 30, BLOCK_SIZE.x - 28, 12), _armor, _armor_ghost,
+			bar_color, ARMOR_SEGMENTS)
+	var energy_color := HudStyle.AMBER if _energy < 0.2 else ENERGY_COLOR
+	HudStyle.draw_segment_bar(_block, Rect2(14, 64, BLOCK_SIZE.x - 28, 6), _energy, _energy_ghost,
+			energy_color, ENERGY_SEGMENTS, 2.0, 2.0)

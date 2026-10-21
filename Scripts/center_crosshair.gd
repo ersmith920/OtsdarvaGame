@@ -2,7 +2,7 @@
 # Separate from the lock-on crosshair, which moves.
 extends Control
 
-@export var color := Color(1.0, 1.0, 1.0):
+@export var color := Color(0.45, 0.92, 1.0):   # HUD cyan
 	set(v):
 		color = v
 		queue_redraw()

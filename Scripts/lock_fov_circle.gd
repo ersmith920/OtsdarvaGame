@@ -1,14 +1,17 @@
-# Draws a circle on the HUD showing the area the lock-on can pick targets from.
+# Draws the lock-on area on the HUD: two arcs (left and right) showing how far from the center
+# a target can be locked, with small tick marks, in the HUD's cyan (red while locked).
 # In the split aim modes it also draws faint lines showing how the circle is divided.
 extends Control
 
 @export var lock_on: LockOn
-@export var idle_color := Color(1.0, 1.0, 1.0, 0.3)
-@export var locked_color := Color(1.0, 0.25, 0.25, 0.5)
+@export var idle_color := Color(0.45, 0.92, 1.0, 0.32)
+@export var locked_color := Color(1.0, 0.3, 0.25, 0.55)
 @export var line_width := 2.0
 @export_range(10.0, 180.0) var arc_degrees := 45.0
 ## Opacity of the split lines, relative to the circle's color.
 @export_range(0.0, 1.0) var divider_alpha := 0.5
+## Length of the tick marks at the ends and middle of each arc, in pixels.
+@export var tick_length := 5.0
 
 var _radius := 0.0
 var _locked := false
@@ -35,10 +38,14 @@ func _draw() -> void:
 	var center := size * 0.5
 	var half := deg_to_rad(arc_degrees) * 0.5
 
-	# Right side: centered on 0 degrees (pointing right).
-	draw_arc(center, _radius, -half, half, 48, color, line_width, true)
-	# Left side: centered on 180 degrees (pointing left).
-	draw_arc(center, _radius, PI - half, PI + half, 48, color, line_width, true)
+	for side in [0.0, PI]:   # right arc (around 0 degrees), left arc (around 180)
+		draw_arc(center, _radius, side - half, side + half, 48, color, line_width, true)
+		# Ticks: inward at both ends, outward in the middle.
+		for a in [side - half, side + half]:
+			var dir := Vector2.from_angle(a)
+			draw_line(center + dir * _radius, center + dir * (_radius - tick_length), color, line_width, true)
+		var mid := Vector2.from_angle(side)
+		draw_line(center + mid * _radius, center + mid * (_radius + tick_length * 1.4), color, line_width, true)
 
 	# Split lines, kept short of the center so they don't cover the middle of the screen.
 	var faint := Color(color, color.a * divider_alpha)

@@ -1,11 +1,9 @@
-# Gold counter, top left of the HUD, just under the enemy count: [glowing coin] x123
+# Credits (gold) counter, in the mission panel (top left, see hud_timer.gd): [glowing coin] 123
 # The coin mimics the floor coins: brightened by the same tint x strength, plus a soft
 # additive halo standing in for the 3D bloom (the HUD layer doesn't get the scene's Glow).
 extends Label
 
-const PADDING := 16
-const FONT_SIZE := 24
-const ROW_OFFSET := 36   # pushes it below the EnemyCount label
+const FONT_SIZE := 15
 
 @export var font: Font
 
@@ -13,11 +11,11 @@ const ROW_OFFSET := 36   # pushes it below the EnemyCount label
 ## Coin art. Use the same image as the floor coins (e.g. gold1.png). Empty = generated gold disc.
 @export var icon_texture: Texture2D
 ## Icon width and height, in pixels.
-@export var icon_size := 28.0
+@export var icon_size := 16.0
 ## Gap between the icon and the text, in pixels.
 @export var icon_gap := 6.0
 ## Text shown before the amount.
-@export var prefix := "x"
+@export var prefix := ""
 ## Crisp pixels instead of smoothing. Turn off for soft art.
 @export var pixel_art := true
 
@@ -58,18 +56,16 @@ var _base_pos := Vector2.ZERO
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT, Control.PRESET_MODE_MINSIZE, PADDING)
-	offset_top += ROW_OFFSET
-	offset_bottom += ROW_OFFSET
-	# Make room on the left for the coin, which sits just outside the label's text.
-	offset_left += icon_size + icon_gap
-	offset_right += icon_size + icon_gap
-
-	if font != null:
-		add_theme_font_override("font", font)
+	# Inside the mission panel: the coin at the row's left edge, the number on the right.
+	set_anchors_preset(Control.PRESET_TOP_LEFT)
+	var left := 14.0 + icon_size + icon_gap
+	position = HudStyle.MISSION_POS + Vector2(left, HudStyle.MISSION_ROW_CREDITS)
+	size = Vector2(HudStyle.MISSION_SIZE.x - left - 14.0, 20)
+	add_theme_font_override("font", HudStyle.NUMBER_FONT)
 	add_theme_font_size_override("font_size", FONT_SIZE)
+	add_theme_color_override("font_color", HudStyle.GOLD)
 
 	_build_icon()
 	resized.connect(_place_icon)
@@ -105,8 +101,8 @@ func _process(delta: float) -> void:
 				_halo.self_modulate = Color.WHITE
 		return
 	_kick *= exp(-pulse_decay * delta)
-	# Grow from the coin's center, so the counter swells in place instead of sliding.
-	pivot_offset = Vector2(-(icon_gap + icon_size * 0.5), size.y * 0.5)
+	# Grow from the right end (where the number is), so it swells in place.
+	pivot_offset = Vector2(size.x, size.y * 0.5)
 	scale = Vector2.ONE * (1.0 + grow_amount * _kick)
 	position = _base_pos + Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * shake_amount * _kick
 	if _halo != null:

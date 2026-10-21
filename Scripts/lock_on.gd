@@ -32,8 +32,8 @@ enum Mode { SINGLE = 1, LEFT_RIGHT = 2, TOP_BOTTOM = 3, QUADRANTS = 4 }
 const MODE_NAMES := {1: "Single Target", 2: "Split Left / Right", 3: "Split Top / Bottom", 4: "Split Quadrants"}
 
 @export var crosshair: Control   # the 2D HUD crosshair (drag it in from the scene)
-@export var idle_color := Color(1.0, 1.0, 1.0, 0.6)
-@export var locked_color := Color(1.0, 0.25, 0.25, 0.85)
+@export var idle_color := Color(0.45, 0.92, 1.0, 0.7)   # HUD cyan
+@export var locked_color := Color(1.0, 0.3, 0.25, 0.95)
 
 @onready var camera: Camera3D = get_parent() as Camera3D
 
@@ -147,14 +147,12 @@ func _flash_mode_name() -> void:
 	if crosshair == null:
 		return
 	if _mode_label == null:
-		_mode_label = Label.new()
-		_mode_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_mode_label = HudStyle.make_label("", 12, HudStyle.CYAN)
 		_mode_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_mode_label.add_theme_font_size_override("font_size", 18)
-		_mode_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-		_mode_label.add_theme_constant_override("outline_size", 4)
+		_mode_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
+		_mode_label.add_theme_constant_override("outline_size", 3)
 		crosshair.get_parent().add_child.call_deferred(_mode_label)
-	_mode_label.text = "Aim: %s  [%d]" % [get_mode_name(), mode]
+	_mode_label.text = "%s   %s" % [HudStyle.caption("AIM %d" % mode), get_mode_name().to_upper()]
 	_mode_label_until = Time.get_ticks_msec() + 1200
 
 

@@ -41,7 +41,7 @@ func _ready() -> void:
 
 	var panel := PanelContainer.new()
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var style := UIJuice.glass_style(6, Color(1, 1, 1, 0.14), box_color)   # shared menu look
+	var style := UIJuice.glass_style(6, Color(HudStyle.CYAN, 0.3), box_color)   # shared look, HUD cyan edge
 	style.set_content_margin_all(BOX_PADDING)
 	panel.add_theme_stylebox_override("panel", style)
 	_root.add_child(panel)
