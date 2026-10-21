@@ -20,7 +20,7 @@ var _weapon_grid: GridContainer
 var _tip: PanelContainer
 var _tip_name: Label
 var _tip_desc: Label
-var _tip_extra: Label   # weapon base stats, dimmer than the description
+var _tip_stats: VBoxContainer   # weapon stats, one Label per line (rolled ones in the rarity color)
 var _hovered: Object   # the ItemData or Gun under the cursor
 
 const ITEM_COLUMNS := 4
@@ -459,13 +459,11 @@ func _build_item_tooltip() -> void:
 	_tip_desc.add_theme_color_override("font_color", tip_description_color)
 	column.add_child(_tip_desc)
 
-	_tip_extra = Label.new()
-	_tip_extra.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_tip_extra.add_theme_font_override("font", description_font)
-	_tip_extra.add_theme_font_size_override("font_size", tip_description_font_size)
-	_tip_extra.add_theme_color_override("font_color", tip_base_stat_color)
-	_tip_extra.visible = false
-	column.add_child(_tip_extra)
+	_tip_stats = VBoxContainer.new()
+	_tip_stats.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tip_stats.add_theme_constant_override("separation", 0)
+	_tip_stats.visible = false
+	column.add_child(_tip_stats)
 
 
 # Polled every frame: also handles tiles scrolling under a stationary cursor.
@@ -511,21 +509,24 @@ func _fill_tooltip(item: ItemData) -> void:
 # Name in its rarity color, then rarity, rolled bonuses, and the gun's own base stats.
 func _fill_weapon_tooltip(gun: Gun) -> void:
 	var color := Rarity.get_color(gun.get_rarity())
-	# The gun's own stats with its rolls applied; rolled ones show the roll in brackets.
-	var stats := PackedStringArray()
+	# The gun's own stats with its rolls applied. Rolled ones are lit up in the rarity color
+	# (like the gun store cards) with the roll in brackets; the rest stay gray.
+	var boost_color := color.lerp(Color.WHITE, 0.45)
+	var stats : Array[Dictionary] = []
 	for stat in gun.get_stat_summary():
 		var line : String = "%s: %s" % [stat.name, stat.value]
 		if not stat.bonus.is_empty():
 			line += "  (%s)" % stat.bonus
-		stats.append(line)
-	_fill_tip(gun.get_display_name(), color, Rarity.name_of(gun.get_rarity()), "\n".join(stats))
+		stats.append({"text": line, "color": boost_color if stat.boosted else tip_base_stat_color})
+	_fill_tip(gun.get_display_name(), color, Rarity.name_of(gun.get_rarity()), stats)
 
 
 func _num(v: float) -> String:
 	return str(int(round(v))) if is_equal_approx(v, round(v)) else str(snappedf(v, 0.01))
 
 
-func _fill_tip(title: String, tier_color: Color, description: String, extra := "") -> void:
+## stats: optional {text, color} lines shown under the description.
+func _fill_tip(title: String, tier_color: Color, description: String, stats: Array[Dictionary] = []) -> void:
 	_tip_name.add_theme_color_override("font_color", tier_color)
 	TextGlow.set_text(_tip_name, title, tier_color)
 	# Line breaks are put in here instead of using Label autowrap: a wrapping Label works out
@@ -534,15 +535,26 @@ func _fill_tip(title: String, tier_color: Color, description: String, extra := "
 	# the box come out a different height each time.
 	_tip_desc.text = _wrap(description, _tip_desc, TIP_MAX_TEXT_WIDTH)
 	_tip_desc.visible = not description.is_empty()
-	_tip_extra.text = _wrap(extra, _tip_extra, TIP_MAX_TEXT_WIDTH)
-	_tip_extra.visible = not extra.is_empty()
+	for child in _tip_stats.get_children():
+		_tip_stats.remove_child(child)
+		child.queue_free()
+	for stat in stats:
+		var label := Label.new()
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		label.add_theme_font_override("font", description_font)
+		label.add_theme_font_size_override("font_size", tip_description_font_size)
+		label.add_theme_color_override("font_color", stat.color)
+		label.text = _wrap(stat.text, label, TIP_MAX_TEXT_WIDTH)
+		_tip_stats.add_child(label)
+	_tip_stats.visible = not stats.is_empty()
 
 	# Hug the text: as wide as the widest line.
-	var width := maxf(_text_width(_tip_name), maxf(_text_width(_tip_desc), _text_width(_tip_extra)))
+	var width := maxf(_text_width(_tip_name), _text_width(_tip_desc))
+	for label in _tip_stats.get_children():
+		width = maxf(width, _text_width(label))
 	width = ceilf(width) + 2.0
 	_tip_name.custom_minimum_size.x = width
 	_tip_desc.custom_minimum_size.x = width
-	_tip_extra.custom_minimum_size.x = width
 	_tip.reset_size()   # containers grow on their own but never shrink back
 
 
