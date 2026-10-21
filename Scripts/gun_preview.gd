@@ -2,8 +2,19 @@
 # Copies only the gun scene's ModelAnchor into its own little world with a camera and light,
 # auto-framed to the model's size, so any gun works without setup.
 # Keeps working while the game is paused.
+#
+# Sharp at any window size: the UI is laid out at the project's base resolution and scaled up
+# to the window (stretch mode canvas_items), so the model is rendered at the real on-screen
+# resolution (size x that scale, plus a little extra) and shown shrunk to fit, instead of
+# being rendered small and stretched.
 class_name GunPreview
-extends SubViewportContainer
+extends TextureRect
+
+## Extra resolution on top of the window's UI scale (1.25 = render 25% sharper than needed,
+## which smooths the edges when it's shrunk to fit).
+const OVERSAMPLE := 1.25
+## Never render bigger than this many pixels on a side.
+const MAX_RENDER_PX := 1024
 
 ## Radians per second the model turns. 0 = still (and rendered only once, which is cheaper).
 var spin_speed := 0.6
@@ -28,16 +39,22 @@ static func create(scene: PackedScene, px: Vector2i, spin := 0.6) -> GunPreview:
 func _build(scene: PackedScene, px: Vector2i) -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	stretch = true
+	expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 
+	var ui_scale := _ui_scale() * OVERSAMPLE
+	var render := Vector2i((Vector2(px) * ui_scale).round())
+	render = render.clamp(Vector2i(8, 8), Vector2i(MAX_RENDER_PX, MAX_RENDER_PX))
 	_viewport = SubViewport.new()
-	_viewport.size = px
+	_viewport.size = render
 	_viewport.own_world_3d = true
 	_viewport.transparent_bg = true
 	_viewport.msaa_3d = Viewport.MSAA_4X
 	_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS if spin_speed != 0.0 \
 			else SubViewport.UPDATE_ONCE
 	add_child(_viewport)
+	texture = _viewport.get_texture()
 
 	var env := Environment.new()
 	env.background_mode = Environment.BG_CLEAR_COLOR
@@ -75,6 +92,20 @@ func _build(scene: PackedScene, px: Vector2i) -> void:
 	cam.transform = _looking_at_origin(view_direction.normalized() * dist)
 	cam.near = maxf(dist - radius * 2.0, 0.01)
 	cam.far = dist + radius * 4.0
+
+
+# How much the window scales the UI up from its base resolution (1 at the base size).
+static func _ui_scale() -> float:
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null or tree.root == null:
+		return 1.0
+	var root := tree.root
+	var s := root.content_scale_factor
+	var base := Vector2(root.content_scale_size)
+	if base.x > 0.0 and base.y > 0.0:
+		var win := Vector2(root.size)
+		s *= minf(win.x / base.x, win.y / base.y)   # how the "expand" stretch scales the UI
+	return clampf(s, 1.0, 4.0)
 
 
 # Built before the preview is in the tree, so no look_at() (that needs global transforms).

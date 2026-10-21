@@ -16,8 +16,9 @@ signal closed
 const TITLE_FONT := preload("res://Fonts/KHMenu-Bold.otf")
 const BODY_FONT := preload("res://Fonts/KHMenu.otf")
 
-const TILE_SIZE := 72
+const TILE_SIZE := 64
 const TILE_GAP := 8
+const TILE_GLOW_ROOM := 10   # space around the tile grid for glows and hover growth
 const GRID_COLUMNS := 4
 const CARD_PADDING := 10
 ## Size of the gun cards here (1 = full size, the gun store uses 0.5).
@@ -25,6 +26,15 @@ const CARD_SCALE := 0.55
 ## Every slot / result frame: one gun card plus padding (same size whatever is in it).
 var CARD_SIZE := GunCard.get_size(CARD_SCALE) + Vector2(CARD_PADDING, CARD_PADDING) * 2.0
 const HINT_WIDTH := 440.0
+const TITLE_SIZE := 28
+const HEADER_SIZE := 15
+const HINT_SIZE := 15
+const BUTTON_SIZE := Vector2(170, 38)
+const BUTTON_FONT_SIZE := 18
+const PANEL_GAP := 16
+const PANEL_PADDING := 14
+const PLUS_WIDTH := 30
+const EMPTY_TEXT_SIZE := 14
 const PANEL_BG := Color(0.05, 0.05, 0.06, 0.94)
 const EMPTY_BORDER := Color(0.4, 0.4, 0.42)
 const HINT_COLOR := Color(0.65, 0.65, 0.68)
@@ -93,30 +103,29 @@ func _build() -> void:
 	_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_holder)
 	_content = VBoxContainer.new()
-	_content.add_theme_constant_override("separation", 18)
+	_content.add_theme_constant_override("separation", 14)
 	_holder.add_child(_content)
 
-	var title := Label.new()
+	var title := _label(combiner.title if combiner != null else "Combiner", TITLE_SIZE, Color.WHITE, TITLE_FONT)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_override("font", TITLE_FONT)
-	title.add_theme_font_size_override("font_size", 34)
-	title.text = combiner.title if combiner != null else "Combiner"
 	_content.add_child(title)
 
+	# Three panels side by side, all the same height, so their headers and their contents
+	# line up: your weapons / the two picks / the result.
 	var columns := HBoxContainer.new()
-	columns.add_theme_constant_override("separation", 36)
+	columns.add_theme_constant_override("separation", PANEL_GAP)
 	columns.alignment = BoxContainer.ALIGNMENT_CENTER
 	_content.add_child(columns)
 
 	# ---- Left: the player's guns ----
-	var left := _section(columns, "Your Weapons")
+	var left := _panel(columns, "Your Weapons")
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size = Vector2(GRID_COLUMNS * (TILE_SIZE + TILE_GAP) + 20, CARD_SIZE.y)
+	scroll.custom_minimum_size = Vector2(GRID_COLUMNS * (TILE_SIZE + TILE_GAP) - TILE_GAP + 2 * TILE_GLOW_ROOM, CARD_SIZE.y)
 	left.add_child(scroll)
-	var pad := MarginContainer.new()   # room for the tiles' glow
+	var pad := MarginContainer.new()   # room for the tiles' glow and hover lift
 	for side in ["left", "top", "right", "bottom"]:
-		pad.add_theme_constant_override("margin_" + side, 10)
+		pad.add_theme_constant_override("margin_" + side, TILE_GLOW_ROOM)
 	scroll.add_child(pad)
 	_grid = GridContainer.new()
 	_grid.columns = GRID_COLUMNS
@@ -125,15 +134,16 @@ func _build() -> void:
 	pad.add_child(_grid)
 
 	# ---- Middle: the two picks ----
-	var middle := _section(columns, "Combine")
+	var middle := _panel(columns, "Combine")
 	var pair := HBoxContainer.new()
-	pair.add_theme_constant_override("separation", 14)
+	pair.add_theme_constant_override("separation", 0)
 	middle.add_child(pair)
 	for i in 2:
 		if i == 1:
-			var plus := _label("+", 40, Color.WHITE, TITLE_FONT)
+			var plus := _label("+", 26, Color(1, 1, 1, 0.7), TITLE_FONT)
+			plus.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			plus.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			plus.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			plus.custom_minimum_size = Vector2(PLUS_WIDTH, CARD_SIZE.y)
 			pair.add_child(plus)
 		var slot := _card_frame()
 		slot.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -141,30 +151,34 @@ func _build() -> void:
 		slot.gui_input.connect(_on_slot_input.bind(i))
 		pair.add_child(slot)
 		_slots.append(slot)
-	_hint = _label("", 18, HINT_COLOR)
+
+	# ---- Right: the result ----
+	var right := _panel(columns, "Result")
+	_result = _card_frame()
+	right.add_child(_result)
+
+	# ---- Footer: the hint, then Cancel and Combine side by side ----
+	_hint = _label("", HINT_SIZE, HINT_COLOR)
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	# Fixed size, so a longer hint never pushes the layout around.
-	_hint.custom_minimum_size = Vector2(HINT_WIDTH, _hint.get_theme_font("font").get_height(18))
+	_hint.custom_minimum_size = Vector2(HINT_WIDTH, _hint.get_theme_font("font").get_height(HINT_SIZE))
 	_hint.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_hint.clip_text = true
 	_hint.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	middle.add_child(_hint)
+	_content.add_child(_hint)
 
-	# ---- Right: the result ----
-	var right := _section(columns, "Result")
-	_result = _card_frame()
-	right.add_child(_result)
-	_combine_button = _button("Combine")
-	_combine_button.pressed.connect(_on_combine)
-	right.add_child(_combine_button)
-
+	var buttons := HBoxContainer.new()
+	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
+	buttons.add_theme_constant_override("separation", 16)
+	_content.add_child(buttons)
 	var cancel := _button("Cancel")
-	cancel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	cancel.custom_minimum_size.x = 220
 	cancel.pressed.connect(func() -> void:
 		if not _closing:
 			_close())
-	_content.add_child(cancel)
+	buttons.add_child(cancel)
+	_combine_button = _button("Combine")
+	_combine_button.pressed.connect(_on_combine)
+	buttons.add_child(_combine_button)
 
 	# Hover popup for the gun tiles.
 	_tip = PanelContainer.new()
@@ -174,11 +188,18 @@ func _build() -> void:
 	add_child(_tip)
 
 
-func _section(parent: Control, header: String) -> VBoxContainer:
+# A glass panel with a small header; returns the box its content goes in.
+func _panel(parent: Control, header: String) -> VBoxContainer:
+	var panel := PanelContainer.new()
+	var style := UIJuice.glass_style(10, Color(1, 1, 1, 0.1), Color(0.03, 0.035, 0.05, 0.7))
+	style.set_content_margin_all(PANEL_PADDING)
+	panel.add_theme_stylebox_override("panel", style)
+	panel.size_flags_vertical = Control.SIZE_FILL
+	parent.add_child(panel)
 	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 12)
-	parent.add_child(box)
-	var label := _label(header, 22, Color(0.85, 0.85, 0.88), TITLE_FONT)
+	box.add_theme_constant_override("separation", 10)
+	panel.add_child(box)
+	var label := _label(header.to_upper(), HEADER_SIZE, Color(0.78, 0.8, 0.86), TITLE_FONT)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(label)
 	return box
@@ -198,15 +219,15 @@ func _button(text: String) -> Button:
 	var button := Button.new()
 	button.text = text
 	button.focus_mode = Control.FOCUS_NONE
-	button.custom_minimum_size = Vector2(0, 46)
+	button.custom_minimum_size = BUTTON_SIZE
 	button.add_theme_font_override("font", TITLE_FONT)
-	button.add_theme_font_size_override("font_size", 22)
+	button.add_theme_font_size_override("font_size", BUTTON_FONT_SIZE)
 	button.add_theme_color_override("font_disabled_color", Color(0.4, 0.4, 0.42))
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var style := StyleBoxFlat.new()
 		style.set_corner_radius_all(6)
 		style.set_border_width_all(2)
-		style.set_content_margin_all(8)
+		style.set_content_margin_all(6)
 		match state:
 			"normal":
 				style.bg_color = BUTTON_BG
@@ -350,7 +371,7 @@ func _make_tile(gun: Gun) -> Control:
 	# Picked guns show which slot they're in; guns that can't be picked are grayed out.
 	var pick := 1 if gun == _first else (2 if gun == _second else 0)
 	if pick > 0:
-		var badge := _label(str(pick), 20, Color.WHITE, TITLE_FONT)
+		var badge := _label(str(pick), 16, Color.WHITE, TITLE_FONT)
 		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		badge.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 		tile.add_child(badge)
@@ -377,7 +398,7 @@ func _fill_frame(frame: PanelContainer, gun: Gun, note: String, empty_text: Stri
 			frame.remove_child(child)
 			child.queue_free()
 	if gun == null:
-		var label := _label(empty_text, 18, HINT_COLOR)
+		var label := _label(empty_text, EMPTY_TEXT_SIZE, HINT_COLOR)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		frame.add_child(label)
