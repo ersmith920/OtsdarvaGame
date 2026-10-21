@@ -18,6 +18,8 @@ class_name GunStore
 ## shifted toward higher rarities by the player's luck stat.
 @export var rarity_table : LootTable
 @export var popup_title := "Gun Store"
+## Size of the gun cards (1 = full size, 0.5 = half).
+@export_range(0.3, 1.5, 0.05) var card_scale := 0.5
 
 @export_group("Dev / Testing")
 ## Never gets used up: can be opened again and again (for test scenes).
@@ -83,7 +85,7 @@ func interact(_normal: Vector3) -> void:
 func _build_cards() -> Array[Control]:
 	var cards : Array[Control] = []
 	for i in _offers.size():
-		cards.append(GunCard.build(_offer_scenes[i], _offers[i]))
+		cards.append(GunCard.build(_offer_scenes[i], _offers[i], "", card_scale))
 	return cards
 
 

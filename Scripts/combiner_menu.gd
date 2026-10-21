@@ -15,10 +15,12 @@ const BODY_FONT := preload("res://Fonts/KHMenu.otf")
 const TILE_SIZE := 72
 const TILE_GAP := 8
 const GRID_COLUMNS := 4
-const CARD_PADDING := 14
+const CARD_PADDING := 10
+## Size of the gun cards here (1 = full size, the gun store uses 0.5).
+const CARD_SCALE := 0.55
 ## Every slot / result frame: one gun card plus padding (same size whatever is in it).
-var CARD_SIZE := GunCard.get_size() + Vector2(CARD_PADDING, CARD_PADDING) * 2.0
-const HINT_WIDTH := 560.0
+var CARD_SIZE := GunCard.get_size(CARD_SCALE) + Vector2(CARD_PADDING, CARD_PADDING) * 2.0
+const HINT_WIDTH := 440.0
 const PANEL_BG := Color(0.05, 0.05, 0.06, 0.94)
 const EMPTY_BORDER := Color(0.4, 0.4, 0.42)
 const HINT_COLOR := Color(0.65, 0.65, 0.68)
@@ -362,7 +364,7 @@ func _fill_frame(frame: PanelContainer, gun: Gun, note: String, empty_text: Stri
 		frame.add_child(label)
 		_color_frame(frame, -1)
 		return
-	var card := GunCard.build(load(gun.scene_file_path), gun, note)
+	var card := GunCard.build(load(gun.scene_file_path), gun, note, CARD_SCALE)
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_ignore_mouse(card)
 	frame.add_child(card)

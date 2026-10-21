@@ -22,6 +22,7 @@ static var _additive: CanvasItemMaterial
 
 
 ## Sets the label's text and tints its glow. Use this instead of `label.text = ...`.
+## For small text, set meta "glow_scale" on the label first (e.g. 0.5) to shrink the halo.
 static func set_text(label: Label, text: String, color: Color, strength := 1.0) -> void:
 	label.text = text
 	label.add_theme_color_override("font_color", color.lerp(Color.WHITE, CORE_WHITEN))
@@ -46,6 +47,7 @@ static func _build(label: Label) -> Array:
 	label.add_theme_font_override("font", spaced)
 
 	var glows: Array = []
+	var glow_scale : float = label.get_meta(&"glow_scale", 1.0)
 	for layer in LAYERS:
 		var glow := Label.new()
 		glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -58,7 +60,7 @@ static func _build(label: Label) -> Array:
 		glow.add_theme_font_size_override("font_size", font_size)
 		glow.add_theme_font_size_override("font_size", label.get_theme_font_size("font_size"))
 		glow.add_theme_color_override("font_color", Color(0, 0, 0, 0))   # only the halo is drawn
-		glow.add_theme_constant_override("outline_size", layer[0])
+		glow.add_theme_constant_override("outline_size", maxi(roundi(layer[0] * glow_scale), 1))
 		label.add_child(glow)
 		glow.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		glows.append(glow)

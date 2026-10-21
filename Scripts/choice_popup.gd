@@ -19,9 +19,10 @@ extends Control
 @export var dim_color := Color(0.0, 0.0, 0.0, 0.55)
 @export var title_font : Font = preload("res://Fonts/KHMenu-Bold.otf")
 @export var title_font_size := 34
-@export var card_size := Vector2(300, 470)
+## Smallest a card's frame can be; cards with bigger content (gun cards) are as big as it.
+@export var card_size := Vector2(120, 160)
 @export var card_gap := 28
-@export var card_padding := 16
+@export var card_padding := 10
 @export var card_bg := Color(0.05, 0.05, 0.06, 0.94)
 @export var card_border := 3
 ## How far the colored glow spreads around a card (more on hover).
