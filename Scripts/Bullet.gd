@@ -65,6 +65,9 @@ func launch(dir: Vector3, speed_bonus: float, lateral: Vector3, settle_time: flo
 
 
 func _physics_process(delta: float) -> void:
+	if not is_instance_valid(source):
+		queue_free()   # its gun is gone (shouldn't happen, but never crash over it)
+		return
 	if _dir == Vector3.ZERO:
 		_dir = global_basis.z   # spawned without launch(): fly straight ahead
 	var speed := source.get_projectile_speed(elapsed_time) + _speed_bonus

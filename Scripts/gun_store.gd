@@ -19,6 +19,14 @@ class_name GunStore
 @export var rarity_table : LootTable
 @export var popup_title := "Gun Store"
 
+@export_group("Dev / Testing")
+## Never gets used up: can be opened again and again (for test scenes).
+@export var reusable := false
+## Adds a Reroll button that swaps the options for new ones (free).
+@export var show_reroll := false
+## Adds a Close button that leaves without picking.
+@export var show_close := false
+
 @export_group("Used Look")
 ## Meshes that change to Used Material after the store has been bought from (e.g. its screen).
 @export var used_meshes : Array[MeshInstance3D]
@@ -57,16 +65,32 @@ func interact(_normal: Vector3) -> void:
 		return
 	if counts_toward_price:
 		_count_purchase()
-	open = true
-	_refresh_cost_display()
-	_set_used_look(true)
+	if not reusable:
+		open = true
+		_refresh_cost_display()
+		_set_used_look(true)
 	_play_sound(open_sound, open_volume_db)
 
 	_roll_offers(player.stats_node.get_value(&"luck"))
+	var buttons := []
+	if show_reroll:
+		buttons.append({"text": "Reroll", "pressed": _reroll})
+	if show_close:
+		buttons.append({"text": "Close", "pressed": GameManager.choice_popup.cancel})
+	GameManager.choice_popup.open(popup_title, _build_cards(), _on_pick, buttons)
+
+
+func _build_cards() -> Array[Control]:
 	var cards : Array[Control] = []
 	for i in _offers.size():
 		cards.append(GunCard.build(_offer_scenes[i], _offers[i]))
-	GameManager.choice_popup.open(popup_title, cards, _on_pick)
+	return cards
+
+
+func _reroll() -> void:
+	var player := GameManager.player
+	_roll_offers(player.stats_node.get_value(&"luck") if player != null else 0.0)
+	GameManager.choice_popup.set_cards(_build_cards())
 
 
 func _roll_offers(luck: float) -> void:

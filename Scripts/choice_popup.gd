@@ -4,6 +4,11 @@
 #
 #   GameManager.choice_popup.open("Gun Store", cards, func(index): ...)
 #
+# Optional buttons under the cards (the dev gun store uses Reroll and Close):
+#   open(title, cards, on_pick, [{"text": "Reroll", "pressed": func(): ...}])
+# A button can swap the cards with set_cards(), or close without a pick with cancel()
+# (on_pick is then called with -1).
+#
 # Each card is any Control you build (see GunCard). The popup wraps each one in a
 # clickable frame in that card's color, so the content doesn't need to handle input.
 class_name ChoicePopup
@@ -33,6 +38,7 @@ extends Control
 
 var _title : Label
 var _row : HBoxContainer
+var _buttons : HBoxContainer
 var _on_pick : Callable
 var _opened_at_ms := 0
 var _was_paused := false
@@ -75,6 +81,11 @@ func _ready() -> void:
 	_row.add_theme_constant_override("separation", card_gap)
 	column.add_child(_row)
 
+	_buttons = HBoxContainer.new()
+	_buttons.alignment = BoxContainer.ALIGNMENT_CENTER
+	_buttons.add_theme_constant_override("separation", 20)
+	column.add_child(_buttons)
+
 
 func is_open() -> bool:
 	return visible
@@ -83,19 +94,22 @@ func is_open() -> bool:
 ## Shows the cards and pauses the game until one is clicked.
 ## cards: one Control per option. Set meta "color" on a card to color its frame.
 ## on_pick: called with the index of the chosen card, after the game unpauses.
-func open(title: String, cards: Array[Control], on_pick: Callable) -> void:
+## buttons: optional [{"text": String, "pressed": Callable}] shown under the cards.
+func open(title: String, cards: Array[Control], on_pick: Callable, buttons: Array = []) -> void:
 	if visible:
 		push_warning("ChoicePopup is already open")
 		return
 	_on_pick = on_pick
 	_title.text = title
 	_title.visible = not title.is_empty()
+	set_cards(cards)
 
-	for child in _row.get_children():
-		_row.remove_child(child)
+	for child in _buttons.get_children():
+		_buttons.remove_child(child)
 		child.queue_free()
-	for i in cards.size():
-		_row.add_child(_wrap_card(cards[i], i))
+	for b in buttons:
+		_buttons.add_child(_make_button(b.text, b.pressed))
+	_buttons.visible = not buttons.is_empty()
 
 	_was_paused = get_tree().paused
 	_prev_mouse_mode = Input.mouse_mode
@@ -105,6 +119,42 @@ func open(title: String, cards: Array[Control], on_pick: Callable) -> void:
 	_opened_at_ms = Time.get_ticks_msec()
 	visible = true
 	_play(open_sound)
+
+
+## Replaces the cards shown (e.g. a reroll) without closing.
+func set_cards(cards: Array[Control]) -> void:
+	for child in _row.get_children():
+		_row.remove_child(child)
+		child.queue_free()
+	for i in cards.size():
+		_row.add_child(_wrap_card(cards[i], i))
+
+
+## Closes without picking anything; on_pick gets -1.
+func cancel() -> void:
+	if visible:
+		_finish(-1)
+
+
+func _make_button(text: String, pressed: Callable) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.focus_mode = Control.FOCUS_NONE
+	button.custom_minimum_size = Vector2(200, 48)
+	if title_font != null:
+		button.add_theme_font_override("font", title_font)
+	button.add_theme_font_size_override("font_size", 22)
+	for state in ["normal", "hover", "pressed"]:
+		var style := StyleBoxFlat.new()
+		style.set_corner_radius_all(6)
+		style.set_border_width_all(2)
+		style.bg_color = card_bg.lightened({"normal": 0.08, "hover": 0.2, "pressed": 0.32}[state])
+		style.border_color = Color(0.6, 0.6, 0.65).lerp(Color.WHITE, {"normal": 0.0, "hover": 0.5, "pressed": 1.0}[state])
+		button.add_theme_stylebox_override(state, style)
+	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	button.pressed.connect(pressed)
+	button.mouse_entered.connect(_play.bind(hover_sound))
+	return button
 
 
 # A Button (fires on release, so the click can't leak into shooting after unpausing)
@@ -165,6 +215,10 @@ func _pick(index: int) -> void:
 	if not visible or Time.get_ticks_msec() - _opened_at_ms < int(input_delay * 1000.0):
 		return
 	_play(pick_sound)
+	_finish(index)
+
+
+func _finish(index: int) -> void:
 	visible = false
 	GameManager.choice_open = false
 	get_tree().paused = _was_paused

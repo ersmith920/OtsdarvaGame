@@ -5,7 +5,6 @@
 [ext_resource type="Texture2D" uid="uid://bp33xrb1qua2e" path="res://Textures/sandSmall.jpg" id="2_kek77"]
 [ext_resource type="PackedScene" uid="uid://dgj880ehnwkqv" path="res://item_pickup.tscn" id="3_1bvp3"]
 [ext_resource type="Texture2D" uid="uid://bdbv12ya7car0" path="res://Textures/stoneSmall.jpg" id="3_4c57u"]
-[ext_resource type="PackedScene" uid="uid://bbk5ykihr3h6m" path="res://gun_box.tscn" id="3_h2yge"]
 [ext_resource type="Resource" uid="uid://c2bb8860ubmp" path="res://Items/attack_speed.tres" id="4_lquwl"]
 [ext_resource type="PackedScene" uid="uid://bi1nl8twd7i4j" path="res://item_chest.tscn" id="5_lquwl"]
 [ext_resource type="Resource" uid="uid://2sk751cmwua4" path="res://Items/ricochet.tres" id="6_7mycd"]
@@ -62,6 +61,7 @@
 [ext_resource type="Script" uid="uid://carmys8n66qb1" path="res://Scripts/interactable_spawn_entry.gd" id="60_entry"]
 [ext_resource type="Resource" uid="uid://dcaftbof8gtdq" path="res://incendiary_rounds.tres" id="61_rm4vd"]
 [ext_resource type="PackedScene" path="res://combiner.tscn" id="62_pjyto"]
+[ext_resource type="PackedScene" path="res://dev_gun_store.tscn" id="63_sm6fg"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_j3pel"]
 panorama = ExtResource("1_efxa6")
@@ -1819,7 +1819,7 @@ light_energy = 0.677
 shadow_enabled = true
 
 [node name="CharacterBody3D" parent="." unique_id=1765552205 instance=ExtResource("1_0xm2m")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -22.4, -0.8, -4.8999996)
+transform = Transform3D(1.3113416e-07, 0, -1, 0, 1, 0, 1, 0, 1.3113416e-07, -22.4, -0.8, -4.8999996)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1308974075]
 transform = Transform3D(842.79626, 0, 0, 0, 0.9021776, 0, 0, 0, 951.7085, 0, -3.6078892, 0)
@@ -1888,37 +1888,25 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26.7, -3.2, 0.5)
 item = ExtResource("4_lquwl")
 
 [node name="itemBox19" parent="." unique_id=1207876015 instance=ExtResource("5_lquwl")]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.412815, -2.7310998, -12.680843)
+transform = Transform3D(-0.7660444, 0, -0.64278764, 0, 1, 0, 0.64278764, 0, -0.7660444, -9.724345, -2.7310998, -15.242825)
 
 [node name="itemBox20" parent="." unique_id=868951258 instance=ExtResource("5_lquwl")]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.0128155, -2.7310998, -10.780842)
+transform = Transform3D(-0.7660444, 0, -0.64278764, 0, 1, 0, 0.64278764, 0, -0.7660444, -8.1966305, -2.7310998, -14.044454)
 
 [node name="itemBox21" parent="." unique_id=482654377 instance=ExtResource("5_lquwl")]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.412815, -2.7310998, -8.780842)
+transform = Transform3D(-0.7660444, 0, -0.64278764, 0, 1, 0, 0.64278764, 0, -0.7660444, -7.217473, -2.7310998, -12.25525)
 
 [node name="itemBox22" parent="." unique_id=1589378448 instance=ExtResource("5_lquwl")]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.112816, -2.7310998, -6.880842)
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -5.7128158, -2.7310998, -6.880842)
 
 [node name="itemBox23" parent="." unique_id=94627803 instance=ExtResource("5_lquwl")]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.212816, -2.7310998, -4.880842)
+transform = Transform3D(-0.86602545, 0, 0.4999999, 0, 1, 0, -0.4999999, 0, -0.86602545, -7.532752, -2.7310998, -1.9718249)
 
 [node name="itemBox24" parent="." unique_id=955445999 instance=ExtResource("5_lquwl")]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.0128155, -2.7310998, -2.9808424)
+transform = Transform3D(-0.86602545, 0, 0.4999999, 0, 1, 0, -0.4999999, 0, -0.86602545, -8.309546, -2.7310998, -0.2263763)
 
 [node name="itemBox25" parent="." unique_id=1525564709 instance=ExtResource("5_lquwl")]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -6.1128154, -2.7310998, -0.98084235)
-
-[node name="gunBox7" parent="." unique_id=825318234 instance=ExtResource("3_h2yge")]
-transform = Transform3D(0.1736483, 0, -0.9848078, 0, 1, 0, 0.9848078, 0, 0.1736483, -12.512815, -2.7310998, -13.980843)
-
-[node name="gunBox8" parent="." unique_id=503614872 instance=ExtResource("3_h2yge")]
-transform = Transform3D(1.3113416e-07, 0, -1, 0, 1, 0, 1, 0, 1.3113416e-07, -9.112816, -2.7310998, -13.880842)
-
-[node name="gunBox9" parent="." unique_id=960158665 instance=ExtResource("3_h2yge")]
-transform = Transform3D(-0.64278775, 0, 0.76604444, 0, 1, 0, -0.76604444, 0, -0.64278775, -8.312815, -2.7310998, 0.6191561)
-
-[node name="gunBox10" parent="." unique_id=113344889 instance=ExtResource("3_h2yge")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -11.212816, -2.7310998, 1.0191576)
+transform = Transform3D(-0.86602545, 0, 0.4999999, 0, 1, 0, -0.4999999, 0, -0.86602545, -9.396149, -2.7310998, 1.4556745)
 
 [node name="ItemPickup2" parent="." unique_id=1666701328 instance=ExtResource("3_1bvp3")]
 transform = Transform3D(0.8528284, 0, -0.5221912, 0, 1, 0, 0.5221912, 0, 0.8528284, -21.951317, -3.2, 16.40555)
@@ -1961,22 +1949,16 @@ transform = Transform3D(0.84054095, 0, -0.5417481, 0, 1, 0, 0.5417481, 0, 0.8405
 item = ExtResource("10_dg77c")
 
 [node name="timer_pylon" parent="." unique_id=425731580 instance=ExtResource("7_272bh")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28.3, -3.2, -5.1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.199999, -3.2, -4.2000003)
 
 [node name="ResetPylon" parent="." unique_id=921388520 instance=ExtResource("8_5vw27")]
-transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, -11.412815, -3.1311004, -6.9808426)
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -13.250378, -3.1311004, -9.502157)
 vacuum_pickups = true
 vacuum_range = 10000.0
 vacuum_time = 1.0
 
-[node name="gunBox" parent="." unique_id=1802771475 instance=ExtResource("3_h2yge")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28.4, -2.7, -2.7)
-
 [node name="itemBox" parent="." unique_id=2069232887 instance=ExtResource("5_lquwl")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -28.2, -2.7, -7.6000004)
-
-[node name="gunBox2" parent="." unique_id=330692454 instance=ExtResource("3_h2yge")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -29.9, -2.7, -1.6)
 
 [node name="itemBox2" parent="." unique_id=1269401893 instance=ExtResource("5_lquwl")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -29.9, -2.7, -8.6)
@@ -2204,6 +2186,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17, -3.2, 32.9)
 item = ExtResource("61_rm4vd")
 
 [node name="Combiner" parent="." unique_id=761182013 instance=ExtResource("62_pjyto")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, -3.2, -7.3)
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -12.931219, -3.2, -7.6893425)
+
+[node name="DevGunStore" parent="." unique_id=716365620 instance=ExtResource("63_sm6fg")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -13.0312195, -3.2, -5.789342)
+
+[node name="itemBox3" parent="." unique_id=1802771475 instance=ExtResource("5_lquwl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.7000003, -2.7, -9.2)
+
+[node name="itemBox4" parent="." unique_id=1916703419 instance=ExtResource("5_lquwl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.7000003, -2.7, -4.6)
 
 [editable path="Buildings"]

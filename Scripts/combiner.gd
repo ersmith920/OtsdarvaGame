@@ -30,6 +30,10 @@ class_name Combiner
 ## Empty = the meshes are just hidden.
 @export var used_material : Material
 
+## Seconds the two used-up guns are kept around (out of the scene) after combining, so
+## bullets they already fired and burns they applied can still read their stats.
+const RETIRE_SECONDS := 20.0
+
 var used := false
 var _saved_materials := {}
 
@@ -66,7 +70,7 @@ func combine(a: Gun, b: Gun) -> Gun:
 	gun.apply_roll(roll_table.combine(gun, a.roll, b.roll))
 	for old in [a, b]:
 		old.get_parent().remove_child(old)
-		old.queue_free()
+		_retire(old)
 	get_tree().current_scene.add_child(gun)
 	gun.global_position = global_position
 	gun.equip(slot)
@@ -75,6 +79,17 @@ func combine(a: Gun, b: Gun) -> Gun:
 		used = true
 		_set_used_look(true)
 	return gun
+
+
+# Out of the scene (it can't shoot or show), freed a while later. The tree owns the timer,
+# so it still fires if the Combiner itself is gone.
+func _retire(gun: Gun) -> void:
+	get_tree().create_timer(RETIRE_SECONDS).timeout.connect(Combiner._free_retired.bind(gun))
+
+
+static func _free_retired(gun: Gun) -> void:
+	if is_instance_valid(gun) and not gun.is_inside_tree():
+		gun.free()
 
 
 ## The Reset Pylon makes a spent Combiner usable again.
