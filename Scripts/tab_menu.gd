@@ -368,7 +368,11 @@ func _rebuild_weapon_grid() -> void:
 		label.add_theme_font_override("font", name_font)
 		label.add_theme_font_size_override("font_size", 14)
 		label.add_theme_color_override("font_color", section_header_color)
-		box.add_child(label)
+		var header := HBoxContainer.new()
+		header.add_theme_constant_override("separation", 8)
+		header.add_child(label)
+		header.add_child(_make_fire_mode_button(q))
+		box.add_child(header)
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", ITEM_TILE_GAP)
 		box.add_child(row)
@@ -381,6 +385,44 @@ func _rebuild_weapon_grid() -> void:
 			row.add_child(tile)
 			_weapon_tiles.append(tile)
 		_weapon_quads.add_child(box)
+
+
+# ---- Manual / Auto toggle per quadrant ----
+
+const MANUAL_COLOR := Color(0.85, 0.18, 0.18)
+const AUTO_COLOR := Color(0.2, 0.45, 1.0)
+
+func _make_fire_mode_button(q: Player.Quadrant) -> Button:
+	var button := Button.new()
+	button.focus_mode = Control.FOCUS_NONE
+	button.custom_minimum_size = Vector2(62, 0)
+	button.add_theme_font_override("font", name_font)
+	button.add_theme_font_size_override("font_size", 11)
+	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	_style_fire_mode_button(button, GameManager.player.quadrant_auto[q])
+	button.pressed.connect(func() -> void:
+		var auto : bool = not GameManager.player.quadrant_auto[q]
+		GameManager.player.set_quadrant_auto(q, auto)
+		_style_fire_mode_button(button, auto))
+	return button
+
+
+func _style_fire_mode_button(button: Button, auto: bool) -> void:
+	button.text = "Auto" if auto else "Manual"
+	var color := AUTO_COLOR if auto else MANUAL_COLOR
+	for state in ["normal", "hover", "pressed"]:
+		var style := StyleBoxFlat.new()
+		style.bg_color = color.darkened({"normal": 0.25, "hover": 0.05, "pressed": 0.4}[state])
+		style.border_color = color.lightened(0.35)
+		style.set_border_width_all(1)
+		style.set_corner_radius_all(4)
+		style.content_margin_left = 6
+		style.content_margin_right = 6
+		style.content_margin_top = 1
+		style.content_margin_bottom = 1
+		button.add_theme_stylebox_override(state, style)
+	for key in ["font_color", "font_hover_color", "font_pressed_color"]:
+		button.add_theme_color_override(key, Color.WHITE)
 
 
 # Left to right as the player sees them (by where each slot lands on screen).

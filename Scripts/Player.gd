@@ -99,6 +99,10 @@ var _unused_upper: Array[Node3D] = []
 # Time.get_ticks_msec() when each fire button started being held, -1 = not held.
 var _right_held_since := -1
 var _left_held_since := -1
+var _auto_held_since := -1
+## Per quadrant (indexed by Quadrant): true = Auto (fires by itself once the lock-on crosshair
+## is on an enemy), false = Manual (fires with that side's mouse button). Set from the Tab menu.
+var quadrant_auto := [false, false, false, false]
 @onready var lock_on: LockOn = $Head/Camera3D/LockOn
 
 
@@ -270,23 +274,43 @@ func _generate_slot(q: Quadrant, upper: bool, right: bool) -> Node3D:
 # Fires every gun on one side (lower and upper) while its button is held. When the button
 # is first pressed, guns start one after another in fill order, fire_stagger apart; after
 # that each keeps its own fire rate. Returns the new held-since time (-1 = released).
+# Quadrants set to Auto are skipped here (they fire in _fire_auto instead).
 func _fire_side(right: bool, held: bool, held_since: int) -> int:
+	return _fire_slots(func(q: Quadrant) -> bool:
+		var is_right := q == Quadrant.LOWER_RIGHT or q == Quadrant.UPPER_RIGHT
+		return is_right == right and not quadrant_auto[q], held, held_since)
+
+
+# Fires every gun in an Auto quadrant (either side) while the lock-on crosshair is on an
+# enemy, with the same staggered start as holding a mouse button.
+func _fire_auto(held_since: int) -> int:
+	if not quadrant_auto.has(true):
+		return -1
+	return _fire_slots(func(q: Quadrant) -> bool: return quadrant_auto[q],
+			lock_on.is_on_target(), held_since)
+
+
+# Shared by manual and auto firing. want(quadrant) picks which slots fire.
+func _fire_slots(want: Callable, held: bool, held_since: int) -> int:
 	if not held:
 		return -1
 	var now := Time.get_ticks_msec()
 	if held_since < 0:
 		held_since = now
 	var elapsed := now - held_since
-	var order := 0   # counts only slots on this side that hold a gun
+	var order := 0   # counts only the chosen slots that hold a gun
 	for slot in gun_slots:
-		var q: Quadrant = _slot_quadrant[slot]
-		var is_right := q == Quadrant.LOWER_RIGHT or q == Quadrant.UPPER_RIGHT
-		if is_right != right or slot.get_child_count() == 0:
+		if slot.get_child_count() == 0 or not want.call(_slot_quadrant[slot]):
 			continue
 		if elapsed >= int(order * fire_stagger * 1000.0):
 			(slot.get_child(0) as Gun).shoot()
 		order += 1
 	return held_since
+
+
+## Switches a quadrant between Manual and Auto firing.
+func set_quadrant_auto(q: Quadrant, auto: bool) -> void:
+	quadrant_auto[q] = auto
 			
 func _ready():
 	_collect_gun_mounts()
@@ -330,10 +354,12 @@ func _physics_process(delta: float) -> void:
 	if menu_open:
 		_left_held_since = -1
 		_right_held_since = -1
+		_auto_held_since = -1
 		return
 	#shoot
 	_left_held_since = _fire_side(false, Input.is_action_pressed("shootLeft"), _left_held_since)
 	_right_held_since = _fire_side(true, Input.is_action_pressed("shootRight"), _right_held_since)
+	_auto_held_since = _fire_auto(_auto_held_since)
 		
 # ---------- Horizontal movement ----------
 func _apply_horizontal(delta: float, wish_dir: Vector3) -> void:

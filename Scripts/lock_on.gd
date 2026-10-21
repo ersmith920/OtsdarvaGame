@@ -37,6 +37,16 @@ var _exclude_countdown := 0
 func is_locked() -> bool:
 	return target != null
 
+## How close (degrees) the crosshair must be to its locked enemy to count as on it.
+const ON_TARGET_ANGLE := 1.5
+
+## True once the crosshair has actually reached a locked enemy (not still sliding onto it).
+## Auto-firing guns wait for this.
+func is_on_target() -> bool:
+	if target == null or not is_instance_valid(target) or (target is SwarmUnit and target.dead):
+		return false
+	return rad_to_deg(_local_dir.angle_to(_desired_local_dir)) <= ON_TARGET_ANGLE
+
 ## World-space direction from the camera toward the crosshair.
 func get_aim_direction() -> Vector3:
 	return (camera.global_basis * _local_dir).normalized()
