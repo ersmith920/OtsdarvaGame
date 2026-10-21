@@ -15,8 +15,10 @@ const BODY_FONT := preload("res://Fonts/KHMenu.otf")
 const TILE_SIZE := 72
 const TILE_GAP := 8
 const GRID_COLUMNS := 4
-const CARD_SIZE := Vector2(260, 470)
-const CARD_PREVIEW := Vector2i(220, 130)
+const CARD_PADDING := 14
+## Every slot / result frame: one gun card plus padding (same size whatever is in it).
+var CARD_SIZE := GunCard.get_size() + Vector2(CARD_PADDING, CARD_PADDING) * 2.0
+const HINT_WIDTH := 560.0
 const PANEL_BG := Color(0.05, 0.05, 0.06, 0.94)
 const EMPTY_BORDER := Color(0.4, 0.4, 0.42)
 const HINT_COLOR := Color(0.65, 0.65, 0.68)
@@ -51,6 +53,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_build()
 	_refresh()
+	_fit.call_deferred()   # the layout's size never changes after this (only on window resize)
 
 	_was_paused = get_tree().paused
 	_prev_mouse_mode = Input.mouse_mode
@@ -129,6 +132,11 @@ func _build() -> void:
 		_slots.append(slot)
 	_hint = _label("", 18, HINT_COLOR)
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# Fixed size, so a longer hint never pushes the layout around.
+	_hint.custom_minimum_size = Vector2(HINT_WIDTH, _hint.get_theme_font("font").get_height(18))
+	_hint.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_hint.clip_text = true
+	_hint.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	middle.add_child(_hint)
 
 	# ---- Right: the result ----
@@ -212,7 +220,7 @@ func _card_frame() -> PanelContainer:
 	style.bg_color = PANEL_BG
 	style.set_corner_radius_all(8)
 	style.set_border_width_all(3)
-	style.set_content_margin_all(14)
+	style.set_content_margin_all(CARD_PADDING)
 	style.shadow_offset = Vector2.ZERO
 	frame.add_theme_stylebox_override("panel", style)
 	_color_frame(frame, -1)
@@ -280,7 +288,6 @@ func _refresh() -> void:
 	else:
 		_hint.text = "Click a weapon to take it back out"
 	_combine_button.disabled = _first == null or _second == null
-	_fit.call_deferred()
 
 
 func _rebuild_grid() -> void:
@@ -355,7 +362,7 @@ func _fill_frame(frame: PanelContainer, gun: Gun, note: String, empty_text: Stri
 		frame.add_child(label)
 		_color_frame(frame, -1)
 		return
-	var card := GunCard.build(load(gun.scene_file_path), gun, note, CARD_PREVIEW)
+	var card := GunCard.build(load(gun.scene_file_path), gun, note)
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_ignore_mouse(card)
 	frame.add_child(card)

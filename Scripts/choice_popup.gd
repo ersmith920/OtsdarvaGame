@@ -183,12 +183,14 @@ func _wrap_card(content: Control, index: int) -> Button:
 
 	_ignore_mouse(content)
 	margin.add_child(content)
-	# Grow the card if its content needs more room than card_size (e.g. a long stat list).
-	var fit := func() -> void:
-		var need := margin.get_combined_minimum_size()
-		button.custom_minimum_size = Vector2(maxf(card_size.x, need.x), maxf(card_size.y, need.y))
-	margin.minimum_size_changed.connect(fit)
-	fit.call_deferred()
+	# Fixed-size content (GunCard) makes every card the same size; anything bigger than
+	# card_size just makes its card bigger. Set once: cards never resize while shown.
+	# (Uses the content's set minimum size: measuring it before it's on screen is unreliable.)
+	var content_size := content.custom_minimum_size
+	if content_size == Vector2.ZERO:
+		content_size = content.get_combined_minimum_size()
+	var need := content_size + Vector2(card_padding, card_padding) * 2.0
+	button.custom_minimum_size = Vector2(maxf(card_size.x, need.x), maxf(card_size.y, need.y))
 	return button
 
 
