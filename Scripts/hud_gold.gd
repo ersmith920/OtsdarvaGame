@@ -1,4 +1,4 @@
-# Credits (gold) counter, in the mission panel (top left, see hud_timer.gd): [glowing coin] 123
+# Scrap (gold) counter, in the mission panel (top left, see hud_timer.gd): [glowing coin] 123
 # The coin mimics the floor coins: brightened by the same tint x strength, plus a soft
 # additive halo standing in for the 3D bloom (the HUD layer doesn't get the scene's Glow).
 extends Label
@@ -61,7 +61,7 @@ func _ready() -> void:
 	# Inside the mission panel: the coin at the row's left edge, the number on the right.
 	set_anchors_preset(Control.PRESET_TOP_LEFT)
 	var left := 14.0 + icon_size + icon_gap
-	position = HudStyle.MISSION_POS + Vector2(left, HudStyle.MISSION_ROW_CREDITS)
+	position = HudStyle.MISSION_POS + Vector2(left, HudStyle.MISSION_ROW_SCRAP)
 	size = Vector2(HudStyle.MISSION_SIZE.x - left - 14.0, 20)
 	add_theme_font_override("font", HudStyle.NUMBER_FONT)
 	add_theme_font_size_override("font_size", FONT_SIZE)

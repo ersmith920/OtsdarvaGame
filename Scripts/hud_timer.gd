@@ -1,36 +1,48 @@
-# Mission panel, top left of the HUD (see HudStyle): the run time as a big readout, with the
-# hostile count and credits (gold) underneath. This script draws the panel and its captions
-# and shows the time; the EnemyCount and Gold labels place themselves inside it.
+# Run timer, top center of the HUD, as a big glowing readout on its own panel (see HudStyle).
+# This script also draws the mission panel in the top left that the hostile count
+# (hud_enemy_count.gd) and scrap counter (hud_gold.gd) sit in.
 extends Label
 
 const FONT_SIZE := 26
 
 var _last_second := -1
-var _panel : Control
+var _time_panel : Control
+var _mission_panel : Control
 
 @export var font: Font   # unused now: the HUD uses HudStyle's fonts (kept so the scene still loads)
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
-	# The panel behind the time, hostiles and credits.
-	_panel = Control.new()
-	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_panel.position = HudStyle.MISSION_POS
-	_panel.size = HudStyle.MISSION_SIZE
-	_panel.draw.connect(_draw_panel)
-	get_parent().add_child.call_deferred(_panel)
-	get_parent().move_child.call_deferred(_panel, get_index())   # drawn behind the readouts
+	# Timer panel, top center.
+	var w := HudStyle.TIME_SIZE.x
+	_time_panel = _make_panel(HudStyle.TIME_SIZE)
+	_time_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_time_panel.offset_left = -w * 0.5
+	_time_panel.offset_right = w * 0.5
+	_time_panel.offset_top = HudStyle.TIME_TOP
+	_time_panel.offset_bottom = HudStyle.TIME_TOP + HudStyle.TIME_SIZE.y
+	var cap := _caption("MISSION TIME", Vector2.ZERO)
+	cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cap.position = Vector2(0, 6)
+	cap.size = Vector2(w, 14)
+	_time_panel.add_child(cap)
 
-	_panel.add_child(_caption("MISSION TIME", Vector2(14, 8)))
-	_panel.add_child(_caption("HOSTILE", Vector2(14, HudStyle.MISSION_ROW_HOSTILE + 3)))
-	_panel.add_child(_caption("CREDITS", Vector2(38, HudStyle.MISSION_ROW_CREDITS + 3)))
+	# Mission panel, top left: hostiles and scrap.
+	_mission_panel = _make_panel(HudStyle.MISSION_SIZE)
+	_mission_panel.position = HudStyle.MISSION_POS
+	_mission_panel.add_child(_caption("HOSTILE", Vector2(14, HudStyle.MISSION_ROW_HOSTILE + 3)))
+	_mission_panel.add_child(_caption("SCRAP", Vector2(38, HudStyle.MISSION_ROW_SCRAP + 3)))
 
-	set_anchors_preset(Control.PRESET_TOP_LEFT)
-	position = HudStyle.MISSION_POS + Vector2(12, 24)
-	size = Vector2(HudStyle.MISSION_SIZE.x - 24, 34)
+	# The time itself, centered in its panel.
+	set_anchors_preset(Control.PRESET_CENTER_TOP)
+	offset_left = -w * 0.5
+	offset_right = w * 0.5
+	offset_top = HudStyle.TIME_TOP + 20
+	offset_bottom = HudStyle.TIME_TOP + HudStyle.TIME_SIZE.y - 4
 	add_theme_font_override("font", HudStyle.NUMBER_FONT)
 	add_theme_font_size_override("font_size", FONT_SIZE)
 	add_theme_color_override("font_color", HudStyle.WHITE)
@@ -41,8 +53,8 @@ func _ready() -> void:
 
 	_update_text()
 
-	# Boot-up: the panel and readouts flicker on when the level starts.
-	for c : CanvasItem in [_panel, self]:
+	# Boot-up: the panels and readout flicker on when the level starts.
+	for c : CanvasItem in [_time_panel, _mission_panel, self]:
 		c.modulate.a = 0.0
 		var t := c.create_tween()
 		t.tween_interval(0.1)
@@ -51,19 +63,21 @@ func _ready() -> void:
 		t.tween_property(c, "modulate:a", 1.0, 0.08)
 
 
+# A HUD panel added behind the readouts (drawn under this label and its siblings).
+func _make_panel(panel_size: Vector2) -> Control:
+	var panel := Control.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.size = panel_size
+	panel.draw.connect(func() -> void: HudStyle.draw_panel(panel, Rect2(Vector2.ZERO, panel_size)))
+	get_parent().add_child.call_deferred(panel)
+	get_parent().move_child.call_deferred(panel, get_index())
+	return panel
+
+
 func _caption(text: String, at: Vector2) -> Label:
 	var l := HudStyle.make_label(HudStyle.caption(text), 10, HudStyle.CYAN_DIM)
 	l.position = at
 	return l
-
-
-func _draw_panel() -> void:
-	var r := Rect2(Vector2.ZERO, HudStyle.MISSION_SIZE)
-	HudStyle.draw_panel(_panel, r)
-	# Divider under the time.
-	var y := HudStyle.MISSION_ROW_HOSTILE - 6.0
-	_panel.draw_line(Vector2(14, y), Vector2(r.size.x - 14, y), HudStyle.CYAN_FAINT, 1.0)
-	_panel.draw_line(Vector2(14, y), Vector2(50, y), HudStyle.CYAN_DIM, 1.0)
 
 
 func _process(_delta: float) -> void:

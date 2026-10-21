@@ -18,18 +18,21 @@ const GOLD := Color(1.0, 0.82, 0.32)
 
 ## Digits and headings (squared-off techno). It has no "/" or "%": use LABEL_FONT for those.
 const NUMBER_FONT := preload("res://Fonts/techno_hideo.ttf")
-## Small captions ("ARMOR", "HOSTILE").
+## Small captions ("HEALTH", "HOSTILE").
 const LABEL_FONT := preload("res://Fonts/KHMenu-Bold.otf")
 
 ## Size of the cut-off corners on panels.
 const CHAMFER := 10.0
 
-## The mission panel, top left: time, hostiles, credits (hud_timer.gd draws it; the enemy
-## count and gold counter sit inside it).
+## The mission panel, top left: hostiles and scrap (hud_timer.gd draws it; the enemy count
+## and gold counter sit inside it).
 const MISSION_POS := Vector2(16, 16)
-const MISSION_SIZE := Vector2(216, 118)
-const MISSION_ROW_HOSTILE := 68.0
-const MISSION_ROW_CREDITS := 92.0
+const MISSION_SIZE := Vector2(216, 64)
+const MISSION_ROW_HOSTILE := 12.0
+const MISSION_ROW_SCRAP := 36.0
+## The timer panel, top center.
+const TIME_SIZE := Vector2(168, 56)
+const TIME_TOP := 12.0
 
 
 ## Caption text spaced out a little, the way HUD captions usually are.
