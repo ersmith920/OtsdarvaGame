@@ -16,9 +16,10 @@ enum Kind {
 	KNOCKBACK,
 	RICOCHET_CHANCE,
 	RICOCHET_BOUNCES,
+	PIERCE_COUNT,
 }
 
-const COUNT := 12
+const COUNT := 13
 
 ## Shown on cards and tooltips.
 const NAMES := {
@@ -34,11 +35,12 @@ const NAMES := {
 	Kind.KNOCKBACK: "Knockback",
 	Kind.RICOCHET_CHANCE: "Ricochet Chance",
 	Kind.RICOCHET_BOUNCES: "Ricochet Bounces",
+	Kind.PIERCE_COUNT: "Pierce Count",
 }
 
-## Stats shown as a plain number (+1 Projectile Count). Everything else is a percent (+12%).
+## Stats shown as a plain number (+1 Projectile Count, +0.5 Pierce Count). Everything else is a percent (+12%).
 ## Ricochet Chance is percentage POINTS added to the chance (+10% = 10 more points).
-const FLAT := [Kind.PROJECTILE_COUNT, Kind.RICOCHET_BOUNCES]
+const FLAT := [Kind.PROJECTILE_COUNT, Kind.RICOCHET_BOUNCES, Kind.PIERCE_COUNT]
 
 ## Only rolled on guns with Explosion Enabled (they'd do nothing otherwise).
 const NEEDS_EXPLOSION := [Kind.AOE_SIZE, Kind.AOE_DAMAGE, Kind.KNOCKBACK]

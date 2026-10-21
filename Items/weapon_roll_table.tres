@@ -97,7 +97,17 @@ rare = Vector2(1, 2)
 epic = Vector2(1, 2)
 legendary = Vector2(2, 3)
 
+[sub_resource type="Resource" id="Range_pierce_count"]
+script = ExtResource("2_range")
+stat = 12
+common = Vector2(0.1, 1)
+uncommon = Vector2(0.1, 1)
+rare = Vector2(0.1, 1)
+epic = Vector2(1, 4)
+legendary = Vector2(1, 4)
+step = 0.1
+
 [resource]
 script = ExtResource("1_table")
 common_rolls = 1
-stat_ranges = Array[ExtResource("2_range")]([SubResource("Range_damage"), SubResource("Range_attack_speed"), SubResource("Range_reload_speed"), SubResource("Range_projectile_count"), SubResource("Range_projectile_speed"), SubResource("Range_accuracy"), SubResource("Range_magazine_size"), SubResource("Range_aoe_size"), SubResource("Range_aoe_damage"), SubResource("Range_knockback"), SubResource("Range_ricochet_chance"), SubResource("Range_ricochet_bounces")])
+stat_ranges = Array[ExtResource("2_range")]([SubResource("Range_damage"), SubResource("Range_attack_speed"), SubResource("Range_reload_speed"), SubResource("Range_projectile_count"), SubResource("Range_projectile_speed"), SubResource("Range_accuracy"), SubResource("Range_magazine_size"), SubResource("Range_aoe_size"), SubResource("Range_aoe_damage"), SubResource("Range_knockback"), SubResource("Range_ricochet_chance"), SubResource("Range_ricochet_bounces"), SubResource("Range_pierce_count")])

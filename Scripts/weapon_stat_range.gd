@@ -1,6 +1,6 @@
 # How much one weapon stat rolls for at each rarity. Lives in a WeaponRollTable.
 # Values are written the way they're shown: Vector2(10, 15) on a percent stat = +10% to +15%,
-# on a flat stat (Projectile Count, Ricochet Bounces) = +10 to +15.
+# on a flat stat (Projectile Count, Ricochet Bounces, Pierce Count) = +10 to +15.
 class_name WeaponStatRange
 extends Resource
 

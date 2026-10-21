@@ -41,17 +41,28 @@ func roll_for(gun: Gun, rarity: int) -> GunRoll:
 	result.rarity = rarity
 
 	var pool : Array[WeaponStatRange] = []
+	# Ricochet Bounces does nothing without a ricochet chance, so it only joins the pool
+	# once this gun has rolled Ricochet Chance.
+	var bounces : WeaponStatRange = null
 	for kind in gun.get_rollable_kinds():
 		var r := get_stat_range(kind)
-		if r != null and r.weight > 0.0:
+		if r == null or r.weight <= 0.0:
+			continue
+		if kind == WeaponStat.Kind.RICOCHET_BOUNCES:
+			bounces = r
+		else:
 			pool.append(r)
 
-	for i in mini(get_roll_count(rarity), pool.size()):
+	for i in get_roll_count(rarity):
+		if pool.is_empty():
+			break
 		var pick := _pick_weighted(pool)
 		pool.erase(pick)
 		var value := pick.roll(rarity)
 		if value != 0.0:
 			result.bonuses[pick.stat] = value
+			if pick.stat == WeaponStat.Kind.RICOCHET_CHANCE and bounces != null:
+				pool.append(bounces)
 	return result
 
 

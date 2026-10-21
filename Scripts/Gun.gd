@@ -20,7 +20,7 @@ static var _active_shot_voices := 0
 ## AoE Size, AoE Damage and Knockback are skipped automatically on guns without an explosion.
 @export_flags("Damage", "Attack Speed", "Reload Speed", "Projectile Count", "Projectile Speed",
 		"Accuracy", "Magazine Size", "AoE Size", "AoE Damage", "Knockback",
-		"Ricochet Chance", "Ricochet Bounces") var rollable_stats := 4095
+		"Ricochet Chance", "Ricochet Bounces", "Pierce Count") var rollable_stats := 8191
 
 @export_group("Projectile")
 @export var projectile : PackedScene
@@ -47,7 +47,10 @@ static var _active_shot_voices := 0
 @export_range(0.0, 2.0, 0.05) var proc_coefficient := 1.0
 ## Hits after a ricochet use proc_coefficient times this (0.5 = half the chance).
 @export_range(0.0, 1.0, 0.05) var ricochet_proc_multiplier := 0.5
-@export var pierce_count : int = 0
+## Enemies a bullet passes through before it stops on the next one (0 = stops on the first).
+## Decimals are a chance, rolled per bullet: 1.3 = pierces once, then a 30% chance of a 2nd.
+## Adds to the player's pierce_count stat and the gun's Pierce Count roll.
+@export_range(0.0, 20.0, 0.1, "or_greater") var pierce_count := 0.0
 @export var damage : float = 0
 @export var aiming : bool = true
 
@@ -230,6 +233,9 @@ func get_stat_summary() -> Array[Dictionary]:
 		_add_stat(out, "Ricochet Chance", "+" + _fmt(chance) + "%", WeaponStat.Kind.RICOCHET_CHANCE, false)
 	if bounces > 0:
 		_add_stat(out, "Ricochet Bounces", "+" + str(bounces), WeaponStat.Kind.RICOCHET_BOUNCES, false)
+	var pierce := pierce_count + _bonus(WeaponStat.Kind.PIERCE_COUNT)
+	if pierce > 0.0:
+		_add_stat(out, "Pierce", _fmt(pierce), WeaponStat.Kind.PIERCE_COUNT)
 	return out
 
 
@@ -367,6 +373,16 @@ func get_dps(include_reload := true) -> float:
 ## Chance (0.15 = 15%) that a bullet ricochets after its first enemy hit.
 func get_ricochet_chance() -> float:
 	return _get_stat(&"ricochet_chance") + _bonus(WeaponStat.Kind.RICOCHET_CHANCE) / 100.0
+
+
+## Pierce count for one bullet: gun + roll + player stat, with the decimal part rolled as a
+## chance (1.3 -> 1, or 2 30% of the time). Called once per bullet.
+func roll_pierce_count() -> int:
+	var total := maxf(pierce_count + _bonus(WeaponStat.Kind.PIERCE_COUNT) + _get_stat(&"pierce_count"), 0.0)
+	var whole := floori(total + 0.0001)
+	if randf() < total - whole:
+		whole += 1
+	return whole
 
 
 ## How many times a ricocheting bullet can chain to another enemy.

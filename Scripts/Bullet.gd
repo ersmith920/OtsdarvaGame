@@ -38,6 +38,11 @@ var _ricochet_rolled := false
 var _ricochets_left := 0
 var _bounces := 0   # ricochets done so far (hits after one proc at a reduced rate)
 var _hit_enemies : Array = []   # enemies this bullet has already hit
+var _pierce_rolled := false
+var _pierces_left := 0
+# Most enemy hits handled in one physics frame (pierce through a packed crowd without
+# losing the rest of the frame's travel, but never loop forever).
+const MAX_HITS_PER_FRAME := 8
 
 # The bullet is a plain Node3D: it has no body in the physics server at all.
 # All hit detection is done with the raycast below, so moving it every frame is free
@@ -74,30 +79,43 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 		return
 
-	var query := PhysicsRayQueryParameters3D.create(global_position, global_position + motion)
-	query.collision_mask = 1 | 16
-	query.hit_from_inside = true
-	query.exclude = _build_exclude_list()
-	var result := get_world_3d().direct_space_state.intersect_ray(query)
+	# A piercing bullet keeps going after a hit, so it can hit several enemies in one frame.
+	var space := get_world_3d().direct_space_state
+	for i in MAX_HITS_PER_FRAME:
+		var from := global_position
+		var query := PhysicsRayQueryParameters3D.create(from, from + motion)
+		query.collision_mask = 1 | 16
+		query.hit_from_inside = true
+		query.exclude = _build_exclude_list()
+		var result := space.intersect_ray(query)
 
-	# Swarm enemies have no physics bodies, so they're checked separately, only up to
-	# whatever the physics ray hit first.
-	var end := global_position + motion if result.is_empty() else (result.position as Vector3)
-	var swarm_hit := Swarm.raycast(global_position, end, _swarm_skip())
-	if not swarm_hit.is_empty():
-		global_position = swarm_hit.position
-		hit(swarm_hit.unit, swarm_hit.normal)
-		return
+		# Swarm enemies have no physics bodies, so they're checked separately, only up to
+		# whatever the physics ray hit first.
+		var end := from + motion if result.is_empty() else (result.position as Vector3)
+		var swarm_hit := Swarm.raycast(from, end, _swarm_skip())
+		var collider : Object
+		var normal : Vector3
+		if not swarm_hit.is_empty():
+			global_position = swarm_hit.position
+			collider = swarm_hit.unit
+			normal = swarm_hit.normal
+		elif not result.is_empty():
+			global_position = result.position
+			collider = result.collider
+			normal = result.normal
+		else:
+			global_position += motion
+			return
 
-	if result.is_empty():
-		global_position += motion
-		return
+		if not hit(collider, normal):
+			return   # stopped, or ricocheted toward a new target
+		# Pierced: carry on with the rest of this frame's travel.
+		motion -= global_position - from
+		if motion.dot(_dir) <= 0.0:
+			return
 
-	global_position = result.position
-	hit(result.collider, result.normal)
 
-
-# Swarm enemies this bullet already hit (ricochets don't hit the same one twice).
+# Swarm enemies this bullet already hit (pierces and ricochets don't hit the same one twice).
 func _swarm_skip() -> Dictionary:
 	if _hit_enemies.is_empty():
 		return {}
@@ -108,7 +126,8 @@ func _swarm_skip() -> Dictionary:
 	return skip
 
 
-func hit(collider : Object, normal : Vector3 = Vector3.ZERO) -> void:
+## Returns true if the bullet pierced and keeps flying straight on.
+func hit(collider : Object, normal : Vector3 = Vector3.ZERO) -> bool:
 	_spawn_hit_effect(normal)
 
 	var is_enemy := collider is Enemy or collider is SwarmUnit
@@ -119,11 +138,30 @@ func hit(collider : Object, normal : Vector3 = Vector3.ZERO) -> void:
 		var kind := HitInfo.Kind.RICOCHET if ricocheted else HitInfo.Kind.DIRECT
 		HitSystem.deal_hit(HitInfo.make(collider, roll.damage, roll.crit, source, proc, kind, global_position))
 	if source.explosion_enabled:
-		_explode()
+		_explode()   # every pierced enemy gets its own blast
 
-	if is_enemy and _try_ricochet(collider):
-		return
+	if is_enemy:
+		if _try_pierce(collider):
+			return true
+		if _try_ricochet(collider):
+			return false
 	queue_free()
+	return false
+
+
+# ---------- Pierce ----------
+
+# Pierce count is rolled once per bullet, on its first enemy hit. Pierces are used up
+# before ricochets: the bullet goes through enemies, then can ricochet off the last one.
+func _try_pierce(enemy : Object) -> bool:
+	if not _pierce_rolled:
+		_pierce_rolled = true
+		_pierces_left = source.roll_pierce_count()
+	if _pierces_left <= 0:
+		return false
+	_pierces_left -= 1
+	_hit_enemies.append(enemy)   # so the next ray goes through it instead of hitting it again
+	return true
 
 
 # ---------- Explosion ----------

@@ -8,6 +8,9 @@ extends Node
 @export var base_projectile_count := 1.0   # floored when firing; multiplies each gun's own projectile_count
 @export var base_ricochet_chance := 0.0     # 0.15 = 15% chance per bullet
 @export var base_ricochet_bounces := 0.0    # extra enemies a ricocheting bullet can chain to
+## Enemies a bullet passes through before it stops. Added to each gun's own Pierce Count.
+## Decimals are a chance: 1.3 = pierces once, then a 30% chance to pierce again.
+@export var base_pierce_count := 0.0
 @export var base_attack_speed := 1.0
 @export var base_reload_speed := 1.0        # 1.0 = 100% (normal); 2.0 = reloads take half as long
 @export var base_accuracy := 1.0
@@ -41,6 +44,7 @@ func _ready() -> void:
 		&"projectile_count": Stat.new(base_projectile_count),
 		&"ricochet_chance": Stat.new(base_ricochet_chance),
 		&"ricochet_bounces": Stat.new(base_ricochet_bounces),
+		&"pierce_count": Stat.new(base_pierce_count),
 		&"attack_speed": Stat.new(base_attack_speed),
 		&"reload_speed": Stat.new(base_reload_speed),
 		&"accuracy": Stat.new(base_accuracy),
