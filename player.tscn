@@ -30,6 +30,8 @@
 [ext_resource type="Script" uid="uid://boby5oihnxo8k" path="res://Scripts/choice_popup.gd" id="26_choice"]
 [ext_resource type="Script" path="res://Scripts/hud_display.gd" id="27_hudfx"]
 [ext_resource type="Script" path="res://Scripts/weapon_stack.gd" id="28_wstack"]
+[ext_resource type="Script" path="res://Scripts/lock_reticle.gd" id="29_reticle"]
+[ext_resource type="Script" path="res://Scripts/screen_filter.gd" id="30_filter"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_jfb0n"]
 
@@ -92,7 +94,7 @@ collide_with_bodies = false
 
 [node name="LockOn" type="Node3D" parent="Head/Camera3D" unique_id=79919 node_paths=PackedStringArray("crosshair")]
 script = ExtResource("2_2hs0m")
-crosshair = NodePath("../../../HUD/Crosshair")
+crosshair = NodePath("../../../HUD/AimViewport/Crosshair")
 
 [node name="EnemySpawner" type="Node3D" parent="." unique_id=2092120457]
 script = ExtResource("6_ivps1")
@@ -126,7 +128,26 @@ offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("9_5tmop")
 
-[node name="FovCircle" type="Control" parent="HUD" unique_id=459560476 node_paths=PackedStringArray("lock_on")]
+[node name="ScreenFilter" type="ColorRect" parent="HUD"]
+mouse_filter = 2
+script = ExtResource("30_filter")
+
+[node name="AimDisplay" type="TextureRect" parent="HUD"]
+mouse_filter = 2
+script = ExtResource("27_hudfx")
+curve = 0.0
+wrap = 0.0
+fringe = 0.3
+scanlines = 0.1
+viewport_name = "AimViewport"
+sway = false
+
+[node name="AimViewport" type="SubViewport" parent="HUD"]
+transparent_bg = true
+gui_disable_input = true
+render_target_update_mode = 4
+
+[node name="FovCircle" type="Control" parent="HUD/AimViewport" unique_id=459560476 node_paths=PackedStringArray("lock_on")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -135,15 +156,22 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("6_1jxqw")
-lock_on = NodePath("../../Head/Camera3D/LockOn")
-line_width = 1.0
+lock_on = NodePath("../../../Head/Camera3D/LockOn")
 
-[node name="Crosshair" type="TextureRect" parent="HUD" unique_id=1659879013]
+[node name="Crosshair" type="TextureRect" parent="HUD/AimViewport" unique_id=1659879013]
 custom_minimum_size = Vector2(24, 24)
 offset_right = 24.0
 offset_bottom = 24.0
 texture = ExtResource("3_1jxqw")
 expand_mode = 1
+script = ExtResource("29_reticle")
+
+[node name="CenterCrosshair" type="Control" parent="HUD/AimViewport" unique_id=2034680122]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("16_u1c27")
 
 [node name="HudDisplay" type="TextureRect" parent="HUD"]
 mouse_filter = 2
@@ -201,15 +229,6 @@ description_font = ExtResource("14_606se")
 name_font_size = 18
 description_font_size = 14
 box_color = Color(0.05882353, 0.05882353, 0.05882353, 0.5411765)
-
-[node name="CenterCrosshair" type="Control" parent="HUD" unique_id=2034680122]
-layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-script = ExtResource("16_u1c27")
-opacity = 0.3
-radius = 1.0
 
 [node name="PauseMenu" type="Control" parent="HUD" unique_id=2072073045]
 layout_mode = 3

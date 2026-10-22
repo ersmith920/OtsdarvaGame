@@ -147,12 +147,18 @@ func _flash_mode_name() -> void:
 	if crosshair == null:
 		return
 	if _mode_label == null:
-		_mode_label = HudStyle.make_label("", 12, HudStyle.CYAN)
+		_mode_label = TermUI.label("", 13, HudStyle.INK, true)
 		_mode_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		_mode_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
-		_mode_label.add_theme_constant_override("outline_size", 3)
+		# Inverted, like a terminal message: dark text on an orange block.
+		var block := StyleBoxFlat.new()
+		block.bg_color = HudStyle.ORANGE
+		block.content_margin_left = 10
+		block.content_margin_right = 10
+		block.content_margin_top = 1
+		block.content_margin_bottom = 1
+		_mode_label.add_theme_stylebox_override("normal", block)
 		crosshair.get_parent().add_child.call_deferred(_mode_label)
-	_mode_label.text = "%s   %s" % [HudStyle.caption("AIM %d" % mode), get_mode_name().to_upper()]
+	_mode_label.text = "AIM MODE %d  //  %s" % [mode, get_mode_name().to_upper()]
 	_mode_label_until = Time.get_ticks_msec() + 1200
 
 
@@ -366,7 +372,7 @@ func _process(delta: float) -> void:
 			var view := _mode_label.get_viewport_rect().size
 			_mode_label.reset_size()
 			_mode_label.position = Vector2((view.x - _mode_label.size.x) * 0.5,
-					view.y * 0.5 + get_fov_screen_radius() + 18.0)
+					view.y * 0.5 + get_fov_screen_radius() + 46.0)
 
 
 # Draws a 2D crosshair from its aim DIRECTION, not the aim point, so walls and
@@ -382,9 +388,17 @@ func _update_crosshair(r: Reticle) -> void:
 	c.visible = true
 	c.position = camera.unproject_position(probe) - c.size * 0.5
 	c.modulate = locked_color if r.target != null else idle_color
+	# What the crosshair draws (lock_reticle.gd): locked or searching, its number, the range.
+	var has_target := r.target != null and is_instance_valid(r.target)
+	c.set_meta(&"locked", has_target)
+	c.set_meta(&"snap", r.snap)
+	c.set_meta(&"index", _reticles.find(r))
+	c.set_meta(&"count", _reticles.size())
+	# A small lock circle (low lock_fov) gets smaller crosshairs, so split ones don't pile up.
+	c.set_meta(&"scale", clampf(get_fov_screen_radius() / 110.0, 0.45, 1.0))
+	c.set_meta(&"range", camera.global_position.distance_to(_aim_point_of(r.target)) if has_target else -1.0)
 	# Locking on: the crosshair starts wide and squeezes in onto the target.
 	c.pivot_offset = c.size * 0.5
-	c.scale = Vector2.ONE * (1.0 + 0.7 * r.snap * r.snap)
 	if r.snap > 0.0:
 		c.modulate = c.modulate.lerp(Color.WHITE, r.snap * 0.6)
 		r.snap = maxf(r.snap - get_process_delta_time() * 6.0, 0.0)

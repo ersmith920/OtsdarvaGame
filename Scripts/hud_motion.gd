@@ -81,9 +81,12 @@ func _process(delta: float) -> void:
 		_roll_velocity = 0.0
 
 	if _rect != null:
-		_rect.pivot_offset = _rect.size * 0.5
-		_rect.rotation = _roll
-		_rect.position = _offset
+		if _rect.has_method(&"set_motion"):
+			_rect.call(&"set_motion", _offset, _roll)   # HudDisplay: keeps its own overhang
+		else:
+			_rect.pivot_offset = _rect.size * 0.5
+			_rect.rotation = _roll
+			_rect.position = _offset
 		return
 	# Rotate about the screen center, then shift.
 	var center := get_viewport().get_visible_rect().size * 0.5
