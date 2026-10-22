@@ -1,6 +1,8 @@
-# Popup shown in the top right when the player picks up an item: a HUD panel (see HudStyle)
-# accented in the item's tier color, "ITEM ACQUIRED" above the name (tier colored) and
-# description, icon on the left. Slides in from the right edge, holds, then slides back out.
+# Popup shown in the top right when the player picks up an item, in the HUD's vector style
+# (see HudStyle): a framed box in the item's tier color topped by an inverted strip
+# ("ITEM ACQUIRED", tier on the right, a blinking cursor), then the icon, the name (flickers
+# on) and the description (types itself out). Slides in from the right edge, a scan line
+# sweeps it, holds, then it slides back out. The rarity chime plays with it.
 extends Control
 
 const MARGIN := 14                # from the top and right screen edges
@@ -33,8 +35,11 @@ var _panel: PanelContainer
 var _accent := HudStyle.CYAN
 var _glint := 0.0
 var _caption : Label
+var _tier_label : Label
+var _header : PanelContainer
+var _header_fill : StyleBoxFlat
 var _blink : Tween
-const CAPTION := "> ITEM ACQUIRED"
+const CAPTION := "ITEM ACQUIRED"
 
 
 func _ready() -> void:
@@ -55,22 +60,53 @@ func _ready() -> void:
 	var panel := PanelContainer.new()
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	var style := StyleBoxEmpty.new()
-	style.set_content_margin_all(BOX_PADDING)
-	style.content_margin_left = BOX_PADDING + 4
-	style.content_margin_right = BOX_PADDING + 6
-	panel.add_theme_stylebox_override("panel", style)
+	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	panel.draw.connect(func() -> void:
 		var r := Rect2(Vector2.ZERO, panel.size)
-		HudStyle.draw_panel(panel, r, _accent)
-		HudStyle.draw_glint(panel, r, _glint, 1.5))
+		panel.draw_rect(r, Color(0.0, 0.025, 0.03, 0.8))
+		HudStyle.draw_frame(panel, r, _accent, 1.0, 1.0, 1.2)
+		HudStyle.draw_glint(panel, r, _glint, 1.2))
 	_root.add_child(panel)
 	_panel = panel
+
+	var stack := VBoxContainer.new()
+	stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	stack.add_theme_constant_override("separation", 0)
+	panel.add_child(stack)
+
+	# Header: an inverted strip in the item's tier color, "ITEM ACQUIRED" left, tier right.
+	_header = PanelContainer.new()
+	_header.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_header_fill = StyleBoxFlat.new()
+	_header_fill.content_margin_left = 8
+	_header_fill.content_margin_right = 8
+	_header_fill.content_margin_top = 1
+	_header_fill.content_margin_bottom = 1
+	_header.add_theme_stylebox_override("panel", _header_fill)
+	stack.add_child(_header)
+	var header_row := HBoxContainer.new()
+	header_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_header.add_child(header_row)
+	_caption = HudStyle.make_label(CAPTION + "_", 10, HudStyle.INK)
+	_caption.remove_theme_constant_override("outline_size")
+	_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_row.add_child(_caption)
+	_tier_label = HudStyle.make_label("", 10, HudStyle.INK)
+	_tier_label.remove_theme_constant_override("outline_size")
+	header_row.add_child(_tier_label)
+
+	var pad := MarginContainer.new()
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side in ["top", "bottom"]:
+		pad.add_theme_constant_override("margin_" + side, BOX_PADDING - 2)
+	pad.add_theme_constant_override("margin_left", BOX_PADDING)
+	pad.add_theme_constant_override("margin_right", BOX_PADDING + 4)
+	stack.add_child(pad)
 
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_theme_constant_override("separation", ICON_TEXT_GAP)
-	panel.add_child(row)
+	pad.add_child(row)
 
 	_icon = TextureRect.new()
 	_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -86,9 +122,6 @@ func _ready() -> void:
 	text_column.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	text_column.add_theme_constant_override("separation", LINE_GAP)
 	row.add_child(text_column)
-
-	_caption = HudStyle.make_caption(CAPTION + "_", 9)
-	text_column.add_child(_caption)
 
 	_name_label = HudStyle.make_label("", NAME_SIZE, HudStyle.WHITE, true)
 	_name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -108,6 +141,9 @@ func show_item(item: ItemData) -> void:
 
 	var tier_color := item.get_tier_color()
 	_accent = tier_color
+	_header_fill.bg_color = tier_color
+	_tier_label.text = Rarity.name_of(Rarity.from_tier(item.tier)).to_upper()
+	Rarity.paint_tier(_header, item.tier)   # Legendary shine / Mythic rainbow on the strip
 	_name_label.add_theme_color_override("font_color", tier_color)
 	TextGlow.set_text(_name_label, item.display_name, tier_color)
 	Rarity.paint_tier(_name_label, item.tier)   # Legendary items shine

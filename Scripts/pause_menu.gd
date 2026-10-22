@@ -87,18 +87,19 @@ func _build_pages() -> void:
 	header.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	header.offset_bottom = 90
 	header.draw.connect(func() -> void:
-		# A dark band fading out to the right, with a hairline under it.
+		# An inverted title strip (solid green, dark text) on a thin rule across the screen.
 		var w := header.size.x
-		header.draw_polygon(PackedVector2Array([Vector2(0, 20), Vector2(w, 20), Vector2(w, 72), Vector2(0, 72)]),
-				PackedColorArray([Color(HudStyle.PANEL_TOP, 0.85), Color(HudStyle.PANEL_TOP, 0.0),
-				Color(HudStyle.PANEL_BOTTOM, 0.0), Color(HudStyle.PANEL_BOTTOM, 0.85)]))
-		header.draw_rect(Rect2(0, 72, w * 0.6, 1), Color(HudStyle.CYAN, 0.6))
-		header.draw_rect(Rect2(60, 71, 80, 3), HudStyle.CYAN))
+		header.draw_rect(Rect2(0, 58, w, 1), Color(HudStyle.FRAME, 0.5))
+		if _title != null:
+			header.draw_rect(Rect2(_title.position - Vector2(14, 3), _title.size + Vector2(28, 4)), HudStyle.PHOSPHOR))
 	_header = header
-	_title = HudStyle.make_label("SYSTEM PAUSED", 30, HudStyle.PHOSPHOR, true)
-	_title.add_theme_font_override("font", HudStyle.spaced(HudStyle.NUMBER_FONT, 4))
-	HudStyle.add_phosphor(_title, HudStyle.PHOSPHOR, 0.35)
-	_title.position = Vector2(60, 22)
+	_title = Label.new()
+	_title.text = "SYSTEM PAUSED"
+	_title.add_theme_font_override("font", HudStyle.spaced(HudStyle.MENU_FONT, 4))
+	_title.add_theme_font_size_override("font_size", 24)
+	_title.add_theme_color_override("font_color", HudStyle.INK)
+	_title.position = Vector2(60, 28)
+	_title.resized.connect(header.queue_redraw)
 	header.add_child(_title)
 
 	_main_page = _make_window()

@@ -223,7 +223,7 @@ func _wrap_card(content: Control, index: int) -> Button:
 # A card frame in the HUD style (HudStyle.card_style). lit: 0 resting, more when hovered.
 func _card_style(color: Color, lit: float) -> HudPanelStyle:
 	var style := HudStyle.card_style(color, lit)
-	style.glow_size = lerpf(glow_size, hover_glow_size, lit)
+	style.glow_size = lerpf(glow_size, hover_glow_size, lit) * 0.5   # a tight glow suits the thin frames
 	return style
 
 

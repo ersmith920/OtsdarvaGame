@@ -5,7 +5,7 @@
 # additive halo standing in for the 3D bloom (the HUD layer doesn't get the scene's Glow).
 extends Label
 
-const FONT_SIZE := 24
+const FONT_SIZE := 18
 
 @export var font: Font
 
@@ -69,9 +69,10 @@ func _ready() -> void:
 	vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	# Inside the mission panel: the coin at the row's left edge, the number on the right.
 	set_anchors_preset(Control.PRESET_TOP_LEFT)
-	var left := 14.0 + icon_size + icon_gap
-	position = HudStyle.MISSION_POS + Vector2(left, HudStyle.MISSION_ROW_SCRAP + 3)
-	size = Vector2(HudStyle.MISSION_SIZE.x - left - 14.0, 22)
+	# Inside the row's boxed field (see hud_timer.gd): the coin at its left, the number right.
+	var left := 96.0 + 6.0 + icon_size + icon_gap
+	position = HudStyle.MISSION_POS + Vector2(left, HudStyle.MISSION_ROW_SCRAP + 1)
+	size = Vector2(HudStyle.MISSION_SIZE.x - left - 8.0, 22)
 	add_theme_constant_override("outline_size", 0)   # the glow layers do the outlining
 	add_theme_font_override("font", HudStyle.NUMBER_FONT)
 	add_theme_font_size_override("font_size", FONT_SIZE)
@@ -83,7 +84,7 @@ func _ready() -> void:
 	_build_icon()
 	# The "SCRAP" caption rides on this label too, so it grows and shakes with the number.
 	_caption = HudStyle.make_caption("SCRAP", 10)
-	_caption.position = Vector2(2, 5)
+	_caption.position = Vector2(-left, 4)   # lined up with HOSTILE at the block's left edge
 	add_child(_caption)
 	resized.connect(_place_icon)
 	_place_icon()
@@ -119,8 +120,8 @@ func _process(delta: float) -> void:
 			_set_number(int(_shown))
 		return
 	_kick *= exp(-pulse_decay * delta)
-	# Grow from the right end (where the number is), so it swells in place.
-	pivot_offset = Vector2(size.x, size.y * 0.5)
+	# Grow from the middle of the row (caption to number), so it swells in place.
+	pivot_offset = Vector2((size.x + _caption.position.x) * 0.5, size.y * 0.5)   # middle of the whole row
 	scale = Vector2.ONE * (1.0 + grow_amount * _kick)
 	position = _base_pos + Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * shake_amount * _kick
 	if _halo != null:
