@@ -33,7 +33,7 @@ func _draw() -> void:
 
 	# Boresight: a small open cross on the exact center (the pipper rings it at rest).
 	for d in [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
-		draw_line(c + d * 2.5, c + d * 5.5, col, 1.5)
+		draw_line(c + d * 2.5, c + d * 5.5, col, 1.0)
 
 	var cam := get_tree().root.get_camera_3d()
 	var player := GameManager.player
@@ -58,7 +58,7 @@ func _draw() -> void:
 	off = off.clamp(-box, box)
 	p = c + off
 	var fc := Color(HudStyle.ORANGE_HOT, opacity * (0.5 if pinned else 1.0))
-	draw_arc(p, 6.0, 0.0, TAU, 24, fc, 1.5, true)
-	draw_line(p + Vector2(-6, 0), p + Vector2(-15, 0), fc, 1.5)
-	draw_line(p + Vector2(6, 0), p + Vector2(15, 0), fc, 1.5)
-	draw_line(p + Vector2(0, -6), p + Vector2(0, -12), fc, 1.5)
+	draw_arc(p, 6.0, 0.0, TAU, 24, fc, 1.0, true)
+	draw_line(p + Vector2(-6, 0), p + Vector2(-15, 0), fc, 1.0)
+	draw_line(p + Vector2(6, 0), p + Vector2(15, 0), fc, 1.0)
+	draw_line(p + Vector2(0, -6), p + Vector2(0, -12), fc, 1.0)

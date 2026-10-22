@@ -372,7 +372,7 @@ func _process(delta: float) -> void:
 			var view := _mode_label.get_viewport_rect().size
 			_mode_label.reset_size()
 			_mode_label.position = Vector2((view.x - _mode_label.size.x) * 0.5,
-					view.y * 0.5 + get_fov_screen_radius() + 46.0)
+					view.y * 0.5 + preload("res://Scripts/lock_fov_circle.gd").readout_offset(view, get_fov_screen_radius()) + 12.0)
 
 
 # Draws a 2D crosshair from its aim DIRECTION, not the aim point, so walls and

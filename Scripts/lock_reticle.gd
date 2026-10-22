@@ -36,8 +36,8 @@ func _draw() -> void:
 	draw_set_transform(c, 0.0, Vector2(k, k))
 	c = Vector2.ZERO
 	var col := Color.WHITE
-	var w := 1.5 / k     # strokes stay the same width on screen whatever the scale
-	var w2 := 2.0 / k
+	var w := 1.0 / k     # strokes stay the same width on screen whatever the scale
+	var w2 := 1.25 / k
 
 	if not locked:
 		# Gun pipper.

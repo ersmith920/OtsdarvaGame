@@ -12,7 +12,7 @@ extends Control
 @export var lock_on: LockOn
 @export var idle_color := Color(1.0, 0.45, 0.1, 0.7)
 @export var locked_color := Color(1.0, 0.15, 0.1, 0.9)
-@export var line_width := 2.0
+@export var line_width := 1.25
 ## Width of the heavy arcs on the left and right, in degrees.
 @export_range(10.0, 180.0) var arc_degrees := 50.0
 ## Opacity of the split lines, relative to the circle's color.
@@ -60,7 +60,7 @@ func _draw() -> void:
 	var dashes := 72
 	for i in dashes:
 		var a0 := TAU * i / dashes
-		draw_arc(center, r, a0, a0 + TAU / dashes * 0.5, 4, dim, 1.5, true)
+		draw_arc(center, r, a0, a0 + TAU / dashes * 0.5, 4, dim, 1.0, true)
 
 	# Heavy arcs left and right, with ticks every 10 degrees across them.
 	var half := deg_to_rad(arc_degrees) * 0.5
@@ -72,7 +72,7 @@ func _draw() -> void:
 			var a: float = side + deg_to_rad(j * 10.0)
 			var d := Vector2.from_angle(a)
 			var tick := tick_length * k * (1.6 if j == 0 else 1.0)
-			draw_line(center + d * r, center + d * (r + tick), color, 1.5, true)
+			draw_line(center + d * r, center + d * (r + tick), color, 1.0, true)
 
 	# Carets on the four sides, pointing in.
 	for a: float in [0.0, PI * 0.5, PI, PI * 1.5]:
@@ -87,7 +87,7 @@ func _draw() -> void:
 		var head := fmod(_time * sweep_speed, 1.0) * TAU - PI * 0.5
 		for i in 8:
 			var a1 := head - i * 0.05
-			draw_arc(center, r + 3.0, a1 - 0.05, a1, 4, Color(color, color.a * (1.0 - i / 8.0)), 3.0, true)
+			draw_arc(center, r + 3.0, a1 - 0.05, a1, 4, Color(color, color.a * (1.0 - i / 8.0)), 2.0, true)
 
 	# Split lines (dashed), kept short of the center so they don't cover the middle.
 	var faint := Color(color, color.a * divider_alpha)
@@ -106,7 +106,9 @@ func _draw() -> void:
 	var fov := GameManager.player.stats_node.get_value(&"lock_fov") if GameManager.player != null else 0.0
 	var text := "%s %03d° AIM%d" % [status, roundi(fov), _mode]
 	var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var base := center + Vector2(-tw * 0.5, r + 16.0 + 10.0 * clampf(r / 110.0, 0.5, 1.0))
+	# Well below the ring, so a small circle (early in a run) isn't crowded by text; a big
+	# circle pushes it further down.
+	var base := center + Vector2(-tw * 0.5, readout_offset(size, r))
 	if _locked:
 		# Inverted while locked: dark text on a filled red block, blinking slowly.
 		if fmod(_time, 0.8) < 0.6:
@@ -116,9 +118,15 @@ func _draw() -> void:
 		draw_string(font, base, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(color, 1.0))
 
 
+## How far below the screen center the status readout sits (LockOn puts the aim-mode
+## message under it).
+static func readout_offset(view: Vector2, radius: float) -> float:
+	return maxf(view.y * 0.3, radius + 30.0)
+
+
 func _dashed_line(a: Vector2, b: Vector2, color: Color) -> void:
 	var length := a.distance_to(b)
 	var d := 0.0
 	while d < length:
-		draw_line(a.lerp(b, d / length), a.lerp(b, minf(d + 6.0, length) / length), color, 1.5)
+		draw_line(a.lerp(b, d / length), a.lerp(b, minf(d + 6.0, length) / length), color, 1.0)
 		d += 11.0
