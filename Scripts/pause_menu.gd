@@ -38,7 +38,6 @@ var _main_page: VBoxContainer
 var _settings_page: VBoxContainer
 var _header: Control
 var _title: Label
-var _kanji: Label
 var _info: Control
 var _info_time: Label
 var _info_scrap: Label
@@ -102,10 +101,7 @@ func _build_pages() -> void:
 	_title.add_theme_color_override("font_color", HudStyle.INK)
 	_title.position = Vector2(150, 26)
 	_title.resized.connect(header.queue_redraw)
-	_kanji = HudStyle.make_kanji("一時停止", 30, HudStyle.ORANGE)
-	_kanji.position = Vector2(46, 8)
-	header.add_child(_kanji)
-	_title.position.x = 46 + _kanji.get_minimum_size().x + 22
+	_title.position.x = 60
 	header.add_child(_title)
 
 	_main_page = _make_window()
@@ -263,8 +259,6 @@ func _show_settings(show: bool) -> void:
 	_settings_page.visible = show
 	if _title != null:
 		_title.text = "SYSTEM CONFIG" if show else "SYSTEM PAUSED"
-		_kanji.text = "設定" if show else "一時停止"
-		_title.position.x = 46 + _kanji.get_minimum_size().x + 22
 
 
 func _on_exit_pressed() -> void:

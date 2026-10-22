@@ -1,19 +1,19 @@
-# The HUD's look in one place: late-80s / 90s anime cyberpunk cockpit displays (NERV's MAGI
-# screens in Evangelion, Akira, Ghost in the Shell, Lain) seen through the mech's canopy.
+# The HUD's look in one place: late-70s to 90s sci-fi cockpit and terminal displays (the
+# Nostromo's vector screens in Alien, 2001, NERV's MAGI screens in Evangelion, Akira, Ghost
+# in the Shell, Lain) seen through the mech's canopy.
 #
 # Rules this style is built on:
-#   - Color carries meaning. NERV orange is the system chrome. Green = nominal, cyan = power
-#     and info, red = alert, yellow / black hazard stripes = danger. Rarity keeps its colors.
-#   - Type is bilingual and heavy: big black-weight Mincho kanji (Noto Serif JP Black) as the
-#     primary label, condensed English (Barlow Condensed) under or beside it, and tiny
-#     monospace data lines (Share Tech Mono) for texture. No letter-spaced captions.
-#   - Shapes are bold: thick outlines, solid gradient-filled blocks, angled 45 degree cuts,
-#     tag boxes, numbered segments, hex cells and hazard stripes. Nothing is a thin hairline
-#     box with corner brackets.
+#   - English only. Condensed caps (Barlow Condensed) for labels and readouts, tiny
+#     monospace data lines (Share Tech Mono) for texture.
+#   - Flat and rectangular, like a vector terminal: square blocks, flat fills, single-weight
+#     outlines, boxed labels, "+" registration marks, square gauge segments. No gradients,
+#     no cut corners, no rounded shapes (dials and rings are the exception).
+#   - Color carries meaning. Orange is the system chrome. Green = nominal, cyan = power and
+#     info, red = alert, yellow / black hazard stripes = danger. Rarity keeps its colors.
 #   - Light comes from the display, not from the shapes: the HUD is rendered off-screen and
-#     shown through a CRT pass (hud_display.gd) with heavy phosphor bloom, a slight canopy
-#     curve, color fringing and scanlines; menus get a screen-space bloom pass. So elements
-#     here are drawn crisp and bright and the bloom is real.
+#     shown through a CRT pass (hud_display.gd) with heavy phosphor bloom, a canopy curve,
+#     color fringing and scanlines; menus get the same pass on screen. So elements here are
+#     drawn crisp and bright and the bloom is real.
 #   - Motion: boot-up sequences, ticking data, blinking alerts, the HUD swaying on its glass.
 # HUD scripts use these colors, fonts and drawing helpers so everything matches.
 class_name HudStyle
@@ -54,9 +54,6 @@ const INK := Color(0.08, 0.02, 0.0)
 const SHADOW := Color(0.0, 0.0, 0.0, 0.85)
 
 # ---- Fonts (all open license, see Fonts/*-OFL.txt) ----
-## Heavy Mincho for kanji and big titles (only the characters the HUD uses are in this cut;
-## see Fonts/NotoSerifJP-Black-HUD-characters.txt).
-const KANJI_FONT := preload("res://Fonts/NotoSerifJP-Black-HUD.ttf")
 ## Condensed English labels and numbers.
 const NUMBER_FONT := preload("res://Fonts/BarlowCondensed-Bold.ttf")
 const MENU_FONT := preload("res://Fonts/BarlowCondensed-Bold.ttf")
@@ -69,23 +66,11 @@ const NUMBER_SCALE := 1.0
 const CUT := 8.0
 const CAPTION_SPACING := 0
 
-## Kanji for the English words the UI uses, shown with them (menus look these up).
-const KANJI := {
-	"MISSION TIME": "作戦時間", "HOSTILE": "敵影", "SCRAP": "資材", "HP": "機体耐久",
-	"EN": "動力", "SPEED": "速度", "HEADING": "方位", "WARNING": "警告", "DANGER": "危険",
-	"WEAPONS": "兵装", "YOUR WEAPONS": "兵装", "ITEM ACQUIRED": "取得", "ITEMS": "物資",
-	"PAUSE": "一時停止", "SYSTEM PAUSED": "一時停止", "SETTINGS": "設定", "SYSTEM CONFIG": "設定",
-	"RESUME": "再開", "EXIT": "終了", "REROLL": "再抽選", "CLOSE": "閉鎖", "CANCEL": "中止",
-	"COMBINE": "融合", "COMBINER": "兵装融合", "RESULT": "結果", "STATS": "能力値",
-	"DEV TOOLS": "開発用", "GUN STORE": "兵装調達", "DEV GUN STORE": "兵装調達", "BACK": "設定",
-	"RELOAD": "装填", "CRITICAL": "臨界",
-}
-
 # ---- Layout (base UI pixels, 1152 x 648) ----
 ## Hostile and scrap blocks, top left (hud_timer.gd draws them; the enemy count and scrap
 ## counter sit inside them).
 const MISSION_POS := Vector2(18, 16)
-const MISSION_SIZE := Vector2(200, 64)
+const MISSION_SIZE := Vector2(212, 64)
 const MISSION_ROW_HOSTILE := 0.0
 const MISSION_ROW_SCRAP := 34.0
 const MISSION_ROW_HEIGHT := 28.0
@@ -109,11 +94,6 @@ static func caption(text: String) -> String:
 
 static func caption_font() -> Font:
 	return LABEL_FONT
-
-
-## The kanji for an English UI word, or "" if there isn't one.
-static func kanji_for(text: String) -> String:
-	return KANJI.get(text.to_upper(), "")
 
 
 ## A label: condensed English. number: the bold cut, for readouts.
@@ -144,13 +124,6 @@ static func add_phosphor(l: Control, color: Color, glow := 0.0) -> void:
 ## A small caption ("HOSTILE"): condensed, dim system orange.
 static func make_caption(text: String, size := 10, color := ORANGE_DIM) -> Label:
 	return make_label(caption(text), size, color)
-
-
-## A kanji label in the heavy Mincho.
-static func make_kanji(text: String, size: int, color := ORANGE) -> Label:
-	var l := make_label(text, size, color)
-	l.add_theme_font_override("font", KANJI_FONT)
-	return l
 
 
 ## A tiny monospace data line.
@@ -442,9 +415,8 @@ static func empty_tile_style() -> HudPanelStyle:
 	return s
 
 
-## A command button: a thick orange outlined block with cut corners; the English label and,
-## when there is one, its kanji (small, at the right end). Hovered, it fills with an orange
-## gradient from the left and the text turns to dark ink; pressing punches it. Hover / click
+## A command button: a flat orange-outlined rectangle with its label. Hovered, it fills with
+## orange from the left and the text turns to dark ink; pressing punches it. Hover / click
 ## sounds included. A disabled button goes dim and dashed and ignores hovers.
 ## slide: nudges right when hovered (left-aligned lists).
 static func make_button(text: String, min_size := Vector2(200, 44), font_size := 18, accent := ORANGE,
@@ -454,11 +426,10 @@ static func make_button(text: String, min_size := Vector2(200, 44), font_size :=
 	button.custom_minimum_size = min_size
 	button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
 	button.alignment = align
-	var kanji := kanji_for(text)
 	for st in ["normal", "hover", "pressed", "disabled", "focus", "hover_pressed"]:
 		var box := StyleBoxEmpty.new()
 		box.content_margin_left = 18 if align == HORIZONTAL_ALIGNMENT_LEFT else 12
-		box.content_margin_right = 12 + (font_size * 0.9 * kanji.length() if align == HORIZONTAL_ALIGNMENT_LEFT else 0.0)
+		box.content_margin_right = 12
 		button.add_theme_stylebox_override(st, box)
 	button.add_theme_font_override("font", spaced(MENU_FONT, 1))
 	button.add_theme_font_size_override("font_size", font_size)
@@ -489,17 +460,12 @@ static func make_button(text: String, min_size := Vector2(200, 44), font_size :=
 		style.fill_bottom = style.fill_top
 		style.sweep = 0.0 if button.disabled else lit
 		HudPanelStyle.paint(plate.get_canvas_item(), r, style)
-		if not kanji.is_empty():
-			var ks := roundi(font_size * 0.75)
-			var kc : Color = Color(accent, 0.3) if button.disabled else accent.lerp(INK, smoothstep(0.35, 0.65, lit))
-			var kw: float = KANJI_FONT.get_string_size(kanji, HORIZONTAL_ALIGNMENT_LEFT, -1, ks).x
-			var y := r.get_center().y + ks * 0.38
-			if align == HORIZONTAL_ALIGNMENT_LEFT:
-				plate.draw_string(KANJI_FONT, Vector2(r.end.x - kw - 12.0, y), kanji, HORIZONTAL_ALIGNMENT_LEFT, -1, ks, kc)
-			else:
-				# Centered buttons: the kanji in the top-left corner, small.
-				var ks2 := roundi(font_size * 0.55)
-				plate.draw_string(KANJI_FONT, r.position + Vector2(8.0, ks2 + 3.0), kanji, HORIZONTAL_ALIGNMENT_LEFT, -1, ks2, kc))
+		# Left-aligned (list) buttons: a small square pip at the right end that lights on hover.
+		if align == HORIZONTAL_ALIGNMENT_LEFT and not button.disabled:
+			var pip := Rect2(r.end.x - 18.0, r.get_center().y - 3.0, 6.0, 6.0)
+			plate.draw_rect(pip, accent.lerp(INK, smoothstep(0.35, 0.65, lit)), lit > 0.5)
+			if lit <= 0.5:
+				plate.draw_rect(pip, accent, false, 1.0))
 	var light := func(to: float) -> void:
 		var t := UIJuice.tween_of(button)
 		t.tween_method(func(v: float) -> void:
@@ -520,8 +486,8 @@ static func make_button(text: String, min_size := Vector2(200, 44), font_size :=
 	return button
 
 
-## A section header: a filled orange tag with the English label in dark ink, its kanji
-## beside it, and a thick rule running on to the right.
+## A section header: a filled orange tag with the label in dark ink and a rule running on
+## to the right.
 static func make_header(text: String, size := 13, _color := ORANGE_DIM, align := HORIZONTAL_ALIGNMENT_LEFT,
 		accent := ORANGE) -> Control:
 	var row := HBoxContainer.new()
@@ -542,9 +508,6 @@ static func make_header(text: String, size := 13, _color := ORANGE_DIM, align :=
 	label.remove_theme_constant_override("outline_size")
 	tag.add_child(label)
 	row.add_child(tag)
-	var kanji := kanji_for(text.get_slice("/", 0).strip_edges())
-	if not kanji.is_empty():
-		row.add_child(make_kanji(kanji, size + 1, accent))
 	if align != HORIZONTAL_ALIGNMENT_CENTER:
 		var rule := make_rule(false, accent)
 		rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -563,49 +526,40 @@ static func make_rule(_centered := false, accent := ORANGE) -> Control:
 	return rule
 
 
-## A menu title, NERV style: the kanji huge in heavy Mincho, the English in a filled tag
-## beside it, and a hazard-striped tab. Returns a control; its meta "label" is the English
-## Label (callers can change its text).
+## A menu title: the name big in condensed caps, a rule under it with a short hazard-striped
+## tab at its left end, and a line of system data. Returns a control; its meta "label" is
+## the title Label (callers can change its text with set_title()).
 static func make_title(text: String, size := 30) -> Control:
-	var row := HBoxContainer.new()
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	row.add_theme_constant_override("separation", 12)
-	var big := make_kanji("", roundi(size * 1.25), ORANGE)
-	row.add_child(big)
-	row.set_meta(&"kanji", big)
 	var column := VBoxContainer.new()
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	column.alignment = BoxContainer.ALIGNMENT_CENTER
-	column.add_theme_constant_override("separation", 3)
-	row.add_child(column)
-	var tag := PanelContainer.new()
-	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var fill := StyleBoxFlat.new()
-	fill.bg_color = ORANGE
-	fill.content_margin_left = 8
-	fill.content_margin_right = 8
-	tag.add_theme_stylebox_override("panel", fill)
-	var label := make_label(text.to_upper(), roundi(size * 0.6), INK, true)
-	label.remove_theme_constant_override("outline_size")
-	tag.add_child(label)
-	column.add_child(tag)
-	var stripes := Control.new()
-	stripes.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	stripes.custom_minimum_size = Vector2(0, 7)
-	stripes.draw.connect(func() -> void: draw_hazard(stripes, Rect2(Vector2.ZERO, stripes.size), YELLOW, 4.0))
-	column.add_child(stripes)
-	row.set_meta(&"label", label)
-	set_title(row, text)
-	return row
+	column.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	column.add_theme_constant_override("separation", 2)
+	var label := make_label(text.to_upper(), roundi(size * 1.1), ORANGE, true)
+	label.add_theme_font_override("font", spaced(NUMBER_FONT, 3))
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(label)
+	var rule := Control.new()
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rule.custom_minimum_size = Vector2(0, 8)
+	rule.draw.connect(func() -> void:
+		rule.draw_rect(Rect2(0, 0, rule.size.x, 2), ORANGE)
+		draw_hazard(rule, Rect2(0, 3, minf(64.0, rule.size.x * 0.3), 5), YELLOW, 4.0))
+	column.add_child(rule)
+	var data := make_data("", 9, ORANGE_DIM)
+	data.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	column.add_child(data)
+	column.set_meta(&"label", label)
+	column.set_meta(&"data", data)
+	set_title(column, text)
+	return column
 
 
-## Changes a make_title() title's text (and its kanji, when there is one).
+## Changes a make_title() title's text.
 static func set_title(title: Control, text: String) -> void:
 	(title.get_meta(&"label") as Label).text = text.to_upper()
-	var big := title.get_meta(&"kanji") as Label
-	big.text = kanji_for(text)
-	big.visible = not big.text.is_empty()
+	var data := title.get_meta(&"data") as Label
+	if data != null:
+		data.text = "SYS/%s  //  TERMINAL %02d" % [text.to_upper().replace(" ", "_"), text.length() % 100]
 
 
 ## A Theme for menus, so anything without its own styling (plain Labels, Buttons, toggles,
@@ -695,7 +649,7 @@ static func _switch_texture(on: bool) -> Texture2D:
 ## red / blue fringing and scanlines. Add it last so it covers the menu's contents; it covers
 ## exactly its parent's rect, so pass the panel when the menu shouldn't process the whole
 ## screen. Unsaturated brights (sky, clouds) barely bloom, so the scene stays as it is.
-static func add_menu_bloom(menu: Control, strength := 1.0) -> ColorRect:
+static func add_menu_bloom(menu: Control, strength := 1.0, margin := 0.0) -> ColorRect:
 	var rect := ColorRect.new()
 	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rect.color = Color.WHITE
@@ -711,6 +665,12 @@ static func add_menu_bloom(menu: Control, strength := 1.0) -> ColorRect:
 	menu.add_child(copy)
 	menu.add_child(rect)
 	rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# Reach a little past the panel, so the glow off its border isn't cut at the edge.
+	if margin > 0.0:
+		rect.offset_left = -margin
+		rect.offset_top = -margin
+		rect.offset_right = margin
+		rect.offset_bottom = margin
 	rect.set_meta(&"glint_overlay", true)   # menus that clear their children keep this
 	return rect
 
@@ -726,7 +686,7 @@ render_mode blend_mix;
 uniform sampler2D screen : hint_screen_texture, filter_linear_mipmap, repeat_disable;
 uniform float strength = 1.0;
 uniform float scan = 0.13;
-uniform float fringe = 1.1;
+uniform float fringe = 0.6;
 
 vec3 bright(vec2 uv, float lod) {
 	vec3 c = textureLod(screen, uv, lod).rgb;

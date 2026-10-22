@@ -5,7 +5,7 @@
 #   [01] UL  RIFLE            ////////////////   24/30
 #
 # The number tag shows the slot's state: green = ready, amber = magazine low, red = reloading
-# or empty (blinking 装填 RELOAD while the magazine refills, the bar filling back up). The
+# or empty (blinking RELOAD while the magazine refills, the bar filling back up). The
 # gun's name is in its rarity color. Empty slots show a dim dashed row. Rows draw in one by
 # one when the level starts.
 class_name WeaponStack
@@ -65,14 +65,13 @@ func _draw() -> void:
 	if GameManager.player == null:
 		return
 	var font := HudStyle.NUMBER_FONT
-	# Header: a filled tag with 兵装 and WEAPONS, and a rule.
+	# Header: a filled WEAPONS tag and a rule.
 	draw_set_transform_matrix(Transform2D(0.0, Vector2.ONE, SKEW, ORIGIN))
-	var head := Rect2(0, -20, 74 * minf(_boot * 3.0, 1.0), 15)
+	var head := Rect2(0, -20, 62 * minf(_boot * 3.0, 1.0), 15)
 	draw_rect(head, HudStyle.ORANGE)
 	if _boot > 0.2:
-		draw_string(HudStyle.KANJI_FONT, Vector2(4, -8), "兵装", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, HudStyle.INK)
-		draw_string(font, Vector2(31, -8), "WEAPONS", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, HudStyle.INK)
-		draw_line(Vector2(78, -12), Vector2(WIDTH * _boot, -12), Color(HudStyle.ORANGE, 0.7), 2.0)
+		draw_string(font, Vector2(6, -8), "WEAPONS", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, HudStyle.INK)
+		draw_line(Vector2(66, -12), Vector2(WIDTH * _boot, -12), Color(HudStyle.ORANGE, 0.7), 2.0)
 	if rows.is_empty():
 		_dashed(Rect2(0, 0, WIDTH * _boot, ROW_H), Color(HudStyle.ORANGE, 0.3))
 		if fmod(_time, 1.0) < 0.6:
@@ -140,7 +139,7 @@ func _draw() -> void:
 		# Count, or the reload alert.
 		if reloading:
 			if fmod(_time, 0.5) < 0.32:
-				draw_string(HudStyle.KANJI_FONT, Vector2(WIDTH - 32, y + 15), "装填", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, HudStyle.RED)
+				draw_string(font, Vector2(WIDTH - 36, y + 15), "RELOAD", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, HudStyle.RED)
 		else:
 			draw_string(HudStyle.DATA_FONT, Vector2(WIDTH - 33, y + 14), "%02d/%02d" % [shots, mini(mag, 99)],
 					HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(status, appear))

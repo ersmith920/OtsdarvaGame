@@ -1,13 +1,13 @@
 # Vitals, bottom right: the mech's instrument cluster (see HudStyle).
 #
-#    087%   [警告 HEALTH CRITICAL]      .----.
-#   [HP 耐久] ////////////////////////( dial )|   the HP bar graph comes out from under the
-#   [EN 動力] /////////////////////    '-----'/    speed dial and wraps up its right side
+#    087%   [WARNING]                    .----.
+#   [HP] ////////////////////////////( dial )|   the HP bar graph comes out from under the
+#   [EN] ////////////////////////     '-----'/    speed dial and wraps up its right side
 #
-# The dial is an analog speedometer (速度): a hot needle over a tick scale (the yellow tick is
+# The dial is an analog speedometer: a hot needle over a tick scale (the yellow tick is
 # normal top speed) with a digital readout (engine m/s x SPEED_DISPLAY_SCALE). The HP bar is
 # one path of segments between two guide lines, green, amber below half, red below LOW with
-# hazard stripes and a blinking 警告. Damage comes off the far (left) end first, leaving a
+# hazard stripes and a blinking WARNING. Damage comes off the far (left) end first, leaving a
 # pale trail that drains a moment later; the gauge flashes and the cluster jolts on hits;
 # heals flare. Everything traces itself on when the level starts. The bloom comes from the
 # HUD display pass (hud_display.gd).
@@ -107,7 +107,7 @@ func _ready() -> void:
 	_speed_num.size = Vector2(60, 22)
 	_speed_num.pivot_offset = _speed_num.size * 0.5
 	_block.add_child(_speed_num)
-	var spd := HudStyle.make_kanji("速度", 9, HudStyle.ORANGE)
+	var spd := HudStyle.make_label("SPEED", 9, HudStyle.ORANGE, true)
 	spd.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	spd.position = _c + Vector2(-20, -24)
 	spd.size = Vector2(40, 12)
@@ -121,27 +121,23 @@ func _ready() -> void:
 	# Filled tags at the left ends of the gauges (drawn in _draw_block), with their text in ink.
 	_hp_tag = HudStyle.make_label("HP", 12, HudStyle.INK, true)
 	_hp_tag.remove_theme_constant_override("outline_size")
-	_hp_tag.position = Vector2(_bar_left - TAG_W + 4, _bar_y - 8)
+	_hp_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hp_tag.position = Vector2(_bar_left - TAG_W, _bar_y - 8)
+	_hp_tag.size.x = TAG_W - 4
 	_block.add_child(_hp_tag)
-	var hp_k := HudStyle.make_kanji("耐久", 9, HudStyle.INK)
-	hp_k.remove_theme_constant_override("outline_size")
-	hp_k.position = Vector2(_bar_left - TAG_W + 21, _bar_y - 6)
-	_block.add_child(hp_k)
 	_en_tag = HudStyle.make_label("EN", 10, HudStyle.INK, true)
 	_en_tag.remove_theme_constant_override("outline_size")
-	_en_tag.position = Vector2(_bar_left - TAG_W + 4, _en_bar.get_center().y - 7)
+	_en_tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_en_tag.position = Vector2(_bar_left - TAG_W, _en_bar.get_center().y - 7)
+	_en_tag.size.x = TAG_W - 4
 	_block.add_child(_en_tag)
-	var en_k := HudStyle.make_kanji("動力", 8, HudStyle.INK)
-	en_k.remove_theme_constant_override("outline_size")
-	en_k.position = Vector2(_bar_left - TAG_W + 21, _en_bar.get_center().y - 6)
-	_block.add_child(en_k)
 
 	# Health as a number above the bar's left end.
 	_hp_num = HudStyle.make_label("100%", 20, HudStyle.GREEN, true)
 	_hp_num.position = Vector2(_bar_left - TAG_W, _bar_y - HP_WIDTH * 0.5 - 30)
 	_block.add_child(_hp_num)
 
-	_critical = HudStyle.make_kanji("警告", 18, HudStyle.RED)
+	_critical = HudStyle.make_label("WARNING", 16, HudStyle.RED, true)
 	_critical.position = Vector2(_bar_left + 80, _bar_y - HP_WIDTH * 0.5 - 32)
 	_critical.visible = false
 	_block.add_child(_critical)

@@ -1,25 +1,23 @@
-# Mission clock, top center (see HudStyle): a block with 作戦時間 / MISSION TIME, big digits
-# and fast-ticking hundredths, a heading tape under it that scrolls as you turn, and a line
-# of system data. This script also draws the HOSTILE and SCRAP blocks in the top left that
-# the enemy count (hud_enemy_count.gd) and scrap counter (hud_gold.gd) sit in: a filled
-# kanji tag joined to an outlined field. Everything traces itself on when the level starts.
+# Mission clock, top center (see HudStyle): just the MM:SS digits standing on their own (no
+# box; the display's bloom makes them glow), with a heading tape under them that scrolls as
+# you turn. This script also draws the HOSTILE and SCRAP blocks in the top left that the enemy
+# count (hud_enemy_count.gd) and scrap counter (hud_gold.gd) sit in: a filled tag joined to
+# an outlined field, and a line of system data under them. Everything traces itself on when
+# the level starts.
 extends Label
 
-const FONT_SIZE := 34
+const FONT_SIZE := 40
 ## Heading tape: size, and how many pixels one degree of heading takes.
 const TAPE_SIZE := Vector2(300, 30)
 const TAPE_PX_PER_DEG := 2.4
-## Top-left blocks: the kanji tag's width, and where each row's field starts.
-const TAG_W := 46.0
-const FIELD_X := 50.0
+## Top-left blocks: the tag's width, and where each row's field starts.
+const TAG_W := 58.0
+const FIELD_X := 62.0
 
 var _last_second := -1
-var _time_panel : Control
 var _mission_panel : Control
 var _tape : Control
-var _hundredths : Label
 var _data : Label
-var _glint := 0.0
 var _boot := 0.0
 var _data_timer := 0.0
 
@@ -31,64 +29,40 @@ func _ready() -> void:
 	horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
-	# Clock block, top center.
 	var w := HudStyle.TIME_SIZE.x
-	_time_panel = _add_panel(HudStyle.TIME_SIZE, _draw_time_panel)
-	_time_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_time_panel.offset_left = -w * 0.5
-	_time_panel.offset_right = w * 0.5
-	_time_panel.offset_top = HudStyle.TIME_TOP
-	_time_panel.offset_bottom = HudStyle.TIME_TOP + HudStyle.TIME_SIZE.y
-	var kanji := HudStyle.make_kanji("作戦時間", 11, HudStyle.INK)
-	kanji.position = Vector2(8, 0)
-	_time_panel.add_child(kanji)
-	var cap := HudStyle.make_label("MISSION TIME", 9, HudStyle.INK, true)
-	cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	cap.position = Vector2(0, 1)
-	cap.size = Vector2(w - 8, 12)
-	_time_panel.add_child(cap)
-	_hundredths = HudStyle.make_label(".00", 14, HudStyle.ORANGE, true)
-	_hundredths.position = Vector2(w - 34, 27)
-	_time_panel.add_child(_hundredths)
 
 	# Heading tape, under the clock.
 	_tape = _add_panel(TAPE_SIZE, _draw_tape)
 	_tape.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_tape.offset_left = -TAPE_SIZE.x * 0.5
 	_tape.offset_right = TAPE_SIZE.x * 0.5
-	_tape.offset_top = HudStyle.TIME_TOP + HudStyle.TIME_SIZE.y + 6
+	_tape.offset_top = HudStyle.TIME_TOP + HudStyle.TIME_SIZE.y + 2
 	_tape.offset_bottom = _tape.offset_top + TAPE_SIZE.y
 
 	# HOSTILE and SCRAP blocks, top left.
 	_mission_panel = _add_panel(HudStyle.MISSION_SIZE + Vector2(0, 14), _draw_mission_panel)
 	_mission_panel.position = HudStyle.MISSION_POS
-	for row in [[HudStyle.MISSION_ROW_HOSTILE, "敵影", "HOSTILE"], [HudStyle.MISSION_ROW_SCRAP, "資材", ""]]:
-		var k := HudStyle.make_kanji(row[1], 13, HudStyle.INK)
-		k.remove_theme_constant_override("outline_size")
-		k.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		k.position = Vector2(0, row[0] + 1)
-		k.size = Vector2(TAG_W, 16)
-		_mission_panel.add_child(k)
-		if not String(row[2]).is_empty():
-			var e := HudStyle.make_label(row[2], 8, HudStyle.INK, true)
-			e.remove_theme_constant_override("outline_size")
-			e.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			e.position = Vector2(0, row[0] + 16)
-			e.size = Vector2(TAG_W, 10)
-			_mission_panel.add_child(e)
-	# (The SCRAP caption belongs to hud_gold.gd, so it kicks along with the number.)
+	# The HOSTILE tag's word, in ink. (The SCRAP word belongs to hud_gold.gd, so it kicks
+	# along with the number.)
+	var e := HudStyle.make_label("HOSTILE", 12, HudStyle.INK, true)
+	e.remove_theme_constant_override("outline_size")
+	e.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	e.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	e.position = Vector2(0, HudStyle.MISSION_ROW_HOSTILE)
+	e.size = Vector2(TAG_W, HudStyle.MISSION_ROW_HEIGHT)
+	_mission_panel.add_child(e)
 	_data = HudStyle.make_data("", 8)
 	_data.position = Vector2(0, HudStyle.MISSION_SIZE.y + 2)
 	_mission_panel.add_child(_data)
 	_update_data()
 
-	# The time itself, in its block.
+	# The time itself, standing on its own.
 	set_anchors_preset(Control.PRESET_CENTER_TOP)
 	offset_left = -w * 0.5
-	offset_right = w * 0.5 - 18
-	offset_top = HudStyle.TIME_TOP + 13
+	offset_right = w * 0.5
+	offset_top = HudStyle.TIME_TOP
 	offset_bottom = HudStyle.TIME_TOP + HudStyle.TIME_SIZE.y
-	add_theme_font_override("font", HudStyle.NUMBER_FONT)
+	add_theme_font_override("font", HudStyle.spaced(HudStyle.NUMBER_FONT, 2))
 	add_theme_font_size_override("font_size", FONT_SIZE)
 	HudStyle.add_phosphor(self, HudStyle.ORANGE_HOT)
 
@@ -97,7 +71,7 @@ func _ready() -> void:
 	# Boot-up: the blocks trace themselves on, then the text flickers in.
 	var t := create_tween()
 	t.tween_property(self, "_boot", 1.0, 0.7).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	for c : CanvasItem in [self, _hundredths, _data]:
+	for c : CanvasItem in [self, _data]:
 		c.modulate.a = 0.0
 		var f := c.create_tween()
 		f.tween_interval(0.45)
@@ -115,16 +89,6 @@ func _add_panel(panel_size: Vector2, painter: Callable) -> Control:
 	get_parent().add_child.call_deferred(panel)
 	get_parent().move_child.call_deferred(panel, get_index())
 	return panel
-
-
-func _draw_time_panel(panel: Control) -> void:
-	var r := Rect2(Vector2.ZERO, panel.size)
-	panel.draw_colored_polygon(HudStyle.chamfer_points(r, 10.0), HudStyle.HUD_BACKING)
-	# Filled header strip, then the block outline.
-	if _boot > 0.3:
-		panel.draw_rect(Rect2(0, 0, r.size.x * smoothstep(0.3, 0.8, _boot), 14), HudStyle.ORANGE)
-	HudStyle.draw_frame(panel, r, HudStyle.ORANGE, _boot, 2.0, 0.0, 10.0)
-	HudStyle.draw_glint(panel, r, _glint)
 
 
 func _draw_mission_panel(panel: Control) -> void:
@@ -186,10 +150,7 @@ func _heading() -> float:
 func _process(delta: float) -> void:
 	_tape.queue_redraw()
 	if _boot < 1.0:
-		_time_panel.queue_redraw()
 		_mission_panel.queue_redraw()
-	# Hundredths tick every frame; the rest only when the second changes.
-	_hundredths.text = ".%02d" % (int(fmod(GameManager.levelTime, 1.0) * 100.0) % 100)
 	if int(GameManager.levelTime) != _last_second:
 		_update_text()
 	_data_timer -= delta
@@ -208,12 +169,8 @@ func _update_text() -> void:
 	@warning_ignore("integer_division")
 	var minute_turned := _last_second >= 0 and int(GameManager.levelTime) / 60 != _last_second / 60
 	_last_second = int(GameManager.levelTime)
-	# Each new minute: a scan line sweeps the block and the digits punch.
+	# Each new minute: the digits punch.
 	if minute_turned:
-		var t := create_tween()
-		t.tween_method(func(v: float) -> void:
-			_glint = v
-			_time_panel.queue_redraw(), 0.0, 1.0, 0.6).set_trans(Tween.TRANS_SINE)
 		pivot_offset = size * 0.5
 		UIJuice.punch(self, 0.15)
 	@warning_ignore("integer_division")

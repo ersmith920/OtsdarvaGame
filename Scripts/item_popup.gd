@@ -87,9 +87,6 @@ func _ready() -> void:
 	var header_row := HBoxContainer.new()
 	header_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_header.add_child(header_row)
-	var acquired := HudStyle.make_kanji("取得", 12, HudStyle.INK)
-	acquired.remove_theme_constant_override("outline_size")
-	header_row.add_child(acquired)
 	_caption = HudStyle.make_label(CAPTION + "_", 11, HudStyle.INK, true)
 	_caption.remove_theme_constant_override("outline_size")
 	_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL

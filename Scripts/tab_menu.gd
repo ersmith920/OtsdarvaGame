@@ -117,7 +117,7 @@ func _ready() -> void:
 	_build_buttons_panel()
 	_build_items_panel()
 	_build_item_tooltip()
-	HudStyle.add_menu_bloom(_box, 0.9)   # CRT pass over the menu box (not the HUD around it)
+	HudStyle.add_menu_bloom(_box, 0.9, 28.0)   # CRT pass over the menu box (not the HUD around it)
 
 # A plain Control with zero minimum size, so all three columns stay exactly equal
 # no matter what ends up inside them.

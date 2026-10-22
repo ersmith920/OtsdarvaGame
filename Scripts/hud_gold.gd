@@ -70,7 +70,7 @@ func _ready() -> void:
 	# Inside the mission panel: the coin at the row's left edge, the number on the right.
 	set_anchors_preset(Control.PRESET_TOP_LEFT)
 	# Inside the row's boxed field (see hud_timer.gd): the coin at its left, the number right.
-	var left := 50.0 + 8.0 + icon_size + icon_gap
+	var left := 62.0 + 8.0 + icon_size + icon_gap
 	position = HudStyle.MISSION_POS + Vector2(left, HudStyle.MISSION_ROW_SCRAP + 3)
 	size = Vector2(HudStyle.MISSION_SIZE.x - left - 10.0, 22)
 	add_theme_constant_override("outline_size", 0)   # the glow layers do the outlining
@@ -83,12 +83,13 @@ func _ready() -> void:
 
 	_build_icon()
 	# The "SCRAP" caption rides on this label too, so it grows and shakes with the number.
-	# On the row's kanji tag (hud_timer.gd draws it), in dark ink under 資材.
-	_caption = HudStyle.make_label("SCRAP", 8, HudStyle.INK, true)
+	# On the row's tag (hud_timer.gd draws it), in dark ink.
+	_caption = HudStyle.make_label("SCRAP", 12, HudStyle.INK, true)
 	_caption.remove_theme_constant_override("outline_size")
 	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_caption.position = Vector2(-left, 13)
-	_caption.size = Vector2(46, 10)
+	_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_caption.position = Vector2(-left, -3)
+	_caption.size = Vector2(58, HudStyle.MISSION_ROW_HEIGHT)
 	add_child(_caption)
 	resized.connect(_place_icon)
 	_place_icon()
