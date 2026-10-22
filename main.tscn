@@ -72,8 +72,15 @@ sky_material = SubResource("PanoramaSkyMaterial_j3pel")
 
 [sub_resource type="Environment" id="Environment_0xm2m"]
 background_mode = 2
+background_energy_multiplier = 1.07
 sky = SubResource("Sky_ig7tw")
 glow_enabled = true
+glow_strength = 1.2
+glow_bloom = 0.24
+fog_light_color = Color(0.7251164, 0.7123584, 0.5678263, 1)
+fog_sun_scatter = 0.1
+fog_aerial_perspective = 0.26
+volumetric_fog_albedo = Color(0.9326549, 0.90967584, 0.63840073, 1)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_05i1g"]
 albedo_texture = ExtResource("2_kek77")
@@ -1970,7 +1977,7 @@ item = ExtResource("13_ycdy4")
 [node name="Buildings" parent="." unique_id=632477655 instance=ExtResource("14_w48qg")]
 transform = Transform3D(-0.22000301, 0, 0.14093465, 0, 0.26127356, 0, -0.14093465, 0, -0.22000301, -24.68199, -3.2, 33.899998)
 
-[node name="Building_03" parent="Buildings" index="0" unique_id=765701959]
+[node name="Building_03" parent="Buildings" index="0" unique_id=2093608311]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 15.387707, 9.419302, 4.959366)
 
 [node name="StaticBody3D" type="StaticBody3D" parent="Buildings/Building_03" index="0" unique_id=82430973]
@@ -1979,7 +1986,7 @@ transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 15.3
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5258789e-05, -7.1525574e-07, -0.15000916)
 shape = SubResource("BoxShape3D_cleto")
 
-[node name="Building_01" parent="Buildings" index="1" unique_id=972077860]
+[node name="Building_01" parent="Buildings" index="1" unique_id=1486094781]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 75.17672, 11.905003, 3.5284424)
 
 [node name="StaticBody3D" type="StaticBody3D" parent="Buildings/Building_01" index="0" unique_id=725519803]
@@ -1988,7 +1995,7 @@ transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 75.1
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25000048, -0.050079346)
 shape = SubResource("BoxShape3D_4spqh")
 
-[node name="Building" parent="Buildings" index="2" unique_id=966623792]
+[node name="Building" parent="Buildings" index="2" unique_id=1469507187]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.3058815, 9.966428, -78.57793)
 
 [node name="StaticBody3D" type="StaticBody3D" parent="Buildings/Building" index="0" unique_id=1603871803]
@@ -1997,7 +2004,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.3058815, 9.966428, -78.5779
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.049964905, -0.25, -0.15020752)
 shape = SubResource("BoxShape3D_5wgwm")
 
-[node name="Building_02" parent="Buildings" index="3" unique_id=1687111313]
+[node name="Building_02" parent="Buildings" index="3" unique_id=1141405187]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.7321, 13.639282, -80.573685)
 
 [node name="StaticBody3D" type="StaticBody3D" parent="Buildings/Building_02" index="0" unique_id=1328751017]
@@ -2006,7 +2013,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.7321, 13.639282, -80.57368
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.19999886, -0.6999982, -0.1000061)
 shape = SubResource("BoxShape3D_en05q")
 
-[node name="Building_04" parent="Buildings" index="4" unique_id=373745729]
+[node name="Building_04" parent="Buildings" index="4" unique_id=1264732355]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 74.72288, 9.414083, 33.622635)
 
 [node name="StaticBody3D" type="StaticBody3D" parent="Buildings/Building_04" index="0" unique_id=1913337746]
@@ -2015,7 +2022,7 @@ transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 74.7
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.6293945e-06, -0.19999933, -0.1000061)
 shape = SubResource("BoxShape3D_xhvk1")
 
-[node name="Building_09" parent="Buildings" index="5" unique_id=169174267]
+[node name="Building_09" parent="Buildings" index="5" unique_id=1653070115]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 72.16462, 6.0233803, 55.071793)
 
 [node name="StaticBody3D" type="StaticBody3D" parent="Buildings/Building_09" index="0" unique_id=1470841573]
@@ -2024,7 +2031,7 @@ transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 72.1
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.050002098, -0.14999819, -0.20239258)
 shape = SubResource("BoxShape3D_nuhd7")
 
-[node name="Building_05" parent="Buildings" index="6" unique_id=1268971870]
+[node name="Building_05" parent="Buildings" index="6" unique_id=424989338]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 14.797817, 9.517458, 32.037704)
 
 [node name="StaticBody3D" type="StaticBody3D" parent="Buildings/Building_05" index="0" unique_id=435772651]
@@ -2033,7 +2040,7 @@ transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 14.7
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.05000496, -0.25, -0.15000916)
 shape = SubResource("BoxShape3D_jfb0n")
 
-[node name="Building_07" parent="Buildings" index="7" unique_id=794959415]
+[node name="Building_07" parent="Buildings" index="7" unique_id=1166461718]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 92.25012, 8.666311, 54.248978)
 
 [node name="StaticBody3D" type="StaticBody3D" parent="Buildings/Building_07" index="0" unique_id=831619847]
@@ -2042,7 +2049,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 92.25012, 8.666311, 54.248978
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5258789e-05, -1.3499994, 0.3500061)
 shape = SubResource("BoxShape3D_w2kri")
 
-[node name="Building_08" parent="Buildings" index="8" unique_id=1820228639]
+[node name="Building_08" parent="Buildings" index="8" unique_id=1838870336]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 17.511852, 5.979414, 54.85315)
 
 [node name="StaticBody3D" type="StaticBody3D" parent="Buildings/Building_08" index="0" unique_id=964252883]
@@ -2051,7 +2058,7 @@ transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 17.5
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4500003, 0)
 shape = SubResource("BoxShape3D_dre7n")
 
-[node name="Building_06" parent="Buildings" index="9" unique_id=36524068]
+[node name="Building_06" parent="Buildings" index="9" unique_id=1750830715]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.000702, 7.3898096, 56.204056)
 
 [node name="StaticBody3D" type="StaticBody3D" parent="Buildings/Building_06" index="0" unique_id=1902133198]
