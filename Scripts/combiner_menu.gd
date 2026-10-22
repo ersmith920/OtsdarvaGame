@@ -187,6 +187,7 @@ func _build() -> void:
 	_tip.visible = false
 	_tip.top_level = true
 	add_child(_tip)
+	HudStyle.add_menu_bloom(self)   # CRT bloom over the whole menu
 
 
 # A HUD panel with a header; returns the box its content goes in.

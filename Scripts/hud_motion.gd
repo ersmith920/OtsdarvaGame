@@ -1,7 +1,7 @@
-# Makes the HUD feel projected onto a real combiner glass inside the mech, instead of
-# painted on the screen: the whole HUD layer trails the view a little when you turn, leans
-# when you strafe, and dips when you land, then springs back. Lives under the HUD CanvasLayer
-# (hud_bars.gd adds it) and moves that layer.
+# Makes the HUD feel projected onto the mech's canopy glass instead of painted on the
+# screen: the display trails the view a little when you turn, leans when you strafe, and
+# dips when you land, then springs back. Lives under HudDisplay (which adds it) and moves
+# it; under a CanvasLayer it moves the whole layer instead.
 #
 # It settles back to rest whenever a menu is open (Tab, pause, a choice popup), so menus that
 # share the HUD layer never drift.
@@ -23,6 +23,7 @@ extends Node
 @export var damping := 13.0
 
 var _layer : CanvasLayer
+var _rect : Control
 var _last_basis : Basis
 var _has_last := false
 var _offset := Vector2.ZERO
@@ -34,10 +35,11 @@ var _roll_velocity := 0.0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS   # so it can settle back while the game is paused
 	_layer = get_parent() as CanvasLayer
+	_rect = get_parent() as Control
 
 
 func _process(delta: float) -> void:
-	if _layer == null or delta <= 0.0:
+	if (_layer == null and _rect == null) or delta <= 0.0:
 		return
 	var target := Vector2.ZERO
 	var target_roll := 0.0
@@ -78,6 +80,11 @@ func _process(delta: float) -> void:
 		_roll = 0.0
 		_roll_velocity = 0.0
 
+	if _rect != null:
+		_rect.pivot_offset = _rect.size * 0.5
+		_rect.rotation = _roll
+		_rect.position = _offset
+		return
 	# Rotate about the screen center, then shift.
 	var center := get_viewport().get_visible_rect().size * 0.5
 	var xf := Transform2D(_roll, center) * Transform2D(0.0, -center)

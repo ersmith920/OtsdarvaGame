@@ -28,6 +28,8 @@
 [ext_resource type="AudioStream" uid="uid://ji1lfawrb06k" path="res://Sounds/hitSound3D.wav" id="25_jm5j8"]
 [ext_resource type="Texture2D" uid="uid://c4ouwq3a62pco" path="res://Images/gold2.png" id="25_qtqh7"]
 [ext_resource type="Script" uid="uid://boby5oihnxo8k" path="res://Scripts/choice_popup.gd" id="26_choice"]
+[ext_resource type="Script" path="res://Scripts/hud_display.gd" id="27_hudfx"]
+[ext_resource type="Script" path="res://Scripts/weapon_stack.gd" id="28_wstack"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_jfb0n"]
 
@@ -143,7 +145,26 @@ offset_bottom = 24.0
 texture = ExtResource("3_1jxqw")
 expand_mode = 1
 
-[node name="StatBars" type="Control" parent="HUD" unique_id=2088652837]
+[node name="HudDisplay" type="TextureRect" parent="HUD"]
+mouse_filter = 2
+script = ExtResource("27_hudfx")
+
+[node name="HudViewport" type="SubViewport" parent="HUD"]
+transparent_bg = true
+gui_disable_input = true
+render_target_update_mode = 4
+
+[node name="WeaponStack" type="Control" parent="HUD/HudViewport"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("28_wstack")
+
+[node name="StatBars" type="Control" parent="HUD/HudViewport" unique_id=2088652837]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
@@ -157,19 +178,19 @@ offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("9_b26j0")
 
-[node name="Timer" type="Label" parent="HUD" unique_id=1142248390]
+[node name="Timer" type="Label" parent="HUD/HudViewport" unique_id=1142248390]
 offset_right = 40.0
 offset_bottom = 23.0
 script = ExtResource("10_n7ghd")
 font = ExtResource("11_606se")
 
-[node name="EnemyCount" type="Label" parent="HUD" unique_id=1481340875]
+[node name="EnemyCount" type="Label" parent="HUD/HudViewport" unique_id=1481340875]
 offset_right = 40.0
 offset_bottom = 23.0
 script = ExtResource("11_nvl01")
 font = ExtResource("11_606se")
 
-[node name="ItemPopup" type="Control" parent="HUD" unique_id=1150307713]
+[node name="ItemPopup" type="Control" parent="HUD/HudViewport" unique_id=1150307713]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
@@ -198,7 +219,7 @@ offset_bottom = 40.0
 script = ExtResource("17_op7ga")
 font = ExtResource("11_606se")
 
-[node name="Gold" type="Label" parent="HUD" unique_id=48988924]
+[node name="Gold" type="Label" parent="HUD/HudViewport" unique_id=48988924]
 offset_right = 40.0
 offset_bottom = 15.0
 script = ExtResource("24_7hik5")

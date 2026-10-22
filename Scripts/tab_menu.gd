@@ -117,6 +117,7 @@ func _ready() -> void:
 	_build_buttons_panel()
 	_build_items_panel()
 	_build_item_tooltip()
+	HudStyle.add_menu_bloom(_box, 0.9)   # CRT pass over the menu box (not the HUD around it)
 
 # A plain Control with zero minimum size, so all three columns stay exactly equal
 # no matter what ends up inside them.
@@ -872,14 +873,18 @@ func _process(_delta: float) -> void:
 
 # Sizes the panel so it stops short of the timer, enemy count and scrap counter (top).
 # Measured on open, so font or size changes to those elements are picked up automatically.
+## The HUD display's canopy wrap pulls the top-left blocks down a little from where they're
+## laid out; this keeps the menu clear of them.
+const WRAP_ALLOWANCE := 16.0
+
 func _fit_to_hud() -> void:
 	var hud := get_parent()
 
 	var top := size.y * EDGE_MARGIN
-	for node_name in ["Timer", "EnemyCount", "Gold"]:
+	for node_name in ["HudViewport/Timer", "HudViewport/EnemyCount", "HudViewport/Gold", "Timer", "EnemyCount", "Gold"]:
 		var label := hud.get_node_or_null(node_name) as Control
 		if label != null:
-			top = maxf(top, label.get_global_rect().end.y + HUD_CLEARANCE)
+			top = maxf(top, label.get_global_rect().end.y + HUD_CLEARANCE + WRAP_ALLOWANCE)
 
 	# The bottom runs down to the screen margin, over the health / energy gauges: the menu
 	# needs the room more than the gauges need to show while it's held open.
@@ -918,10 +923,17 @@ func _open() -> void:
 # The health / energy gauges sit under the bottom of the menu: they fade back while it's open
 # so they don't show through the stats.
 func _fade_vitals(alpha: float) -> void:
-	var bars := get_parent().get_node_or_null("StatBars") as CanvasItem
+	var bars := get_parent().get_node_or_null("HudViewport/StatBars") as CanvasItem
+	if bars == null:
+		bars = get_parent().get_node_or_null("StatBars") as CanvasItem
 	if bars != null:
 		var t := bars.create_tween()
 		t.tween_property(bars, "modulate:a", alpha, 0.12)
+	# The weapon list too: the menu shows the weapons itself.
+	var stack := get_parent().get_node_or_null("HudViewport/WeaponStack") as CanvasItem
+	if stack != null:
+		var t := stack.create_tween()
+		t.tween_property(stack, "modulate:a", alpha * 0.5 if alpha < 1.0 else 1.0, 0.12)
 
 
 func _close() -> void:

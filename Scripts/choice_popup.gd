@@ -98,6 +98,7 @@ func _ready() -> void:
 	_buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	_buttons.add_theme_constant_override("separation", 20)
 	column.add_child(_buttons)
+	HudStyle.add_menu_bloom(self)   # CRT bloom over the whole popup
 
 
 func is_open() -> bool:
@@ -116,7 +117,7 @@ func open(title: String, cards: Array[Control], on_pick: Callable, buttons: Arra
 	_closing = false
 	_column.modulate.a = 1.0
 	_column.scale = Vector2.ONE
-	_title.text = title.to_upper()
+	HudStyle.set_title(_title_box, title)
 	_title_box.visible = not title.is_empty()
 	for child in _buttons.get_children():
 		_buttons.remove_child(child)

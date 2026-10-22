@@ -5,7 +5,7 @@
 # additive halo standing in for the 3D bloom (the HUD layer doesn't get the scene's Glow).
 extends Label
 
-const FONT_SIZE := 18
+const FONT_SIZE := 22
 
 @export var font: Font
 
@@ -70,21 +70,25 @@ func _ready() -> void:
 	# Inside the mission panel: the coin at the row's left edge, the number on the right.
 	set_anchors_preset(Control.PRESET_TOP_LEFT)
 	# Inside the row's boxed field (see hud_timer.gd): the coin at its left, the number right.
-	var left := 96.0 + 6.0 + icon_size + icon_gap
-	position = HudStyle.MISSION_POS + Vector2(left, HudStyle.MISSION_ROW_SCRAP + 1)
-	size = Vector2(HudStyle.MISSION_SIZE.x - left - 8.0, 22)
+	var left := 50.0 + 8.0 + icon_size + icon_gap
+	position = HudStyle.MISSION_POS + Vector2(left, HudStyle.MISSION_ROW_SCRAP + 3)
+	size = Vector2(HudStyle.MISSION_SIZE.x - left - 10.0, 22)
 	add_theme_constant_override("outline_size", 0)   # the glow layers do the outlining
 	add_theme_font_override("font", HudStyle.NUMBER_FONT)
 	add_theme_font_size_override("font_size", FONT_SIZE)
 	# Glowing gold number with the Legendary gold shine sliding across it.
-	set_meta(&"glow_scale", 0.8)
+	set_meta(&"glow_scale", 0.35)   # small: the HUD display's bloom does the wide glow
 	_set_number(0)
 	Rarity.paint(self, Rarity.LEGENDARY)
 
 	_build_icon()
 	# The "SCRAP" caption rides on this label too, so it grows and shakes with the number.
-	_caption = HudStyle.make_caption("SCRAP", 10)
-	_caption.position = Vector2(-left, 4)   # lined up with HOSTILE at the block's left edge
+	# On the row's kanji tag (hud_timer.gd draws it), in dark ink under 資材.
+	_caption = HudStyle.make_label("SCRAP", 8, HudStyle.INK, true)
+	_caption.remove_theme_constant_override("outline_size")
+	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_caption.position = Vector2(-left, 13)
+	_caption.size = Vector2(46, 10)
 	add_child(_caption)
 	resized.connect(_place_icon)
 	_place_icon()
@@ -116,7 +120,7 @@ func _process(delta: float) -> void:
 			position = _base_pos
 			if _halo != null:
 				_halo.self_modulate = Color.WHITE
-			_caption.add_theme_color_override("font_color", HudStyle.CYAN_DIM)
+			_caption.add_theme_color_override("font_color", HudStyle.INK)
 			_set_number(int(_shown))
 		return
 	_kick *= exp(-pulse_decay * delta)
@@ -127,7 +131,7 @@ func _process(delta: float) -> void:
 	if _halo != null:
 		var bright := 1.0 + flash_amount * _kick
 		_halo.self_modulate = Color(bright, bright, bright, 1.0)
-	_caption.add_theme_color_override("font_color", HudStyle.CYAN_DIM.lerp(GLOW_COLOR, minf(_kick, 1.0)))
+	_caption.add_theme_color_override("font_color", HudStyle.INK.lerp(Color.WHITE, minf(_kick, 1.0)))
 	_set_number(int(_shown))   # the glow flares with the kick
 
 

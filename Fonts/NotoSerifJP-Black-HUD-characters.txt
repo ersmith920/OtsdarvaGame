@@ -1,0 +1,7 @@
+Noto Serif JP (Black weight) cut down to just the characters the HUD uses, so the font is
+~150 KB instead of 13 MB. Characters included (plus all of basic ASCII and ・ー「」：):
+
+作戦時間敵影資材機体耐久動力速度方位警告危険損傷兵装入手取得一時停止設定再開終了調達融合承認否定選択抽閉鎖状態物資開発用結果待機接続正常異常解析起動臨界機動品装備能力値左右上下前後確認中止推進残弾装填射撃自動手動照準目標捕捉距離高度姿勢制御系統生命維持出力冷却温度電圧通信記録番号型式規格稀少級最強伝説神話一二三四五六七八九十〇零
+
+To use a kanji that isn't listed, it has to be added here and the font re-cut (fontTools
+instancer at wght=900, then pyftsubset with this text) from Google Fonts' NotoSerifJP[wght].ttf.

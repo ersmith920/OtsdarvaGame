@@ -4,8 +4,8 @@
 extends Control
 
 @export var lock_on: LockOn
-@export var idle_color := Color(0.42, 1.0, 0.55, 0.32)
-@export var locked_color := Color(1.0, 0.7, 0.15, 0.55)
+@export var idle_color := Color(1.0, 0.45, 0.1, 0.3)
+@export var locked_color := Color(1.0, 0.15, 0.1, 0.55)
 @export var line_width := 2.0
 @export_range(10.0, 180.0) var arc_degrees := 45.0
 ## Opacity of the split lines, relative to the circle's color.

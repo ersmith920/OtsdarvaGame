@@ -63,8 +63,8 @@ func _ready() -> void:
 	panel.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	panel.draw.connect(func() -> void:
 		var r := Rect2(Vector2.ZERO, panel.size)
-		panel.draw_rect(r, Color(0.0, 0.025, 0.03, 0.8))
-		HudStyle.draw_frame(panel, r, _accent, 1.0, 1.0, 1.2)
+		panel.draw_colored_polygon(HudStyle.chamfer_points(r, 12.0), Color(0.03, 0.01, 0.0, 0.85))
+		HudStyle.draw_frame(panel, r, _accent, 1.0, 2.0, 0.0, 12.0)
 		HudStyle.draw_glint(panel, r, _glint, 1.2))
 	_root.add_child(panel)
 	_panel = panel
@@ -87,11 +87,14 @@ func _ready() -> void:
 	var header_row := HBoxContainer.new()
 	header_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_header.add_child(header_row)
-	_caption = HudStyle.make_label(CAPTION + "_", 10, HudStyle.INK)
+	var acquired := HudStyle.make_kanji("取得", 12, HudStyle.INK)
+	acquired.remove_theme_constant_override("outline_size")
+	header_row.add_child(acquired)
+	_caption = HudStyle.make_label(CAPTION + "_", 11, HudStyle.INK, true)
 	_caption.remove_theme_constant_override("outline_size")
 	_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header_row.add_child(_caption)
-	_tier_label = HudStyle.make_label("", 10, HudStyle.INK)
+	_tier_label = HudStyle.make_label("", 11, HudStyle.INK, true)
 	_tier_label.remove_theme_constant_override("outline_size")
 	header_row.add_child(_tier_label)
 
@@ -144,8 +147,9 @@ func show_item(item: ItemData) -> void:
 	_header_fill.bg_color = tier_color
 	_tier_label.text = Rarity.name_of(Rarity.from_tier(item.tier)).to_upper()
 	Rarity.paint_tier(_header, item.tier)   # Legendary shine / Mythic rainbow on the strip
-	_name_label.add_theme_color_override("font_color", tier_color)
-	TextGlow.set_text(_name_label, item.display_name, tier_color)
+	# A hot core of the tier color; the HUD display's bloom supplies the glow.
+	_name_label.add_theme_color_override("font_color", tier_color.lerp(Color.WHITE, 0.35))
+	_name_label.text = item.display_name
 	Rarity.paint_tier(_name_label, item.tier)   # Legendary items shine
 	_desc_label.text = item.description
 	_desc_label.visible = not item.description.is_empty()

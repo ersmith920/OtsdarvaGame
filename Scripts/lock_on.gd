@@ -32,8 +32,8 @@ enum Mode { SINGLE = 1, LEFT_RIGHT = 2, TOP_BOTTOM = 3, QUADRANTS = 4 }
 const MODE_NAMES := {1: "Single Target", 2: "Split Left / Right", 3: "Split Top / Bottom", 4: "Split Quadrants"}
 
 @export var crosshair: Control   # the 2D HUD crosshair (drag it in from the scene)
-@export var idle_color := Color(0.42, 1.0, 0.55, 0.75)   # HUD phosphor green
-@export var locked_color := Color(1.0, 0.7, 0.15, 0.95)   # amber
+@export var idle_color := Color(1.0, 0.45, 0.1, 0.8)   # HUD system orange
+@export var locked_color := Color(1.0, 0.15, 0.1, 0.95)   # alert red
 
 @onready var camera: Camera3D = get_parent() as Camera3D
 
