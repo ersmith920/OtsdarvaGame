@@ -11,9 +11,9 @@
 class_name GunCard
 extends RefCounted
 
-const NAME_FONT := preload("res://Fonts/KHMenu-Bold.otf")
-const BODY_FONT := preload("res://Fonts/KHMenu.otf")
-const NAME_SIZE := 26
+const NAME_FONT := HudStyle.NUMBER_FONT   # VT323 (terminal)
+const BODY_FONT := HudStyle.LABEL_FONT    # Share Tech Mono
+const NAME_SIZE := 34
 const RARITY_SIZE := 17
 const STAT_SIZE := 16
 ## Smallest a stat line's text shrinks to when it doesn't fit the card's width.
@@ -24,10 +24,10 @@ const PREVIEW_PX := Vector2i(290, 150)
 ## Most stat lines a card can show (every stat a gun can have, plus the note line).
 const MAX_STAT_LINES := 14
 const STAT_LINE_GAP := 2
-const STAT_COLOR := Color(0.88, 0.9, 0.92)
+const STAT_COLOR := Color(0.86, 1.0, 0.89)
 ## Stats the gun didn't roll a bonus on.
-const BASE_STAT_COLOR := Color(0.62, 0.64, 0.68)
-const NO_ROLLS_COLOR := Color(0.6, 0.6, 0.6)
+const BASE_STAT_COLOR := Color(0.45, 0.72, 0.52)
+const NO_ROLLS_COLOR := Color(0.4, 0.6, 0.45)
 
 
 ## The size every card's content is (and what frames should hold, plus their padding).

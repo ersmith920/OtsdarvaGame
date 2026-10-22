@@ -15,8 +15,8 @@ extends Control
 
 signal closed
 
-const TITLE_FONT := preload("res://Fonts/KHMenu-Bold.otf")
-const BODY_FONT := preload("res://Fonts/KHMenu.otf")
+const TITLE_FONT := HudStyle.MENU_FONT
+const BODY_FONT := HudStyle.LABEL_FONT
 
 const TILE_SIZE := 64
 const TILE_GAP := 8
@@ -37,9 +37,9 @@ const PANEL_GAP := 16
 const PANEL_PADDING := 14
 const PLUS_WIDTH := 30
 const EMPTY_TEXT_SIZE := 14
-const HINT_COLOR := Color(0.6, 0.72, 0.85, 0.8)
-const GRAYED := Color(0.3, 0.3, 0.3, 0.8)
-const DIM_COLOR := Color(0, 0, 0, 0.55)
+const HINT_COLOR := Color(0.36, 0.82, 0.46, 0.8)
+const GRAYED := Color(0.25, 0.4, 0.3, 0.7)
+const DIM_COLOR := Color(0.0, 0.04, 0.015, 0.6)
 
 var combiner : Combiner
 

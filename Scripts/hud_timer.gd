@@ -3,7 +3,7 @@
 # (hud_gold.gd) sit on.
 extends Label
 
-const FONT_SIZE := 24
+const FONT_SIZE := 34
 
 var _last_second := -1
 var _time_panel : Control
@@ -46,13 +46,7 @@ func _ready() -> void:
 	offset_bottom = HudStyle.TIME_TOP + HudStyle.TIME_SIZE.y - 2
 	add_theme_font_override("font", HudStyle.NUMBER_FONT)
 	add_theme_font_size_override("font_size", FONT_SIZE)
-	add_theme_color_override("font_color", HudStyle.WHITE)
-	add_theme_color_override("font_shadow_color", Color(HudStyle.CYAN, 0.25))
-	add_theme_constant_override("shadow_offset_x", 0)
-	add_theme_constant_override("shadow_offset_y", 0)
-	add_theme_constant_override("shadow_outline_size", 8)   # soft glow behind the digits
-	add_theme_color_override("font_outline_color", Color(HudStyle.SHADOW, 0.8))
-	add_theme_constant_override("outline_size", 3)
+	HudStyle.add_phosphor(self, HudStyle.WHITE, 0.35)   # soft phosphor glow behind the digits
 
 	_update_text()
 
@@ -77,10 +71,20 @@ func _make_panel(panel_size: Vector2, divided: bool) -> Control:
 		if not divided:
 			HudStyle.draw_glint(panel, Rect2(Vector2.ZERO, panel_size), _glint)
 		if divided:
-			HudStyle.draw_divider(panel, Vector2(10, HudStyle.MISSION_ROW_SCRAP - 1), panel_size.x - 20))
+			HudStyle.draw_divider(panel, Vector2(10, HudStyle.MISSION_ROW_SCRAP - 1), panel_size.x - 20)
+			# Dotted leaders from each caption toward its number, like a printed readout.
+			_leader(panel, 68.0, 128.0, HudStyle.MISSION_ROW_HOSTILE + HudStyle.MISSION_ROW_HEIGHT * 0.5 + 3.0)
+			_leader(panel, 82.0, 104.0, HudStyle.MISSION_ROW_SCRAP + HudStyle.MISSION_ROW_HEIGHT * 0.5 + 3.0))
 	get_parent().add_child.call_deferred(panel)
 	get_parent().move_child.call_deferred(panel, get_index())
 	return panel
+
+
+func _leader(ci: CanvasItem, x0: float, x1: float, y: float) -> void:
+	var x := x0
+	while x < x1:
+		ci.draw_rect(Rect2(x, y, 1.0, 1.0), Color(HudStyle.PHOSPHOR, 0.35))
+		x += 4.0
 
 
 func _caption(text: String, at: Vector2) -> Label:

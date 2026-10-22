@@ -22,7 +22,7 @@ extends Control
 
 @export_group("Look")
 ## Tint over the frozen (blurred) game behind the cards; alpha = how dark.
-@export var dim_color := Color(0.0, 0.0, 0.0, 0.5)
+@export var dim_color := Color(0.0, 0.04, 0.015, 0.55)
 ## Unused now: titles use HudStyle's font (kept so scenes that set it still load).
 @export var title_font : Font = preload("res://Fonts/KHMenu-Bold.otf")
 @export var title_font_size := 34

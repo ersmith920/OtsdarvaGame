@@ -5,7 +5,7 @@
 # additive halo standing in for the 3D bloom (the HUD layer doesn't get the scene's Glow).
 extends Label
 
-const FONT_SIZE := 18
+const FONT_SIZE := 24
 
 @export var font: Font
 

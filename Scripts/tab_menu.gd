@@ -48,8 +48,9 @@ var _tip_style: HudPanelStyle
 var _hover_tile: Control       # item / weapon tile under the cursor (lifted)
 var _last_values := {}         # stat name -> last shown value (changes flash)
 
-@export var name_font: Font = preload("res://Fonts/KHMenu-Bold.otf")
-@export var description_font: Font = preload("res://Fonts/KHMenu.otf")
+## Unused now: the menu uses HudStyle's fonts (kept so scenes that set them still load).
+@export var name_font: Font = HudStyle.MENU_FONT
+@export var description_font: Font = HudStyle.LABEL_FONT
 @export var tip_name_font_size := 20
 @export var tip_description_font_size := 15
 @export var tip_description_color := Color(0.85, 0.85, 0.85)
@@ -72,6 +73,8 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
 	theme = HudStyle.menu_theme()
+	name_font = HudStyle.MENU_FONT
+	description_font = HudStyle.LABEL_FONT
 
 	var box := Panel.new()
 	box.anchor_left = EDGE_MARGIN

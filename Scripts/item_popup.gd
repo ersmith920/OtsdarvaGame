@@ -32,6 +32,9 @@ var _tween: Tween
 var _panel: PanelContainer
 var _accent := HudStyle.CYAN
 var _glint := 0.0
+var _caption : Label
+var _blink : Tween
+const CAPTION := "> ITEM ACQUIRED"
 
 
 func _ready() -> void:
@@ -84,7 +87,8 @@ func _ready() -> void:
 	text_column.add_theme_constant_override("separation", LINE_GAP)
 	row.add_child(text_column)
 
-	text_column.add_child(HudStyle.make_caption("Item acquired", 9))
+	_caption = HudStyle.make_caption(CAPTION + "_", 9)
+	text_column.add_child(_caption)
 
 	_name_label = HudStyle.make_label("", NAME_SIZE, HudStyle.WHITE, true)
 	_name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -127,7 +131,25 @@ func show_item(item: ItemData) -> void:
 	# Slides in from the right edge and settles.
 	_tween.tween_property(_root, "modulate:a", 1.0, FADE_IN)
 	_tween.parallel().tween_method(_slide, SLIDE, 0.0, 0.35).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
-	# A glint sweeps across as it lands, and the icon pops.
+	# Terminal feel: the name flickers on, the description types itself out, and a cursor
+	# blinks after the caption.
+	var flick := create_tween()
+	_name_label.modulate.a = 0.0
+	flick.tween_interval(0.12)
+	for a in [1.0, 0.2, 1.0, 0.5, 1.0]:
+		flick.tween_property(_name_label, "modulate:a", a, 0.04)
+	_desc_label.visible_ratio = 0.0
+	var typing := create_tween()
+	typing.tween_interval(0.25)
+	typing.tween_property(_desc_label, "visible_ratio", 1.0, clampf(item.description.length() * 0.012, 0.15, 0.8))
+	if _blink != null:
+		_blink.kill()
+	_blink = create_tween().set_loops(int((HOLD_TIME + 1.0) / 0.8))
+	_blink.tween_callback(func() -> void: _caption.text = CAPTION + "_")
+	_blink.tween_interval(0.4)
+	_blink.tween_callback(func() -> void: _caption.text = CAPTION + " ")
+	_blink.tween_interval(0.4)
+	# A scan line sweeps down the panel as it lands, and the icon pops.
 	var fx := create_tween()
 	fx.tween_interval(0.15)
 	fx.tween_method(func(v: float) -> void:

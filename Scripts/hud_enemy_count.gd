@@ -2,7 +2,7 @@
 # swarm enemies. Ticks up with a brief amber flash when the count rises.
 extends Label
 
-const FONT_SIZE := 18
+const FONT_SIZE := 24
 const REFRESH_INTERVAL := 0.1   # seconds between recounts; no need to do it every frame
 
 var _last_count := -1
@@ -18,8 +18,7 @@ func _ready() -> void:
 	position = HudStyle.MISSION_POS + Vector2(HudStyle.MISSION_SIZE.x - 14 - 120, HudStyle.MISSION_ROW_HOSTILE + 3)
 	size = Vector2(120, 22)
 	vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	add_theme_color_override("font_outline_color", Color(HudStyle.SHADOW, 0.8))
-	add_theme_constant_override("outline_size", 3)
+	HudStyle.add_phosphor(self, HudStyle.WHITE)
 	add_theme_font_override("font", HudStyle.NUMBER_FONT)
 	add_theme_font_size_override("font_size", FONT_SIZE)
 	_refresh()

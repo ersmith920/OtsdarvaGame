@@ -1,27 +1,29 @@
-# Vitals, bottom right: a KH2-style cluster in a clean, modern style (see HudStyle).
+# Vitals, bottom right, as an old military instrument cluster (see HudStyle).
 #
 #                          .----.
-#                        (  core  )|     the HP gauge comes out from underneath the core,
-#   HP =================='-------'/      running left; the other end wraps up the core's
-#   EN ==========================        right side to the top, as one smooth path;
-#                                        energy runs underneath
+#                        ( dial )|       the HP bar graph comes out from underneath the speed
+#   HP [][][][][][][][][]'-----'/        dial, running left; the other end wraps up the
+#   EN [][][][][][][][][][][]            dial's right side, as one path of LED segments;
+#                                        energy is a second bar graph underneath
 #
-# The HP path is built as a single polygon strip (arc and straight part share one outline),
-# so there are no seams or corners where it starts to curve.
-# The core shows the player's speed (horizontal, m/s) with a speed arc; the tick ring spins
-# faster the faster you go and the core lights up past normal top speed.
-# Feel: the gauges glow and a sheen runs along them. Damage comes off the far (left) end
-# first, leaving a pale trail that drains a moment later; the gauge flashes and the cluster
-# jolts on hits. Healing flares the regained stretch. Below LOW health the gauge pulses and
-# a HEALTH CRITICAL tag blinks. The cluster slides in when the level starts.
+# The HP path is one path (arc and straight part flow into each other), cut into segments.
+# The dial is an analog speedometer: a needle sweeping over a tick scale (the amber tick is
+# normal top speed) with a digital readout of the speed (engine m/s x SPEED_DISPLAY_SCALE).
+# Feel: the gauges glow like phosphor and a sheen runs along them. Damage comes off the far
+# (left) end first, leaving a pale trail that drains a moment later; the gauge flashes and
+# the cluster jolts on hits. Healing flares the regained stretch. Health turns amber at half
+# and red below LOW, with a blinking warning. The cluster slides in when the level starts.
 extends Control
 
 const PADDING := 12
-const BLOCK_SIZE := Vector2(440, 140)
+const BLOCK_SIZE := Vector2(440, 146)
 ## The core (the round readout the HP gauge wraps around).
-const CORE_RADIUS := 38.0
-const RING_RADIUS := 50.0
+const CORE_RADIUS := 44.0
+const RING_RADIUS := 56.0
 const HP_WIDTH := 12.0
+## Length of one HP segment along the path (including its gap) and the gap, in pixels.
+const HP_SEGMENT := 9.0
+const HP_GAP := 2.5
 ## The arc starts at the top of the core (radians), runs clockwise down its right side to the
 ## bottom, where the straight part takes over and runs left from underneath the core.
 const ARC_FROM := -PI * 0.5
@@ -33,6 +35,8 @@ const GHOST_DELAY := 0.35
 const GHOST_SPEED := 4.0
 ## Below this fraction of health the gauge pulses and HEALTH CRITICAL shows.
 const LOW := 0.25
+## Health turns amber below this fraction.
+const CAUTION := 0.5
 ## Glow brightness (0 = none) and seconds between sheens along the gauges.
 const GLOW_STRENGTH := 0.9
 const SHEEN_CYCLE := 2.6
@@ -40,8 +44,8 @@ const SHEEN_CYCLE := 2.6
 ## marks normal top speed).
 const SPEED_ARC_MAX := 2.0
 ## The speed arc: starts bottom left and sweeps clockwise this far.
-const SPEED_ARC_START := PI * 0.75
-const SPEED_ARC_SWEEP := PI * 1.5
+const SPEED_ARC_START := PI * 0.8
+const SPEED_ARC_SWEEP := PI * 1.4
 ## The speed readout shows the engine speed times this (24.3 m/s reads 243), to sell the
 ## mech's size. The speed arc still compares against the real move speed.
 const SPEED_DISPLAY_SCALE := 10.0
@@ -66,13 +70,12 @@ var _heal_from := 1.0         # where the regained stretch starts
 var _jolt := 0.0
 var _jolting := false
 var _time := 0.0
-var _spin := 0.0
 var _speed := 0.0             # shown speed (smoothed)
 var _speed_frac := 0.0        # speed / (move speed * SPEED_ARC_MAX)
 var _over := 0.0              # 0-1, how far past normal top speed
 const _MAX_FRAC := 1.0 / SPEED_ARC_MAX
 
-var _c := Vector2(BLOCK_SIZE.x - 64, BLOCK_SIZE.y - 78)   # core center
+var _c := Vector2(BLOCK_SIZE.x - 70, BLOCK_SIZE.y - 84)   # core center
 var _arc_len := RING_RADIUS * (ARC_TO - ARC_FROM)
 var _path_len := _arc_len + HP_BAR_LENGTH
 var _bar_y := _c.y + RING_RADIUS                           # center line of the straight part
@@ -96,17 +99,18 @@ func _ready() -> void:
 	_block.draw.connect(_draw_block)
 
 	# Speed in the core: the number, "M/S" under it.
-	_speed_num = HudStyle.make_label("0", 24, HudStyle.WHITE, true)
+	_speed_num = HudStyle.make_label("0", 20, HudStyle.WHITE, true)
 	_speed_num.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_speed_num.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_speed_num.position = _c + Vector2(-40, -19)
-	_speed_num.size = Vector2(80, 30)
+	# In the wedge at the bottom of the dial, which the needle never sweeps through.
+	_speed_num.position = _c + Vector2(-30, 7)
+	_speed_num.size = Vector2(60, 22)
 	_speed_num.pivot_offset = _speed_num.size * 0.5
 	_block.add_child(_speed_num)
-	var unit := HudStyle.make_caption("M/S", 9)
+	var unit := HudStyle.make_caption("M/S", 8)
 	unit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	unit.position = _c + Vector2(-30, 9)
-	unit.size = Vector2(60, 12)
+	unit.position = _c + Vector2(-30, 30)
+	unit.size = Vector2(60, 10)
 	_block.add_child(unit)
 
 	# Tags at the left ends of the gauges.
@@ -117,7 +121,7 @@ func _ready() -> void:
 	_en_tag.position = Vector2(_bar_left - 30, _en_bar.get_center().y - 8)
 	_block.add_child(_en_tag)
 
-	_critical = HudStyle.make_caption("HEALTH CRITICAL", 11, HudStyle.RED)
+	_critical = HudStyle.make_caption("!! HEALTH CRITICAL !!", 11, HudStyle.RED)
 	_critical.position = Vector2(_bar_left, _bar_y - HP_WIDTH * 0.5 - 20)
 	_critical.visible = false
 	_block.add_child(_critical)
@@ -184,14 +188,12 @@ func _process(delta: float) -> void:
 	_speed = lerpf(_speed, speed, 1.0 - exp(-12.0 * delta))
 	_speed_frac = clampf(_speed / (move_speed * SPEED_ARC_MAX), 0.0, 1.0)
 	_over = clampf((_speed - move_speed) / move_speed, 0.0, 1.0)
-	_spin += delta * (0.3 + 2.5 * _speed_frac)
-	_speed_num.text = "%d" % roundi(_speed * SPEED_DISPLAY_SCALE)
-	_speed_num.add_theme_color_override("font_color", HudStyle.WHITE.lerp(HudStyle.CYAN.lerp(Color.WHITE, 0.3), _over))
-	_speed_num.scale = Vector2.ONE * (1.0 + 0.12 * _over)
+	_speed_num.text = "%03d" % roundi(_speed * SPEED_DISPLAY_SCALE)
+	HudStyle.add_phosphor(_speed_num, HudStyle.WHITE.lerp(HudStyle.AMBER, _over * 0.8), 0.35 + 0.3 * _over)
+	_speed_num.scale = Vector2.ONE * (1.0 + 0.1 * _over)
 
 	var low_en := en < 0.2
-	_en_tag.add_theme_color_override("font_color",
-			HudStyle.AMBER if low_en and fmod(_time, 0.5) < 0.3 else HudStyle.WHITE)
+	HudStyle.add_phosphor(_en_tag, HudStyle.AMBER if low_en and fmod(_time, 0.5) < 0.3 else HudStyle.WHITE)
 	var critical := hp <= LOW and player.health > 0.0
 	_critical.visible = critical and fmod(_time, 0.8) < 0.55
 	if _jolt > 0.0:
@@ -224,8 +226,10 @@ func _trail(value: float, shown: float, ghost: float, wait: float, delta: float)
 
 func _hp_color() -> Color:
 	if _hp <= LOW:
-		return HudStyle.HP_RED.lerp(Color(1, 0.62, 0.62), 0.5 + 0.5 * sin(_time * TAU * 1.6))
-	return HudStyle.HP_RED
+		return HudStyle.RED.lerp(Color(1, 0.62, 0.55), 0.5 + 0.5 * sin(_time * TAU * 1.6))
+	if _hp <= CAUTION:
+		return HudStyle.AMBER
+	return HudStyle.HP_COLOR
 
 
 # ---------- The HP path ----------
@@ -264,7 +268,8 @@ func _samples(s0: float, s1: float) -> PackedFloat32Array:
 
 # Fills the HP path between s0 and s1 as one polygon with rounded ends. outer is the color on
 # the upper side of the bar (the inside of the curve), inner on the other side, for a soft gloss.
-func _strip(ci: CanvasItem, s0: float, s1: float, width: float, outer: Color, inner: Color) -> void:
+func _strip(ci: CanvasItem, s0: float, s1: float, width: float, outer: Color, inner: Color,
+		caps := true) -> void:
 	s0 = clampf(s0, 0.0, _path_len)
 	s1 = clampf(s1, 0.0, _path_len)
 	if s1 - s0 < 0.5:
@@ -282,11 +287,13 @@ func _strip(ci: CanvasItem, s0: float, s1: float, width: float, outer: Color, in
 	for p in outer_pts:
 		pts.append(p)
 		cols.append(outer)
-	_cap(pts, cols, s1, half, 1.0, outer, inner)
+	if caps:
+		_cap(pts, cols, s1, half, 1.0, outer, inner)
 	for i in range(inner_pts.size() - 1, -1, -1):
 		pts.append(inner_pts[i])
 		cols.append(inner)
-	_cap(pts, cols, s0, half, -1.0, inner, outer)
+	if caps:
+		_cap(pts, cols, s0, half, -1.0, inner, outer)
 	ci.draw_polygon(pts, cols)
 	# Antialiased edges (the polygon itself isn't smoothed).
 	ci.draw_polyline(outer_pts, outer, 1.0, true)
@@ -309,58 +316,67 @@ func _cap(pts: PackedVector2Array, cols: PackedColorArray, s: float, half: float
 # ---------- Drawing ----------
 
 func _draw_block() -> void:
-	# Trough (no panel behind the cluster: just the gauges themselves).
-	var trough := Color(0.0, 0.01, 0.03, 0.72)
-	_strip(_block, 0.0, _path_len, HP_WIDTH + 3.0, trough, trough)
-	var empty := Color(HudStyle.HP_RED, 0.08)
-	_strip(_block, 0.0, _path_len, HP_WIDTH, empty, empty)
+	# Trough: a dark channel along the whole path (no panel behind the cluster).
+	var trough := Color(0.0, 0.02, 0.01, 0.75)
+	_strip(_block, 0.0, _path_len, HP_WIDTH + 4.0, trough, trough, false)
 
-	# HP: pale damage trail, then the gauge (lighter on the outside edge for a soft gloss).
-	_strip(_block, 0.0, _hp_ghost * _path_len, HP_WIDTH, HudStyle.TRAIL, Color(HudStyle.TRAIL, 0.55))
+	# HP segments: lit up to the fill, the pale trail after that, dim beyond.
 	var col := _hp_color().lerp(Color.WHITE, _flash * 0.6)
-	_strip(_block, 0.0, _hp * _path_len, HP_WIDTH, col.lerp(Color.WHITE, 0.22), col.darkened(0.25))
-	# Hairline highlight along the top of the fill.
-	if _hp > 0.01:
-		var hl := PackedVector2Array()
-		for s in _samples(0.0, _hp * _path_len):
-			hl.append(_point(s) + _tangent(s).rotated(PI * 0.5) * (HP_WIDTH * 0.25))
-		_block.draw_polyline(hl, Color(1, 1, 1, 0.3), 1.0, true)
-	# Quarter marks across the path.
-	for i in range(1, 4):
-		var s := _path_len * i / 4.0
-		var n := _tangent(s).rotated(PI * 0.5) * (HP_WIDTH * 0.5 - 1.5)
-		_block.draw_line(_point(s) - n, _point(s) + n, Color(0, 0, 0, 0.45), 1.0, true)
+	var count := maxi(roundi(_path_len / HP_SEGMENT), 1)
+	var seg := _path_len / count
+	for i in count:
+		var s0 := i * seg + HP_GAP * 0.5
+		var s1 := (i + 1) * seg - HP_GAP * 0.5
+		var mid := (i + 0.5) * seg
+		var c := Color(col, 0.1)
+		if mid <= _hp * _path_len:
+			c = col
+		elif mid <= _hp_ghost * _path_len:
+			c = HudStyle.TRAIL
+		_strip(_block, s0, s1, HP_WIDTH, c.lerp(Color.WHITE, 0.15 if c.a > 0.5 else 0.0), c.darkened(0.2), false)
 
-	# EN gauge.
-	var en_color := HudStyle.AMBER if _en < 0.2 else HudStyle.EN_BLUE
-	HudStyle.draw_gauge(_block, _en_bar, _en, _en_ghost, en_color, Color(0.8, 0.9, 1.0, 0.5))
+	# EN bar graph.
+	var en_color := HudStyle.AMBER if _en < 0.2 else HudStyle.EN_COLOR
+	HudStyle.draw_gauge(_block, _en_bar, _en, _en_ghost, en_color, Color(0.8, 1.0, 0.9, 0.5), true, 6.0)
 
 	_draw_core()
 
 
-# The round readout: dark glass disc, hairline rings, a spinning tick ring and the speed arc.
+# The speed dial: dark scope face with a double rim, a tick scale along the needle's sweep
+# (amber tick = normal top speed), and the needle on a center hub.
 func _draw_core() -> void:
 	var c := _c
-	_block.draw_circle(c, CORE_RADIUS + 2.0, Color(0.0, 0.01, 0.03, 0.85))
-	_block.draw_circle(c, CORE_RADIUS, HudStyle.PANEL_TOP.lerp(Color(0.05, 0.2, 0.3, 0.85), _over * 0.6))
-	_block.draw_arc(c, CORE_RADIUS, 0.0, TAU, 64, HudStyle.PANEL_EDGE.lerp(Color(HudStyle.CYAN, 0.7), _over), 1.0, true)
-	_block.draw_arc(c, CORE_RADIUS + 2.5, 0.0, TAU, 64, Color(HudStyle.CYAN, 0.35), 1.0, true)
-	# Tick ring: spins faster the faster you go.
-	for i in 24:
-		var a := _spin + TAU * i / 24.0
+	var green := HudStyle.PHOSPHOR
+	_block.draw_circle(c, CORE_RADIUS + 3.0, Color(0.0, 0.02, 0.01, 0.9))
+	_block.draw_circle(c, CORE_RADIUS, HudStyle.PANEL_TOP.lerp(Color(0.1, 0.08, 0.0, 0.9), _over * 0.5))
+	# Faint scanlines across the face.
+	var y := c.y - CORE_RADIUS + 2.0
+	while y < c.y + CORE_RADIUS - 1.0:
+		var half_w := sqrt(maxf(CORE_RADIUS * CORE_RADIUS - (y - c.y) * (y - c.y), 0.0)) - 1.0
+		_block.draw_line(Vector2(c.x - half_w, y), Vector2(c.x + half_w, y), Color(green, 0.05), 1.0)
+		y += 3.0
+	_block.draw_arc(c, CORE_RADIUS, 0.0, TAU, 64, Color(green, 0.55), 1.0, true)
+	_block.draw_arc(c, CORE_RADIUS - 3.0, 0.0, TAU, 64, Color(green, 0.18), 1.0, true)
+	# Tick scale.
+	var r := CORE_RADIUS - 5.0
+	for i in 29:
+		var f := i / 28.0
+		var a := SPEED_ARC_START + SPEED_ARC_SWEEP * f
 		var d := Vector2(cos(a), sin(a))
-		var major := i % 6 == 0
-		_block.draw_line(c + d * (CORE_RADIUS - (6.0 if major else 4.0)), c + d * (CORE_RADIUS - 2.0),
-				Color(HudStyle.CYAN, (0.6 if major else 0.25) + 0.3 * _over), 1.0, true)
-	# Speed arc: trough, fill, and a tick at normal top speed.
-	var r := CORE_RADIUS - 10.0
-	_block.draw_arc(c, r, SPEED_ARC_START, SPEED_ARC_START + SPEED_ARC_SWEEP, 48, Color(HudStyle.CYAN, 0.12), 3.0, true)
-	if _speed_frac > 0.005:
-		var col := HudStyle.CYAN.lerp(Color.WHITE, 0.5 * _over)
-		_block.draw_arc(c, r, SPEED_ARC_START, SPEED_ARC_START + SPEED_ARC_SWEEP * _speed_frac, 48, col, 3.0, true)
+		var major := i % 7 == 0
+		var lit := f <= _speed_frac
+		_block.draw_line(c + d * (r - (6.0 if major else 3.0)), c + d * r,
+				Color(green, (0.9 if lit else 0.4) if major else (0.7 if lit else 0.2)), 1.5 if major else 1.0, true)
 	var ma := SPEED_ARC_START + SPEED_ARC_SWEEP * _MAX_FRAC
 	var md := Vector2(cos(ma), sin(ma))
-	_block.draw_line(c + md * (r - 4.0), c + md * (r + 4.0), Color(HudStyle.WHITE, 0.8), 1.5, true)
+	_block.draw_line(c + md * (r - 8.0), c + md * (r + 1.0), HudStyle.AMBER, 2.0, true)
+	# Needle (shivers a little past top speed) and hub.
+	var na := SPEED_ARC_START + SPEED_ARC_SWEEP * _speed_frac + sin(_time * 40.0) * 0.02 * _over
+	var nd := Vector2(cos(na), sin(na))
+	var needle := HudStyle.WHITE.lerp(HudStyle.AMBER, _over)
+	_block.draw_line(c - nd * 4.0, c + nd * (r - 2.0), needle, 2.0, true)
+	_block.draw_circle(c, 3.5, needle)
+	_block.draw_circle(c, 1.5, Color(0.0, 0.02, 0.01))
 
 
 func _draw_glow() -> void:
@@ -390,7 +406,7 @@ func _draw_glow() -> void:
 		var col := Color(1.0, 0.85, 0.8, 0.45 * _heal)
 		_strip(_glow, _heal_from * _path_len, filled, HP_WIDTH + 4.0, col, col)
 	# EN halo and sheen.
-	var en_color := HudStyle.AMBER if _en < 0.2 else HudStyle.EN_BLUE
+	var en_color := HudStyle.AMBER if _en < 0.2 else HudStyle.EN_COLOR
 	var en_rect := Rect2(_en_bar.end.x - _en_bar.size.x * _en, _en_bar.position.y, _en_bar.size.x * _en, EN_HEIGHT)
 	if _en > 0.005:
 		en_rect.size.x = maxf(en_rect.size.x, EN_HEIGHT)
@@ -399,12 +415,12 @@ func _draw_glow() -> void:
 			_glow.draw_colored_polygon(HudStyle.rounded_points(en_rect.grow(i * 1.6), EN_HEIGHT * 0.5 + i * 1.6),
 					Color(en_color, 0.05 * breathe * (1.0 - i / 5.0)))
 		_bar_sheen(en_rect, 0.45, breathe * 0.8)
-	# Speed arc glow, stronger past top speed.
-	if _speed_frac > 0.005:
-		_glow.draw_arc(_c, CORE_RADIUS - 10.0, SPEED_ARC_START, SPEED_ARC_START + SPEED_ARC_SWEEP * _speed_frac,
-				48, Color(HudStyle.CYAN, (0.18 + 0.25 * _over) * breathe), 8.0, true)
+	# Needle glow, and the face warming to amber past top speed.
+	var na := SPEED_ARC_START + SPEED_ARC_SWEEP * _speed_frac
+	var nd := Vector2(cos(na), sin(na))
+	_glow.draw_line(_c, _c + nd * (CORE_RADIUS - 7.0), Color(HudStyle.PHOSPHOR, 0.18 * breathe), 6.0, true)
 	if _over > 0.0:
-		_glow.draw_circle(_c, CORE_RADIUS, Color(HudStyle.CYAN, 0.08 * _over * breathe))
+		_glow.draw_circle(_c, CORE_RADIUS, Color(HudStyle.AMBER, 0.07 * _over * breathe))
 
 
 # A light band sliding right to left across a filled straight gauge.

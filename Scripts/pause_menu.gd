@@ -79,7 +79,7 @@ func _build_background() -> void:
 
 
 func _build_pages() -> void:
-	# KH2-style layout: a "PAUSE" header across the top left, a column of command buttons
+	# KH2-style layout: a "SYSTEM PAUSED" header across the top left, a column of command buttons
 	# down the left side, and a mission info panel (time, scrap) bottom right.
 	var header := Control.new()
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -95,9 +95,10 @@ func _build_pages() -> void:
 		header.draw_rect(Rect2(0, 72, w * 0.6, 1), Color(HudStyle.CYAN, 0.6))
 		header.draw_rect(Rect2(60, 71, 80, 3), HudStyle.CYAN))
 	_header = header
-	_title = HudStyle.make_label("PAUSE", 34, HudStyle.WHITE, true)
-	_title.add_theme_font_override("font", HudStyle.spaced(HudStyle.MENU_FONT, 8))
-	_title.position = Vector2(60, 24)
+	_title = HudStyle.make_label("SYSTEM PAUSED", 30, HudStyle.PHOSPHOR, true)
+	_title.add_theme_font_override("font", HudStyle.spaced(HudStyle.NUMBER_FONT, 4))
+	HudStyle.add_phosphor(_title, HudStyle.PHOSPHOR, 0.35)
+	_title.position = Vector2(60, 22)
 	header.add_child(_title)
 
 	_main_page = _make_window()
@@ -254,7 +255,7 @@ func _show_settings(show: bool) -> void:
 	_main_page.visible = not show
 	_settings_page.visible = show
 	if _title != null:
-		_title.text = "SETTINGS" if show else "PAUSE"
+		_title.text = "SYSTEM CONFIG" if show else "SYSTEM PAUSED"
 
 
 func _on_exit_pressed() -> void:
