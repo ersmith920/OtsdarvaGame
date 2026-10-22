@@ -82,7 +82,10 @@ static func paint(rid: RID, r: Rect2, s: HudPanelStyle) -> void:
 				Vector2(clip.end.x, clip.position.y), clip.end, Vector2(clip.position.x, clip.end.y)]))
 		var top := s.accent   # flat accent fill
 		var bottom := s.accent
-		for piece in area:
+		for raw in area:
+			var piece := HudStyle._clean_polygon(raw)   # skip slivers the renderer can't triangulate
+			if piece.is_empty():
+				continue
 			var pc := PackedColorArray()
 			for p in piece:
 				var t := clampf((p.y - r.position.y) / maxf(r.size.y, 1.0), 0.0, 1.0)

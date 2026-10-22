@@ -250,8 +250,32 @@ static func draw_hazard(ci: CanvasItem, r: Rect2, color := YELLOW, stripe := 6.0
 				Vector2(x + stripe + r.size.y, r.position.y), Vector2(x + r.size.y, r.position.y)])
 		for piece in Geometry2D.intersect_polygons(poly, PackedVector2Array([r.position,
 				Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)])):
-			ci.draw_colored_polygon(piece, color)
+			var clean := _clean_polygon(piece)
+			if not clean.is_empty():
+				ci.draw_colored_polygon(clean, color)
 		x += stripe * 2.0
+
+
+# A clipped polygon made safe to draw: drops points that sit on top of the one before, and
+# returns an empty array for slivers (a stripe just touching the rect's edge) that the
+# renderer can't triangulate.
+static func _clean_polygon(pts: PackedVector2Array) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for p in pts:
+		if out.is_empty() or out[out.size() - 1].distance_squared_to(p) > 0.0001:
+			out.append(p)
+	if out.size() > 1 and out[0].distance_squared_to(out[out.size() - 1]) <= 0.0001:
+		out.remove_at(out.size() - 1)
+	if out.size() < 3:
+		return PackedVector2Array()
+	var area := 0.0
+	for i in out.size():
+		var a := out[i]
+		var b := out[(i + 1) % out.size()]
+		area += a.x * b.y - b.x * a.y
+	if absf(area) * 0.5 < 0.05:
+		return PackedVector2Array()
+	return out
 
 
 ## A hexagon cell (flat top), outlined or filled.
