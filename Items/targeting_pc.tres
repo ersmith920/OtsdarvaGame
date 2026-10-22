@@ -2,7 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://crlm52e0dki7" path="res://Images/Icon_Targeting_PC.png" id="1_02vk2"]
 [ext_resource type="Script" uid="uid://5h1eu84vtblx" path="res://Scripts/stat_modifier.gd" id="1_bhxjw"]
-[ext_resource type="PackedScene" uid="uid://bo66g767vi05i" path="res://models/item_target_comp.glb" id="1_gn7m5"]
+[ext_resource type="PackedScene" uid="uid://b300ld68664xv" path="res://models/item_devpc.glb" id="2_ch5uv"]
 [ext_resource type="Script" uid="uid://btu6or7jc4i8g" path="res://Scripts/item_data.gd" id="2_gn7m5"]
 [ext_resource type="Script" uid="uid://brcb8mgr2pcvv" path="res://Scripts/on_hit_effect.gd" id="4_ch5uv"]
 
@@ -24,6 +24,6 @@ id = &"item_targeting_pc"
 display_name = "Targeting PC"
 description = "Enhances lock on capabilties"
 icon = ExtResource("1_02vk2")
-model = ExtResource("1_gn7m5")
+model = ExtResource("2_ch5uv")
 modifiers = Array[ExtResource("1_bhxjw")]([SubResource("Resource_02vk2"), SubResource("Resource_ch5uv")])
 metadata/_custom_type_script = "uid://btu6or7jc4i8g"
