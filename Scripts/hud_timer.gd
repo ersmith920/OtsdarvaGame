@@ -13,6 +13,8 @@ const TAPE_PX_PER_DEG := 2.4
 ## Top-left blocks: the tag's width, and where each row's field starts.
 const TAG_W := 58.0
 const FIELD_X := 62.0
+## Where each row's icon sits (the scrap coin, the hostile reticle), from the panel's left.
+const ICON_X := 70.0
 
 var _last_second := -1
 var _mission_panel : Control
@@ -62,9 +64,9 @@ func _ready() -> void:
 	offset_right = w * 0.5
 	offset_top = HudStyle.TIME_TOP
 	offset_bottom = HudStyle.TIME_TOP + HudStyle.TIME_SIZE.y
-	add_theme_font_override("font", HudStyle.spaced(HudStyle.NUMBER_FONT, 2))
+	add_theme_font_override("font", HudStyle.spaced(HudStyle.READOUT_FONT, 1))
 	add_theme_font_size_override("font_size", FONT_SIZE)
-	HudStyle.add_phosphor(self, HudStyle.ORANGE_HOT)
+	HudStyle.bolden(self, HudStyle.ORANGE_HOT, 2)
 
 	_update_text()
 
@@ -99,6 +101,14 @@ func _draw_mission_panel(panel: Control) -> void:
 		var field := Rect2(FIELD_X, row, HudStyle.MISSION_SIZE.x - FIELD_X, h)
 		panel.draw_colored_polygon(HudStyle.chamfer_points(field, 7.0), HudStyle.HUD_BACKING)
 		HudStyle.draw_frame(panel, field, HudStyle.ORANGE, _boot, 2.0, 0.0, 7.0)
+	# The HOSTILE row's icon, where the SCRAP row has its coin: a small target reticle.
+	if _boot > 0.6:
+		var c := Vector2(ICON_X + 8.0, HudStyle.MISSION_ROW_HOSTILE + HudStyle.MISSION_ROW_HEIGHT * 0.5)
+		var col := Color(HudStyle.RED, smoothstep(0.6, 1.0, _boot))
+		panel.draw_arc(c, 5.5, 0.0, TAU, 20, col, 1.5, true)
+		for d in [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
+			panel.draw_line(c + d * 4.0, c + d * 8.5, col, 1.5)
+		panel.draw_rect(Rect2(c - Vector2(1, 1), Vector2(2, 2)), col)
 
 
 # The heading tape: ticks every 5 degrees, longer every 15, labels every 30 (N / E / S / W at
@@ -124,8 +134,8 @@ func _draw_tape(panel: Control) -> void:
 			panel.draw_line(Vector2(x, base), Vector2(x, base + tick), c, 1.5 if d % 15 == 0 else 1.0)
 			if d % 30 == 0:
 				var text : String = {0: "N", 90: "E", 180: "S", 270: "W"}.get(d, "%02d" % (d / 10))
-				var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
-				panel.draw_string(font, Vector2(x - tw * 0.5, base + 21.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, c)
+				var tw := HudStyle.READOUT_FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+				panel.draw_string(HudStyle.READOUT_FONT, Vector2(x - tw * 0.5, base + 21.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, c)
 		deg += 5
 	# Caret and the heading in a filled box.
 	var caret := Color(HudStyle.ORANGE_HOT, _boot)
@@ -133,7 +143,7 @@ func _draw_tape(panel: Control) -> void:
 	var text := "%03d" % posmod(roundi(heading), 360)
 	var box := Rect2(mid + 9, base - 11, 28, 13)
 	panel.draw_rect(box, Color(HudStyle.ORANGE, _boot))
-	panel.draw_string(font, Vector2(box.position.x + 4, box.end.y - 2), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, HudStyle.INK)
+	panel.draw_string(HudStyle.READOUT_FONT, Vector2(box.position.x + 3, box.end.y - 2), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, HudStyle.INK)
 
 
 # Compass heading of the view, in degrees (0 = north = -Z, increasing clockwise).

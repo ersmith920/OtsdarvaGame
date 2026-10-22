@@ -2,7 +2,7 @@
 # swarm enemies. Ticks up with a brief amber flash when the count rises.
 extends Label
 
-const FONT_SIZE := 22
+const FONT_SIZE := 24
 const REFRESH_INTERVAL := 0.1   # seconds between recounts; no need to do it every frame
 
 var _last_count := -1
@@ -15,11 +15,12 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	set_anchors_preset(Control.PRESET_TOP_LEFT)
-	position = HudStyle.MISSION_POS + Vector2(HudStyle.MISSION_SIZE.x - 10 - 120, HudStyle.MISSION_ROW_HOSTILE + 3)
-	size = Vector2(120, 22)
+	# The same box the scrap number sits in (hud_gold.gd), so the two rows line up exactly.
+	position = HudStyle.MISSION_POS + Vector2(HudStyle.MISSION_SIZE.x - 10 - 120, HudStyle.MISSION_ROW_HOSTILE)
+	size = Vector2(120, HudStyle.MISSION_ROW_HEIGHT)
 	vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	HudStyle.add_phosphor(self, HudStyle.ORANGE_HOT)
-	add_theme_font_override("font", HudStyle.NUMBER_FONT)
+	HudStyle.bolden(self, HudStyle.ORANGE_HOT, 2)
+	add_theme_font_override("font", HudStyle.spaced(HudStyle.READOUT_FONT, 2))   # spaced like the scrap number
 	add_theme_font_size_override("font_size", FONT_SIZE)
 	_refresh()
 
@@ -31,7 +32,7 @@ func _process(delta: float) -> void:
 		_refresh()
 	if _flash > 0.0:
 		_flash = maxf(_flash - delta * 3.0, 0.0)
-		add_theme_color_override("font_color", HudStyle.ORANGE_HOT.lerp(Color.WHITE, _flash))
+		HudStyle.bolden(self, HudStyle.ORANGE_HOT.lerp(Color.WHITE, _flash), 2)
 
 
 func _refresh() -> void:
@@ -42,4 +43,4 @@ func _refresh() -> void:
 			_flash = 1.0
 		_last_count = count
 		text = "%04d" % count
-		add_theme_color_override("font_color", HudStyle.ORANGE_HOT.lerp(Color.WHITE, _flash))
+		HudStyle.bolden(self, HudStyle.ORANGE_HOT.lerp(Color.WHITE, _flash), 2)

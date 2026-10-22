@@ -1,8 +1,10 @@
 # Hold-Tab menu. Opens while the "menu" action is held, closes the instant it's released.
-# Look: the HUD style (HudStyle): one see-through HUD panel split into three columns by
-# hairlines, letter-spaced section headers, HUD tiles glowing in their tier color (they lift
-# when hovered), HUD buttons and toggles, and a tooltip framed in the hovered thing's color.
-# The columns deal in when it opens.
+# Look: a terminal screen (HudStyle / TermUI): one see-through window with an inverted title
+# bar (live counts on the right), three columns with inverted header bars (items and
+# weapons / dev tools / a dotted-leader stats table), tier-colored tiles that lift when
+# hovered, terminal commands and toggles, a tooltip with a header bar in the hovered thing's
+# color, and key hints along the bottom. Opening powers the window on like a CRT and types
+# the headers in.
 extends Control
 
 const EDGE_MARGIN := 0.03   # fraction of the screen left clear on each side
@@ -26,6 +28,7 @@ var _swapped_slots: Array = []   # slots just changed by a drop (their tiles pop
 var _drop_target: Control        # tile lit up under a dragged gun
 var _tip: PanelContainer
 var _tip_name: Label
+var _tip_band: Control
 var _tip_desc: Label
 var _tip_stats: VBoxContainer   # weapon stats, one Label per line (rolled ones in the rarity color)
 var _hovered: Object   # the ItemData or Gun under the cursor
@@ -43,6 +46,7 @@ const TILE_GLOW_SIZE := 6         # room around the tile grids for the tiles' gl
 
 
 var _box: Panel
+var _title_bar: Control
 var _columns: HBoxContainer
 var _tip_style: HudPanelStyle
 var _hover_tile: Control       # item / weapon tile under the cursor (lifted)
@@ -51,8 +55,8 @@ var _last_values := {}         # stat name -> last shown value (changes flash)
 ## Unused now: the menu uses HudStyle's fonts (kept so scenes that set them still load).
 @export var name_font: Font = HudStyle.MENU_FONT
 @export var description_font: Font = HudStyle.LABEL_FONT
-@export var tip_name_font_size := 20
-@export var tip_description_font_size := 15
+@export var tip_name_font_size := 16
+@export var tip_description_font_size := 13
 @export var tip_description_color := Color(0.85, 0.85, 0.85)
 ## Unused now: the tooltip and headers use HudStyle (kept so scenes that set them still load).
 @export var tip_box_color := Color(0.06, 0.06, 0.06, 0.95)
@@ -73,8 +77,8 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
 	theme = HudStyle.menu_theme()
-	name_font = HudStyle.MENU_FONT
-	description_font = HudStyle.LABEL_FONT
+	name_font = HudStyle.TERM_BOLD
+	description_font = HudStyle.TERM_FONT
 
 	var box := Panel.new()
 	box.anchor_left = EDGE_MARGIN
@@ -90,13 +94,30 @@ func _ready() -> void:
 	add_child(box)
 	_box = box
 
+	# Title bar across the top, the columns, then a line of key hints.
+	var layout := VBoxContainer.new()
+	layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layout.add_theme_constant_override("separation", 0)
+	box.add_child(layout)
+	_title_bar = HudStyle.make_header("OTSDARVA//OS  >  LOADOUT", 14, HudStyle.ORANGE_DIM, HORIZONTAL_ALIGNMENT_LEFT,
+			HudStyle.ORANGE, "--")
+	layout.add_child(_title_bar)
+
 	content = MarginContainer.new()
-	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	for side in ["left", "right"]:
 		content.add_theme_constant_override("margin_" + side, 18)
 	for side in ["top", "bottom"]:
 		content.add_theme_constant_override("margin_" + side, 12)
-	box.add_child(content)
+	layout.add_child(content)
+
+	var hints := TermUI.label("[TAB] RELEASE TO CLOSE     [DRAG] MOVE WEAPON     [WHEEL] SCROLL", 12, HudStyle.ORANGE_DIM)
+	hints.set_meta(TermUI.NO_TYPE, true)
+	var hint_pad := MarginContainer.new()
+	hint_pad.add_theme_constant_override("margin_left", 18)
+	hint_pad.add_theme_constant_override("margin_bottom", 8)
+	hint_pad.add_child(hints)
+	layout.add_child(hint_pad)
 
 	# Three equal-width columns.
 	var columns := HBoxContainer.new()
@@ -107,8 +128,11 @@ func _ready() -> void:
 	columns.draw.connect(func() -> void:
 		for i in range(1, columns.get_child_count()):
 			var x := (columns.get_child(i) as Control).position.x
-			columns.draw_rect(Rect2(x, 0, 1, columns.size.y), HudStyle.PANEL_EDGE)
-			columns.draw_rect(Rect2(x - 1, 0, 3, 24), Color(HudStyle.CYAN, 0.7)))
+			columns.draw_rect(Rect2(x, 0, 1, columns.size.y), Color(HudStyle.ORANGE, 0.35))
+			for k in 3:   # registration crosses on the divider
+				var p := Vector2(x, columns.size.y * (k + 0.5) / 3.0)
+				columns.draw_line(p - Vector2(5, 0), p + Vector2(5, 0), HudStyle.ORANGE, 1.5)
+				columns.draw_line(p - Vector2(0, 5), p + Vector2(0, 5), HudStyle.ORANGE, 1.5))
 	left_column = _make_column(columns)
 	middle_column = _make_column(columns)
 	right_column = _make_column(columns)
@@ -162,23 +186,16 @@ func _rebuild_stat_rows() -> void:
 	_last_values.clear()
 	var index := 0
 	for stat_name in GameManager.player.stats_node.stats:
-		var row := HBoxContainer.new()
-		row.custom_minimum_size.y = 26
-		# Faint stripe on every other row, so long lists stay easy to read across.
-		if index % 2 == 0:
-			row.draw.connect(func() -> void: row.draw_rect(Rect2(Vector2.ZERO, row.size), Color(HudStyle.CYAN, 0.05)))
+		# "MAX HEALTH ............ 125.0"
+		var row := TermUI.leader_row(String(stat_name).capitalize().to_upper(), "", 13,
+				Color(HudStyle.ORANGE, 0.85), HudStyle.WHITE)   # "max_health" -> "MAX HEALTH"
+		row.custom_minimum_size.y = 25
+		if index % 2 == 0:   # a faint stripe on every other row, so long lists stay easy to read
+			row.draw.connect(func() -> void: row.draw_rect(Rect2(Vector2.ZERO, row.size), Color(HudStyle.ORANGE, 0.04)))
 		index += 1
-
-		var name_label := HudStyle.make_label(String(stat_name).capitalize(), 15, Color(HudStyle.WHITE, 0.75))   # "max_health" -> "Max Health"
-		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		row.add_child(name_label)
-
-		var value_label := HudStyle.make_label("", 16, HudStyle.WHITE, true)
-		value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		value_label.custom_minimum_size.x = 70
-		row.add_child(value_label)
+		var value_label : Label = row.get_meta(&"value")
+		value_label.custom_minimum_size.x = 64
+		value_label.set_meta(TermUI.NO_TYPE, true)
 		var pad := Control.new()
 		pad.custom_minimum_size.x = 8
 		row.add_child(pad)
@@ -325,7 +342,7 @@ func _build_items_panel() -> void:
 	_item_grid = _item_scroll.get_meta(&"grid")
 	# Always room for at least one full row of items.
 	_item_scroll.custom_minimum_size.y = ITEM_TILE_SIZE + TILE_GLOW_SIZE * 2
-	_weapon_scroll = _add_grid_section(halves, "Weapons  /  drag to move")
+	_weapon_scroll = _add_grid_section(halves, "Weapons")
 	# Swap the plain grid for the four quadrants.
 	var grid : GridContainer = _weapon_scroll.get_meta(&"grid")
 	_weapon_quads = GridContainer.new()
@@ -361,6 +378,7 @@ func _add_grid_section(parent: Control, title: String) -> ScrollContainer:
 	pad.add_child(grid)
 	scroll.set_meta(&"grid", grid)
 	scroll.set_meta(&"header", header.get_meta(&"label"))
+	scroll.set_meta(&"header_bar", header)
 	return scroll
 
 
@@ -382,7 +400,7 @@ func _rebuild_item_grid() -> void:
 		_item_grid.add_child(_make_item_tile(item, inventory[item]))
 		total += inventory[item]
 	# "ITEMS  /  12": how many you're carrying in all.
-	(_item_scroll.get_meta(&"header") as Label).text = HudStyle.caption("Items  /  %d" % total)
+	HudStyle.set_header_value(_item_scroll.get_meta(&"header_bar"), "%03d" % total)
 
 
 # Every gun slot, laid out like they sit on screen: four quadrants (upper on top, left on
@@ -400,7 +418,7 @@ func _rebuild_weapon_grid() -> void:
 	for q in QUADRANT_ORDER:
 		var box := VBoxContainer.new()
 		box.add_theme_constant_override("separation", 4)
-		var label := HudStyle.make_caption(Player.quadrant_label(q), 11)
+		var label := TermUI.label(Player.quadrant_label(q).to_upper(), 11, HudStyle.ORANGE_DIM)
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		var header := HBoxContainer.new()
 		header.add_theme_constant_override("separation", 8)
@@ -436,7 +454,7 @@ func _make_fire_mode_button(q: Player.Quadrant) -> Button:
 	var button := Button.new()
 	button.focus_mode = Control.FOCUS_NONE
 	button.custom_minimum_size = Vector2(66, 20)
-	button.add_theme_font_override("font", HudStyle.spaced(HudStyle.MENU_FONT, 1))
+	button.add_theme_font_override("font", HudStyle.spaced(HudStyle.TERM_BOLD, 1))
 	button.add_theme_font_size_override("font_size", 10)
 	button.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 	_style_fire_mode_button(button, GameManager.player.quadrant_auto[q])
@@ -454,24 +472,20 @@ func _style_fire_mode_button(button: Button, auto: bool) -> void:
 	button.text = "AUTO" if auto else "MANUAL"
 	var color := AUTO_COLOR if auto else MANUAL_COLOR
 	for state in ["normal", "hover", "pressed", "hover_pressed"]:
-		var style := HudPanelStyle.new()
-		style.accent = color.lightened(0.3)
-		style.cut = 4.0
-		style.bracket = 5.0
-		style.bar = false
-		style.fill_top = Color(color.darkened(0.45), 0.9)
-		style.fill_bottom = Color(color.darkened(0.65), 0.9)
-		style.edge = Color(color.lightened(0.2), 0.8)
-		style.lit = {"normal": 0.0, "hover": 0.5, "pressed": 1.0, "hover_pressed": 1.0}[state]
-		style.glow = Color(color, 0.7)
-		style.glow_size = 4.0 + 4.0 * style.lit
-		style.content_margin_left = 6
-		style.content_margin_right = 6
+		# A flat outlined box; hovered or pressed, it inverts.
+		var lit : bool = state != "normal"
+		var style := StyleBoxFlat.new()
+		style.bg_color = color if lit else Color(color.darkened(0.7), 0.85)
+		style.border_color = color.lightened(0.25)
+		style.set_border_width_all(1)
+		style.content_margin_left = 7
+		style.content_margin_right = 7
 		style.content_margin_top = 1
 		style.content_margin_bottom = 1
 		button.add_theme_stylebox_override(state, style)
-	for key in ["font_color", "font_hover_color", "font_pressed_color"]:
-		button.add_theme_color_override(key, Color.WHITE)
+	button.add_theme_color_override("font_color", color.lightened(0.45))
+	for key in ["font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
+		button.add_theme_color_override(key, HudStyle.INK)
 
 
 # Left to right as the player sees them (by where each slot lands on screen).
@@ -622,7 +636,7 @@ func _make_item_tile(item: ItemData, count: int) -> Control:
 	count_label.text = "x%d" % count
 	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	count_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-	count_label.add_theme_font_override("font", HudStyle.NUMBER_FONT)
+	count_label.add_theme_font_override("font", HudStyle.READOUT_FONT)
 	count_label.add_theme_font_size_override("font_size", 15)
 	count_label.add_theme_color_override("font_outline_color", Color(HudStyle.SHADOW, 0.9))
 	count_label.add_theme_constant_override("outline_size", 4)
@@ -649,6 +663,10 @@ func _build_item_tooltip() -> void:
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_theme_constant_override("separation", 4)
 	_tip.add_child(column)
+
+	# Header bar in the hovered thing's color: what it is and its rarity.
+	_tip_band = HudStyle.make_header("", 11)
+	column.add_child(_tip_band)
 
 	_tip_name = Label.new()
 	_tip_name.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -747,6 +765,7 @@ func _tile_data_at(scroll: ScrollContainer, grid: GridContainer, mouse: Vector2)
 
 func _fill_tooltip(item: ItemData) -> void:
 	_fill_tip(item.display_name, item.get_tier_color(), item.description)
+	_set_tip_band("ITEM DATA", Rarity.name_of(Rarity.from_tier(item.tier)), item.get_tier_color())
 	Rarity.paint_tier(_tip_name, item.tier)   # Legendary shine (and clears a gun's effect: the tooltip is reused)
 
 
@@ -762,12 +781,21 @@ func _fill_weapon_tooltip(gun: Gun) -> void:
 		if not stat.bonus.is_empty():
 			line += "  (%s)" % stat.bonus
 		stats.append({"text": line, "color": boost_color if stat.boosted else tip_base_stat_color, "boosted": stat.boosted})
-	_fill_tip(gun.get_display_name(), color, Rarity.name_of(gun.get_rarity()), stats)
+	_fill_tip(gun.get_display_name(), color, "", stats)
+	_set_tip_band("ARMS DATA", Rarity.name_of(gun.get_rarity()), color)
 	# Mythic: the name and rolled stats get the rolling rainbow (other rarities clear it).
 	Rarity.paint(_tip_name, gun.get_rarity())
 	for label in _tip_stats.get_children():
 		if label.get_meta(&"boosted", false):
 			Rarity.paint(label, gun.get_rarity())
+
+
+# The tooltip's header bar: "ITEM DATA ......... RARE" on the thing's color.
+func _set_tip_band(kind: String, rarity_name: String, color: Color) -> void:
+	(_tip_band.get_meta(&"label") as Label).text = kind
+	HudStyle.set_header_value(_tip_band, rarity_name.to_upper())
+	var fill := (_tip_band.get_theme_stylebox("panel") as StyleBoxFlat)
+	fill.bg_color = color
 
 
 # Re-tints a weapon tooltip that's already showing (for animated rarity colors).
@@ -868,6 +896,7 @@ func _process(_delta: float) -> void:
 		_close()
 		return
 	_update_stat_values()   # keeps values live if a stat changes while open
+	_update_title_bar()
 	_update_item_hover()
 	_update_drop_target()
 
@@ -875,7 +904,7 @@ func _process(_delta: float) -> void:
 # Measured on open, so font or size changes to those elements are picked up automatically.
 ## The HUD display's canopy wrap pulls the top-left blocks down a little from where they're
 ## laid out; this keeps the menu clear of them.
-const WRAP_ALLOWANCE := 16.0
+const WRAP_ALLOWANCE := 26.0
 
 func _fit_to_hud() -> void:
 	var hud := get_parent()
@@ -899,14 +928,16 @@ func _open() -> void:
 	visible = true
 	_fit_to_hud()
 	_fade_vitals(0.12)
-	UIJuice.pop_in(_box, 0.0, 0.97, 0.12)
-	# The columns deal in one after another.
+	# The window powers on like a CRT, the columns come up one after another and the headers
+	# type in.
+	TermUI.power_on(_box, 0.0, 0.14)
 	for i in _columns.get_child_count():
 		var column := _columns.get_child(i) as Control
 		column.modulate.a = 0.0
 		var t := UIJuice.tween_of(column)
-		t.tween_interval(0.03 + 0.05 * i)
-		t.tween_property(column, "modulate:a", 1.0, 0.14)
+		t.tween_interval(0.08 + 0.05 * i)
+		t.tween_property(column, "modulate:a", 1.0, 0.1)
+	TermUI.type_tree(_title_bar, 0.1, TermUI.TYPE_SPEED * 2.0)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_pause_toggle.set_pressed_no_signal(GameManager.timer_paused)
 	if GameManager.player != null:
@@ -918,6 +949,25 @@ func _open() -> void:
 		if _stat_value_labels.size() != GameManager.player.stats_node.stats.size():
 			_rebuild_stat_rows()
 		_update_stat_values()
+	_update_title_bar()
+
+
+# Live counts on the title bar: items carried, guns mounted, the mission clock.
+func _update_title_bar() -> void:
+	var player := GameManager.player
+	if player == null:
+		return
+	var items := 0
+	for item in player.inventory:
+		items += player.inventory[item]
+	var guns := 0
+	for slot in player.gun_slots:
+		if slot.get_child_count() > 0 and slot.get_child(0) is Gun:
+			guns += 1
+	var secs := int(GameManager.levelTime)
+	@warning_ignore("integer_division")
+	HudStyle.set_header_value(_title_bar, "ITEMS %03d  |  ARMS %d/%d  |  T+%02d:%02d" % [items, guns,
+			player.gun_slots.size(), secs / 60, secs % 60])
 
 
 # The health / energy gauges sit under the bottom of the menu: they fade back while it's open

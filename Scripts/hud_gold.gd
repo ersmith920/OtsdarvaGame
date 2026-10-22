@@ -5,7 +5,7 @@
 # additive halo standing in for the 3D bloom (the HUD layer doesn't get the scene's Glow).
 extends Label
 
-const FONT_SIZE := 22
+const FONT_SIZE := 24
 
 @export var font: Font
 
@@ -71,10 +71,10 @@ func _ready() -> void:
 	set_anchors_preset(Control.PRESET_TOP_LEFT)
 	# Inside the row's boxed field (see hud_timer.gd): the coin at its left, the number right.
 	var left := 62.0 + 8.0 + icon_size + icon_gap
-	position = HudStyle.MISSION_POS + Vector2(left, HudStyle.MISSION_ROW_SCRAP + 3)
-	size = Vector2(HudStyle.MISSION_SIZE.x - left - 10.0, 22)
+	position = HudStyle.MISSION_POS + Vector2(left, HudStyle.MISSION_ROW_SCRAP)
+	size = Vector2(HudStyle.MISSION_SIZE.x - left - 10.0, HudStyle.MISSION_ROW_HEIGHT)
 	add_theme_constant_override("outline_size", 0)   # the glow layers do the outlining
-	add_theme_font_override("font", HudStyle.NUMBER_FONT)
+	add_theme_font_override("font", HudStyle.READOUT_FONT)
 	add_theme_font_size_override("font_size", FONT_SIZE)
 	# Glowing gold number with the Legendary gold shine sliding across it.
 	set_meta(&"glow_scale", 0.35)   # small: the HUD display's bloom does the wide glow
@@ -88,7 +88,7 @@ func _ready() -> void:
 	_caption.remove_theme_constant_override("outline_size")
 	_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_caption.position = Vector2(-left, -3)
+	_caption.position = Vector2(-left, 0)
 	_caption.size = Vector2(58, HudStyle.MISSION_ROW_HEIGHT)
 	add_child(_caption)
 	resized.connect(_place_icon)

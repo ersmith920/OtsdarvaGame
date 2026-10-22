@@ -18,9 +18,9 @@ const BLOCK_SIZE := Vector2(440, 146)
 ## The core (the round readout the HP gauge wraps around).
 const CORE_RADIUS := 44.0
 const RING_RADIUS := 56.0
-const HP_WIDTH := 12.0
+const HP_WIDTH := 10.0
 ## Length of one HP segment along the path (including its gap) and the gap, in pixels.
-const HP_SEGMENT := 8.0
+const HP_SEGMENT := 7.0
 const HP_GAP := 2.5
 ## The arc starts at the top of the core (radians), runs clockwise down its right side to the
 ## bottom, where the straight part takes over and runs left from underneath the core.
@@ -100,6 +100,8 @@ func _ready() -> void:
 
 	# Speed in the core: the number, "M/S" under it.
 	_speed_num = HudStyle.make_label("0", 22, HudStyle.ORANGE_HOT, true)
+	_speed_num.add_theme_font_override("font", HudStyle.READOUT_FONT)
+	HudStyle.bolden(_speed_num, HudStyle.ORANGE_HOT, 1)
 	_speed_num.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_speed_num.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	# In the wedge at the bottom of the dial, which the needle never sweeps through.
@@ -133,8 +135,9 @@ func _ready() -> void:
 	_block.add_child(_en_tag)
 
 	# Health as a number above the bar's left end.
-	_hp_num = HudStyle.make_label("100%", 20, HudStyle.GREEN, true)
-	_hp_num.position = Vector2(_bar_left - TAG_W, _bar_y - HP_WIDTH * 0.5 - 30)
+	_hp_num = HudStyle.make_label("100%", 16, HudStyle.GREEN, true)
+	_hp_num.add_theme_font_override("font", HudStyle.READOUT_FONT)
+	_hp_num.position = Vector2(_bar_left - TAG_W, _bar_y - HP_WIDTH * 0.5 - 24)
 	_block.add_child(_hp_num)
 
 	_critical = HudStyle.make_label("WARNING", 16, HudStyle.RED, true)

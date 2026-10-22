@@ -13,15 +13,15 @@ extends TextureRect
 ## How strong the bloom is (0 = none), and how far it spreads (1 = default).
 @export_range(0.0, 4.0, 0.05) var bloom := 1.9
 @export_range(0.25, 3.0, 0.05) var bloom_spread := 1.0
-## Canopy curve: how much further away the middle sits than the edges (0 = flat).
-@export_range(0.0, 0.2, 0.005) var curve := 0.06
+## How much columns bow in toward the middle (0 = flat).
+@export_range(0.0, 0.2, 0.005) var curve := 0.05
 ## Color fringing toward the edges, in pixels.
 @export_range(0.0, 4.0, 0.1) var fringe := 0.6
 ## Scanline darkness (0 = none) and flicker (0 = none).
 @export_range(0.0, 0.6, 0.01) var scanlines := 0.16
 @export_range(0.0, 0.2, 0.005) var flicker := 0.025
-## How much taller things get toward the left and right sides (0 = flat).
-@export_range(0.0, 0.3, 0.005) var wrap := 0.08
+## How much rows bow in toward the middle: the top and bottom of the HUD curve (0 = flat).
+@export_range(0.0, 0.3, 0.005) var wrap := 0.09
 ## How far the HUD dims while the pause menu or a choice popup is up.
 @export_range(0.0, 1.0, 0.05) var menu_dim := 0.2
 
@@ -32,21 +32,23 @@ render_mode blend_premul_alpha;
 uniform sampler2D glow_near : filter_linear;   // HUD blurred at 1/4 resolution
 uniform sampler2D glow_far : filter_linear;    // ...and again at 1/16
 uniform float bloom = 1.6;
-uniform float curve = 0.06;
+uniform float curve = 0.05;
 uniform float fringe = 0.6;
 uniform float scan = 0.16;
 uniform float flicker = 0.025;
-uniform float wrap = 0.08;
+uniform float wrap = 0.09;
 uniform float fade = 1.0;
 
 vec2 warp(vec2 uv) {
 	vec2 c = uv * 2.0 - 1.0;
-	// Concave canopy: the middle of the display sits furthest away (drawn smaller) and the
-	// edges come toward you (drawn bigger), as if the glass wraps around the pilot. Each
-	// term is zero at the screen edges, so nothing near an edge is ever pushed off it.
-	vec2 s = c * (1.0 + curve * (1.0 - c * c));
-	// The sides lean in more: toward the left and right, things stand taller.
-	s.y *= 1.0 + wrap * (1.0 - c.x * c.x) * (1.0 - c.y * c.y);
+	// Concave canopy: the middle of the display sits furthest away and the edges come toward
+	// you, as if the glass wraps around the pilot. Rows of symbology bow toward the middle
+	// of the screen (the top row dips in the middle, the bottom row rises), and columns bow
+	// in too, so blocks near the corners lean like angled side panels. Content only ever
+	// moves inward, so nothing near an edge is cut off.
+	vec2 s = c;
+	s.y *= 1.0 + wrap * (1.0 - c.x * c.x);
+	s.x *= 1.0 + curve * (1.0 - c.y * c.y);
 	return s * 0.5 + 0.5;
 }
 
@@ -79,7 +81,7 @@ void fragment() {
 		// (Writing COLOR drops the node's modulate, so fading goes through `fade`.)
 		// Glow spills mostly outward: over the element itself it's held back, so text
 		// inside filled tags stays readable while the edges burn.
-		vec3 rgb = c.rgb * lines * flick + glow * bloom * flick * (1.0 - 0.8 * c.a);
+		vec3 rgb = c.rgb * lines * flick + glow * bloom * flick * (1.0 - 0.5 * c.a);
 		// Over-bright areas keep their hue (orange stays orange instead of clipping to
 		// yellow) and only partly burn toward white, like an overdriven phosphor.
 		float peak = max(rgb.r, max(rgb.g, rgb.b));

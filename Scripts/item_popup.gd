@@ -11,8 +11,8 @@ const ICON_DISPLAY_SIZE := 48
 const ICON_TEXT_GAP := 12
 const LINE_GAP := 2
 const MAX_TEXT_WIDTH := 300.0     # description wraps beyond this
-const NAME_SIZE := 20
-const DESCRIPTION_SIZE := 13
+const NAME_SIZE := 17
+const DESCRIPTION_SIZE := 12
 const SLIDE := 160.0              # how far it slides in from
 const FADE_IN := 0.15
 const HOLD_TIME := 3.0
@@ -87,11 +87,11 @@ func _ready() -> void:
 	var header_row := HBoxContainer.new()
 	header_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_header.add_child(header_row)
-	_caption = HudStyle.make_label(CAPTION + "_", 11, HudStyle.INK, true)
+	_caption = TermUI.label(CAPTION + "_", 10, HudStyle.INK, true)
 	_caption.remove_theme_constant_override("outline_size")
 	_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header_row.add_child(_caption)
-	_tier_label = HudStyle.make_label("", 11, HudStyle.INK, true)
+	_tier_label = TermUI.label("", 10, HudStyle.INK, true)
 	_tier_label.remove_theme_constant_override("outline_size")
 	header_row.add_child(_tier_label)
 
@@ -123,11 +123,11 @@ func _ready() -> void:
 	text_column.add_theme_constant_override("separation", LINE_GAP)
 	row.add_child(text_column)
 
-	_name_label = HudStyle.make_label("", NAME_SIZE, HudStyle.WHITE, true)
+	_name_label = TermUI.label("", NAME_SIZE, HudStyle.WHITE, true)
 	_name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	text_column.add_child(_name_label)
 
-	_desc_label = HudStyle.make_label("", DESCRIPTION_SIZE, Color(HudStyle.WHITE, 0.85))
+	_desc_label = TermUI.label("", DESCRIPTION_SIZE, Color(HudStyle.WHITE, 0.85))
 	_desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	text_column.add_child(_desc_label)
 

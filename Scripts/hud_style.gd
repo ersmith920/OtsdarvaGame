@@ -3,8 +3,12 @@
 # in the Shell, Lain) seen through the mech's canopy.
 #
 # Rules this style is built on:
-#   - English only. Condensed caps (Barlow Condensed) for labels and readouts, tiny
-#     monospace data lines (Share Tech Mono) for texture.
+#   - English only. Menus, popups and tooltips are terminal text (IBM Plex Mono); numeric
+#     readouts are a squared technical mono (Share Tech Mono); condensed caps (Barlow
+#     Condensed) only on the HUD's small filled tags.
+#   - Menus are terminal screens (TermFrame, TermUI): an inverted title bar, windows with
+#     inverted header bars, dotted-leader tables, inverted selection, text that types in,
+#     screens that power on and off like a CRT, and computer-speaker bleeps.
 #   - Flat and rectangular, like a vector terminal: square blocks, flat fills, single-weight
 #     outlines, boxed labels, "+" registration marks, square gauge segments. No gradients,
 #     no cut corners, no rounded shapes (dials and rings are the exception).
@@ -58,8 +62,13 @@ const SHADOW := Color(0.0, 0.0, 0.0, 0.85)
 const NUMBER_FONT := preload("res://Fonts/BarlowCondensed-Bold.ttf")
 const MENU_FONT := preload("res://Fonts/BarlowCondensed-Bold.ttf")
 const LABEL_FONT := preload("res://Fonts/BarlowCondensed-SemiBold.ttf")
-## Tiny monospace data lines.
+## Tiny monospace data lines, and numeric readouts (clock, counters, gauges): a squared-off
+## technical mono like the Nostromo's screens.
 const DATA_FONT := preload("res://Fonts/ShareTechMono-Regular.ttf")
+const READOUT_FONT := preload("res://Fonts/ShareTechMono-Regular.ttf")
+## Terminal text (menus, popups, tooltips): a code mono, regular and bold.
+const TERM_FONT := preload("res://Fonts/IBMPlexMono-Medium.ttf")
+const TERM_BOLD := preload("res://Fonts/IBMPlexMono-Bold.ttf")
 const NUMBER_SCALE := 1.0
 
 ## Default 45 degree corner cut on blocks.
@@ -119,6 +128,14 @@ static func add_phosphor(l: Control, color: Color, glow := 0.0) -> void:
 		l.add_theme_constant_override("shadow_offset_x", 0)
 		l.add_theme_constant_override("shadow_offset_y", 0)
 		l.add_theme_constant_override("shadow_outline_size", maxi(roundi(size * 0.5), 4))
+
+
+## Thickens a readout's strokes (an outline in its own color), so a thin technical face
+## stays solid on the CRT instead of reading as hollow outlines under the bloom.
+static func bolden(l: Control, color: Color, px := 2) -> void:
+	l.add_theme_color_override("font_color", color)
+	l.add_theme_color_override("font_outline_color", color)
+	l.add_theme_constant_override("outline_size", px)
 
 
 ## A small caption ("HOSTILE"): condensed, dim system orange.
@@ -346,7 +363,7 @@ static func panel_style(accent := ORANGE, padding := 12.0, fill_alpha := 1.0) ->
 	var s := HudPanelStyle.new()
 	s.accent = accent
 	s.edge = Color(accent, 0.85)
-	s.edge_width = 2.0
+	s.edge_width = 1.5
 	s.cut = 10.0
 	s.fill_top = Color(PANEL_BOTTOM, PANEL_BOTTOM.a * fill_alpha)
 	s.fill_bottom = s.fill_top
@@ -361,7 +378,7 @@ static func panel_style(accent := ORANGE, padding := 12.0, fill_alpha := 1.0) ->
 static func card_style(color: Color, lit := 0.0, padding := 10.0) -> HudPanelStyle:
 	var s := HudPanelStyle.new()
 	color_card(s, color, lit)
-	s.edge_width = 2.5
+	s.edge_width = 2.0
 	s.cut = 14.0
 	s.set_content_margin_all(padding)
 	return s
@@ -415,106 +432,178 @@ static func empty_tile_style() -> HudPanelStyle:
 	return s
 
 
-## A command button: a flat orange-outlined rectangle with its label. Hovered, it fills with
-## orange from the left and the text turns to dark ink; pressing punches it. Hover / click
-## sounds included. A disabled button goes dim and dashed and ignores hovers.
-## slide: nudges right when hovered (left-aligned lists).
+## A terminal command: the label in bold mono inside a thin outlined box. Hovered, the box
+## inverts (fills with the accent, text in dark ink), a ">" caret appears before the label
+## and a block cursor blinks after it, with a speaker bleep. Pressing flashes it. A disabled
+## button goes dim and dashed and ignores hovers.
+## _slide: kept for older callers (the terminal look doesn't slide).
 static func make_button(text: String, min_size := Vector2(200, 44), font_size := 18, accent := ORANGE,
-		slide := false, align := HORIZONTAL_ALIGNMENT_CENTER) -> Button:
+		_slide := false, align := HORIZONTAL_ALIGNMENT_CENTER) -> Button:
 	var button := Button.new()
 	button.text = text.to_upper()
 	button.custom_minimum_size = min_size
 	button.focus_mode = Control.FOCUS_NONE   # keeps Space (jump) from re-pressing it
 	button.alignment = align
+	var fs := roundi(font_size * 0.85)   # mono reads bigger than the condensed face it replaces
 	for st in ["normal", "hover", "pressed", "disabled", "focus", "hover_pressed"]:
 		var box := StyleBoxEmpty.new()
-		box.content_margin_left = 18 if align == HORIZONTAL_ALIGNMENT_LEFT else 12
-		box.content_margin_right = 12
+		box.content_margin_left = 34 if align == HORIZONTAL_ALIGNMENT_LEFT else 26
+		box.content_margin_right = 26
 		button.add_theme_stylebox_override(st, box)
-	button.add_theme_font_override("font", spaced(MENU_FONT, 1))
-	button.add_theme_font_size_override("font_size", font_size)
+	button.add_theme_font_override("font", spaced(TERM_BOLD, 1))
+	button.add_theme_font_size_override("font_size", fs)
 	var set_ink := func(lit: float) -> void:
-		var c := accent.lerp(INK, smoothstep(0.35, 0.65, lit))
+		var c := accent if lit < 0.5 else INK
 		for key in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
 			button.add_theme_color_override(key, c)
 	set_ink.call(0.0)
 	button.add_theme_color_override("font_disabled_color", Color(accent, 0.3))
 	button.add_theme_constant_override("outline_size", 0)
 	button.set_meta(&"lit", 0.0)
-	# The block is drawn by a child shown behind the button, so the text stays on top.
+	# The box is drawn by a child shown behind the button, so the text stays on top.
 	var plate := Control.new()
 	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	plate.show_behind_parent = true
 	button.add_child(plate)
 	plate.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var style := HudPanelStyle.new()
-	style.cut = 8.0
-	style.edge_width = 2.0
 	plate.draw.connect(func() -> void:
 		var lit : float = button.get_meta(&"lit")
-		var r := Rect2(Vector2(lit * 6.0 if slide else 0.0, 0), button.size)
-		style.accent = accent
-		style.dashed = button.disabled
-		style.edge = Color(accent, 0.3) if button.disabled else accent
-		style.fill_top = Color(0.06, 0.02, 0.0, 0.8)
-		style.fill_bottom = style.fill_top
-		style.sweep = 0.0 if button.disabled else lit
-		HudPanelStyle.paint(plate.get_canvas_item(), r, style)
-		# Left-aligned (list) buttons: a small square pip at the right end that lights on hover.
-		if align == HORIZONTAL_ALIGNMENT_LEFT and not button.disabled:
-			var pip := Rect2(r.end.x - 18.0, r.get_center().y - 3.0, 6.0, 6.0)
-			plate.draw_rect(pip, accent.lerp(INK, smoothstep(0.35, 0.65, lit)), lit > 0.5)
-			if lit <= 0.5:
-				plate.draw_rect(pip, accent, false, 1.0))
+		var r := Rect2(Vector2.ZERO, button.size)
+		var edge := Color(accent, 0.3) if button.disabled else accent
+		plate.draw_rect(r, Color(0.04, 0.012, 0.0, 0.85))
+		if button.disabled:
+			_dashed_rect(plate, r, edge, 1.5)
+			return
+		# The inversion wipes across fast (left to right), like a terminal redrawing the line.
+		if lit > 0.0:
+			plate.draw_rect(Rect2(r.position, Vector2(r.size.x * minf(lit * 1.25, 1.0), r.size.y)), accent)
+		plate.draw_rect(r.grow(-0.75), edge, false, 1.5)
+		# Caret before the label and a blinking block cursor after it.
+		var f := button.get_theme_font("font")
+		var tw := f.get_string_size(button.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var tx := r.position.x + 34.0 if align == HORIZONTAL_ALIGNMENT_LEFT else r.get_center().x - tw * 0.5
+		var base := r.get_center().y + fs * 0.36
+		if lit > 0.5:
+			plate.draw_string(f, Vector2(tx - fs * 1.2, base), ">", HORIZONTAL_ALIGNMENT_LEFT, -1, fs, INK)
+			if fmod(Time.get_ticks_msec() / 1000.0, 0.6) < 0.36:
+				plate.draw_rect(Rect2(tx + tw + fs * 0.35, base - fs * 0.78, fs * 0.55, fs * 0.95), INK)
+		else:
+			# Resting: a dim index tick on the left edge.
+			plate.draw_rect(Rect2(r.position.x + 8.0, r.get_center().y - 1.0, 8.0, 2.0), Color(accent, 0.6)))
+	var blink : Array = [null]   # the hovered button's cursor blink (a looping tween)
 	var light := func(to: float) -> void:
 		var t := UIJuice.tween_of(button)
 		t.tween_method(func(v: float) -> void:
 			button.set_meta(&"lit", v)
 			set_ink.call(v)
-			plate.queue_redraw(), button.get_meta(&"lit"), to, 0.14)
+			plate.queue_redraw(), button.get_meta(&"lit"), to, 0.08)
 	button.mouse_entered.connect(func() -> void:
 		if button.disabled:
 			return
 		light.call(1.0)
-		UIJuice.play(UIJuice.Sfx.HOVER))
-	button.mouse_exited.connect(func() -> void: light.call(0.0))
+		UIJuice.play(UIJuice.Sfx.HOVER)
+		if blink[0] != null:
+			(blink[0] as Tween).kill()
+		var bt := plate.create_tween().set_loops()
+		bt.tween_interval(0.1)
+		bt.tween_callback(plate.queue_redraw)
+		blink[0] = bt)
+	button.mouse_exited.connect(func() -> void:
+		light.call(0.0)
+		if blink[0] != null:
+			(blink[0] as Tween).kill()
+			blink[0] = null)
 	button.button_down.connect(func() -> void:
 		UIJuice.play(UIJuice.Sfx.CLICK)
-		UIJuice.punch(button, -0.05))
+		UIJuice.flash(button, 0.8, 0.18)
+		UIJuice.punch(button, -0.04))
 	# Redraw when it's enabled / disabled (Godot doesn't redraw children for that).
 	button.draw.connect(plate.queue_redraw)
 	return button
 
 
-## A section header: a filled orange tag with the label in dark ink and a rule running on
-## to the right.
+static func _dashed_rect(ci: CanvasItem, r: Rect2, color: Color, width := 1.0, dash := 6.0, gap := 4.0) -> void:
+	var pts := [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y), r.position]
+	for i in 4:
+		var a : Vector2 = pts[i]
+		var b : Vector2 = pts[i + 1]
+		var len_ab := a.distance_to(b)
+		var d := 0.0
+		while d < len_ab:
+			ci.draw_line(a.lerp(b, d / len_ab), a.lerp(b, minf(d + dash, len_ab) / len_ab), color, width)
+			d += dash + gap
+
+
+## A window's header bar: inverted (filled with the accent) across the full width, the title
+## in dark ink on the left and an optional value on the right ("ITEMS ........ 8 / 64").
+## Its metas "label" and "value" are the two Labels.
 static func make_header(text: String, size := 13, _color := ORANGE_DIM, align := HORIZONTAL_ALIGNMENT_LEFT,
-		accent := ORANGE) -> Control:
-	var row := HBoxContainer.new()
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_theme_constant_override("separation", 8)
-	if align == HORIZONTAL_ALIGNMENT_CENTER:
-		row.alignment = BoxContainer.ALIGNMENT_CENTER
-	var tag := PanelContainer.new()
-	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		accent := ORANGE, value := "") -> Control:
+	var bar := PanelContainer.new()
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var fill := StyleBoxFlat.new()
 	fill.bg_color = accent
-	fill.content_margin_left = 7
-	fill.content_margin_right = 7
-	fill.content_margin_top = 0
-	fill.content_margin_bottom = 0
-	tag.add_theme_stylebox_override("panel", fill)
-	var label := make_label(caption(text), size + 2, INK, true)
-	label.remove_theme_constant_override("outline_size")
-	tag.add_child(label)
-	row.add_child(tag)
-	if align != HORIZONTAL_ALIGNMENT_CENTER:
-		var rule := make_rule(false, accent)
-		rule.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		rule.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		row.add_child(rule)
-	row.set_meta(&"label", label)
-	return row
+	fill.content_margin_left = 8
+	fill.content_margin_right = 8
+	fill.content_margin_top = 1
+	fill.content_margin_bottom = 1
+	bar.add_theme_stylebox_override("panel", fill)
+	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.add_child(row)
+	var label := TermUI.label(caption(text), size, INK, true)
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if align == HORIZONTAL_ALIGNMENT_CENTER:
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	row.add_child(label)
+	var value_label := TermUI.label(value, size, INK, true)
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value_label.visible = not value.is_empty()
+	row.add_child(value_label)
+	bar.set_meta(&"label", label)
+	bar.set_meta(&"value", value_label)
+	return bar
+
+
+## A terminal window: a flat dark box with a thin outline and "+" registration marks, an
+## inverted header bar across its top, and a padded body. Returns the window; its metas
+## "body" (a VBoxContainer: put the content here) and "header" (the bar).
+static func make_window(title: String, value := "", accent := ORANGE, padding := 14.0, header_size := 13) -> PanelContainer:
+	var window := PanelContainer.new()
+	window.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := panel_style(accent, 0.0)
+	style.content_margin_left = 2
+	style.content_margin_right = 2
+	style.content_margin_top = 2
+	style.content_margin_bottom = 2
+	window.add_theme_stylebox_override("panel", style)
+	var column := VBoxContainer.new()
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_theme_constant_override("separation", 0)
+	window.add_child(column)
+	var header := make_header(title, header_size, ORANGE_DIM, HORIZONTAL_ALIGNMENT_LEFT, accent, value)
+	column.add_child(header)
+	var pad := MarginContainer.new()
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pad.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	for side in ["left", "right", "top", "bottom"]:
+		pad.add_theme_constant_override("margin_" + side, roundi(padding))
+	column.add_child(pad)
+	var body := VBoxContainer.new()
+	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	body.add_theme_constant_override("separation", 10)
+	pad.add_child(body)
+	window.set_meta(&"body", body)
+	window.set_meta(&"header", header)
+	return window
+
+
+## Sets a make_header() bar's right-hand value.
+static func set_header_value(header: Control, value: String) -> void:
+	var l := header.get_meta(&"value") as Label
+	l.text = value
+	l.visible = not value.is_empty()
 
 
 ## A thick rule.
@@ -526,28 +615,43 @@ static func make_rule(_centered := false, accent := ORANGE) -> Control:
 	return rule
 
 
-## A menu title: the name big in condensed caps, a rule under it with a short hazard-striped
-## tab at its left end, and a line of system data. Returns a control; its meta "label" is
-## the title Label (callers can change its text with set_title()).
+## A menu title: a big inverted bar (the name in bold mono, dark ink, with a line of system
+## data on its right), a hazard-striped strip under its left end and a thin rule. Returns a
+## control; its meta "label" is the title Label (change it with set_title()).
 static func make_title(text: String, size := 30) -> Control:
 	var column := VBoxContainer.new()
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	column.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	column.add_theme_constant_override("separation", 2)
-	var label := make_label(text.to_upper(), roundi(size * 1.1), ORANGE, true)
-	label.add_theme_font_override("font", spaced(NUMBER_FONT, 3))
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	column.add_child(label)
-	var rule := Control.new()
-	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rule.custom_minimum_size = Vector2(0, 8)
-	rule.draw.connect(func() -> void:
-		rule.draw_rect(Rect2(0, 0, rule.size.x, 2), ORANGE)
-		draw_hazard(rule, Rect2(0, 3, minf(64.0, rule.size.x * 0.3), 5), YELLOW, 4.0))
-	column.add_child(rule)
-	var data := make_data("", 9, ORANGE_DIM)
-	data.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	column.add_child(data)
+	column.add_theme_constant_override("separation", 3)
+	var bar := PanelContainer.new()
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = ORANGE
+	fill.content_margin_left = 14
+	fill.content_margin_right = 14
+	fill.content_margin_top = 2
+	fill.content_margin_bottom = 2
+	bar.add_theme_stylebox_override("panel", fill)
+	column.add_child(bar)
+	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 24)
+	bar.add_child(row)
+	var label := TermUI.label("", roundi(size * 0.85), INK, true)
+	label.add_theme_font_override("font", spaced(TERM_BOLD, 2))
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(label)
+	var data := TermUI.label("", 12, INK, true)
+	data.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	data.size_flags_vertical = Control.SIZE_FILL
+	row.add_child(data)
+	var strip := Control.new()
+	strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	strip.custom_minimum_size = Vector2(0, 7)
+	strip.draw.connect(func() -> void:
+		draw_hazard(strip, Rect2(0, 0, minf(120.0, strip.size.x * 0.3), 7), YELLOW, 5.0)
+		var x0 := minf(120.0, strip.size.x * 0.3) + 6.0
+		strip.draw_rect(Rect2(x0, 3, strip.size.x - x0, 1.5), Color(ORANGE, 0.6)))
+	column.add_child(strip)
 	column.set_meta(&"label", label)
 	column.set_meta(&"data", data)
 	set_title(column, text)
@@ -559,7 +663,7 @@ static func set_title(title: Control, text: String) -> void:
 	(title.get_meta(&"label") as Label).text = text.to_upper()
 	var data := title.get_meta(&"data") as Label
 	if data != null:
-		data.text = "SYS/%s  //  TERMINAL %02d" % [text.to_upper().replace(" ", "_"), text.length() % 100]
+		data.text = "SYS/%s  TERM.%02d" % [text.to_upper().replace(" ", "_"), (text.hash() & 0xff) % 100]
 
 
 ## A Theme for menus, so anything without its own styling (plain Labels, Buttons, toggles,
@@ -568,8 +672,8 @@ static func menu_theme() -> Theme:
 	if _theme != null:
 		return _theme
 	var t := Theme.new()
-	t.default_font = LABEL_FONT
-	t.default_font_size = 16
+	t.default_font = TERM_FONT
+	t.default_font_size = 15
 	t.set_color("font_color", "Label", WHITE)
 
 	for state in ["normal", "hover", "pressed", "disabled", "hover_pressed"]:
@@ -588,8 +692,8 @@ static func menu_theme() -> Theme:
 		s.content_margin_bottom = 4
 		t.set_stylebox(state, "Button", s)
 	t.set_stylebox("focus", "Button", StyleBoxEmpty.new())
-	t.set_font("font", "Button", MENU_FONT)
-	t.set_font_size("font_size", "Button", 16)
+	t.set_font("font", "Button", TERM_BOLD)
+	t.set_font_size("font_size", "Button", 14)
 	t.set_color("font_color", "Button", ORANGE)
 	for c in ["font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
 		t.set_color(c, "Button", INK)
@@ -598,8 +702,8 @@ static func menu_theme() -> Theme:
 	# Toggles: label plus a block, outlined when off and filled when on.
 	for state in ["normal", "hover", "pressed", "disabled", "hover_pressed", "focus"]:
 		t.set_stylebox(state, "CheckButton", StyleBoxEmpty.new())
-	t.set_font("font", "CheckButton", MENU_FONT)
-	t.set_font_size("font_size", "CheckButton", 16)
+	t.set_font("font", "CheckButton", TERM_BOLD)
+	t.set_font_size("font_size", "CheckButton", 13)
 	for c in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color"]:
 		t.set_color(c, "CheckButton", ORANGE)
 	t.set_icon("checked", "CheckButton", _switch_texture(true))

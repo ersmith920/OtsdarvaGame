@@ -8,15 +8,17 @@
 # Feel (see UIJuice): the game blurs behind it, it pops in and out, tiles lift on hover, a
 # picked gun flies from its tile into its slot, the result flips in, Combine pulses while it's
 # ready, and combining bursts the result (a bigger jackpot burst for a Mythic).
-# Look: the HUD style (HudStyle): HUD panels with headers, card frames in the rarity color
-# with a glow (a glint sweeps a slot as a gun lands in it), HUD tiles and buttons.
+# Look: a terminal screen (TermFrame, HudStyle): a frame around the whole screen with a title
+# bar and key hints, three windows with inverted header bars, card frames in the rarity
+# color (a glint sweeps a slot as a gun lands in it), tiles and terminal commands. It powers
+# on like a CRT and off again when it closes.
 class_name CombinerMenu
 extends Control
 
 signal closed
 
-const TITLE_FONT := HudStyle.MENU_FONT
-const BODY_FONT := HudStyle.LABEL_FONT
+const TITLE_FONT := HudStyle.TERM_BOLD
+const BODY_FONT := HudStyle.TERM_FONT
 
 const TILE_SIZE := 64
 const TILE_GAP := 8
@@ -30,15 +32,15 @@ var CARD_SIZE := GunCard.get_size(CARD_SCALE) + Vector2(CARD_PADDING, CARD_PADDI
 const HINT_WIDTH := 440.0
 const TITLE_SIZE := 28
 const HEADER_SIZE := 15
-const HINT_SIZE := 15
+const HINT_SIZE := 13
 const BUTTON_SIZE := Vector2(170, 38)
 const BUTTON_FONT_SIZE := 18
 const PANEL_GAP := 16
 const PANEL_PADDING := 14
 const PLUS_WIDTH := 30
-const EMPTY_TEXT_SIZE := 14
-const HINT_COLOR := Color(0.36, 0.82, 0.46, 0.8)
-const GRAYED := Color(0.25, 0.4, 0.3, 0.7)
+const EMPTY_TEXT_SIZE := 12
+const HINT_COLOR := Color(1.0, 0.6, 0.25, 0.85)
+const GRAYED := Color(0.35, 0.25, 0.2, 0.6)
 const DIM_COLOR := Color(0.0, 0.04, 0.015, 0.6)
 
 var combiner : Combiner
@@ -48,6 +50,7 @@ var _second : Gun
 var _preview_gun : Gun   # the result shown on the right (not in the tree)
 
 var _holder : Control
+var _frame : TermFrame
 var _dim : ColorRect
 var _closing := false        # input is ignored (combining or closing)
 var _close_started := false
@@ -97,6 +100,11 @@ func _build() -> void:
 	_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_dim)
 	_dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	_frame = TermFrame.new()
+	_frame.title = combiner.title if combiner != null else "Combiner"
+	_frame.hints = "[LMB] PICK / TAKE BACK     [ESC] CANCEL"
+	add_child(_frame)
 
 	# Everything sits in one holder that's centered and scaled down to fit small screens.
 	_holder = Control.new()
@@ -190,17 +198,12 @@ func _build() -> void:
 	HudStyle.add_menu_bloom(self)   # CRT bloom over the whole menu
 
 
-# A HUD panel with a header; returns the box its content goes in.
+# A terminal window with an inverted header bar; returns the box its content goes in.
 func _panel(parent: Control, header: String) -> VBoxContainer:
-	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", HudStyle.panel_style(HudStyle.CYAN, PANEL_PADDING))
-	panel.size_flags_vertical = Control.SIZE_FILL
-	parent.add_child(panel)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 10)
-	panel.add_child(box)
-	box.add_child(HudStyle.make_header(header, HEADER_SIZE - 2, HudStyle.CYAN_DIM, HORIZONTAL_ALIGNMENT_CENTER))
-	return box
+	var window := HudStyle.make_window(header, "", HudStyle.ORANGE, PANEL_PADDING)
+	window.size_flags_vertical = Control.SIZE_FILL
+	parent.add_child(window)
+	return window.get_meta(&"body")
 
 
 func _label(text: String, size_px: int, color: Color, font: Font = BODY_FONT) -> Label:
@@ -274,14 +277,15 @@ func _refresh() -> void:
 				else "Empty\n\nPick another of the\nsame weapon and rarity")
 	_rebuild_result()
 
+	_frame.status = ["ARMS %d" % _player_guns().size(), "SCRAP %d" % (GameManager.player.gold if GameManager.player != null else 0)]
 	if _first == null:
-		_hint.text = "Pick two of the same weapon and rarity"
+		_hint.text = "> Pick two of the same weapon and rarity"
 	elif _second == null:
 		var any := _player_guns().any(func(g: Gun) -> bool: return _pickable(g))
 		var wanted := "%s %s" % [Rarity.name_of(_first.get_rarity()), _first.get_display_name()]
-		_hint.text = ("Pick another %s" if any else "You have no other %s to combine") % wanted
+		_hint.text = ("> Pick another %s" if any else "> No other %s to combine") % wanted
 	else:
-		_hint.text = "Click a weapon to take it back out"
+		_hint.text = "> Ready. Click a weapon to take it back out"
 	var ready := _first != null and _second != null
 	if ready and _combine_button.disabled:
 		UIJuice.pulse(_combine_button)   # waiting to be pressed
@@ -542,8 +546,9 @@ func _process(_delta: float) -> void:
 func _open_anim() -> void:
 	(_dim.material as ShaderMaterial).set_shader_parameter(&"amount", 0.0)
 	UIJuice.fade_backdrop(_dim, 1.0, 0.2)
-	UIJuice.pop_in(_content, 0.0, 0.92, 0.22)
-	UIJuice.play(UIJuice.Sfx.OPEN)
+	_frame.boot()
+	TermUI.power_on(_content, 0.0, 0.2)
+	TermUI.type_tree(_content, 0.2, TermUI.TYPE_SPEED * 2.0, 0.02)
 
 
 # Animates out, then closes (and runs after_close, e.g. the actual combine).
@@ -554,9 +559,8 @@ func _close(after_close := Callable()) -> void:
 	_closing = true
 	_tip.visible = false
 	UIJuice.fade_backdrop(_dim, 0.0, 0.16)
-	if not after_close.is_valid():
-		UIJuice.play(UIJuice.Sfx.CLOSE)
-	UIJuice.pop_out(_content, func() -> void:
+	_frame.create_tween().tween_property(_frame, "modulate:a", 0.0, 0.2)
+	TermUI.power_off(_content, func() -> void:
 		_finish_close()
 		if after_close.is_valid():
 			after_close.call())
@@ -590,26 +594,28 @@ func _show_tip(gun: Gun) -> void:
 		child.queue_free()
 	var tip_style := HudStyle.panel_style(Rarity.get_color(gun.get_rarity()), 10.0)
 	tip_style.fill_top = Color(tip_style.fill_top, 0.95)
-	tip_style.fill_bottom = Color(tip_style.fill_bottom, 0.95)
+	tip_style.fill_bottom = tip_style.fill_top
 	_tip.add_theme_stylebox_override("panel", tip_style)
 
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 2)
 	_tip.add_child(column)
-	var name_label := _label("", 20, Color.WHITE, TITLE_FONT)
+	# Header bar in the rarity color: "ARMS DATA ........ RARE".
+	column.add_child(HudStyle.make_header("Arms Data", 11, HudStyle.ORANGE_DIM, HORIZONTAL_ALIGNMENT_LEFT,
+			Rarity.get_color(gun.get_rarity()), Rarity.name_of(gun.get_rarity()).to_upper()))
+	var name_label := _label("", 16, Color.WHITE, TITLE_FONT)
 	column.add_child(name_label)
-	column.add_child(_label(Rarity.name_of(gun.get_rarity()), 15, Color(0.85, 0.85, 0.85)))
 	var lit : Array[Label] = []
 	for stat in gun.get_stat_summary():
 		var line : String = "%s: %s" % [stat.name, stat.value]
 		if not stat.bonus.is_empty():
 			line += "  (%s)" % stat.bonus
-		var label := _label(line, 15, Color(0.6, 0.6, 0.6))
+		var label := _label(line, 13, Color(1.0, 0.6, 0.3, 0.8))
 		column.add_child(label)
 		if stat.boosted:
 			lit.append(label)
 	if not WeaponRollTable.can_combine(gun):
-		column.add_child(_label("Mythic weapons can't be combined", 15, HINT_COLOR))
+		column.add_child(_label("> Mythic weapons can't be combined", 13, HINT_COLOR))
 	var display_name := gun.get_display_name()
 	RarityAnimator.attach(column, gun.get_rarity(), func(c: Color) -> void:
 		TextGlow.set_text(name_label, display_name, c)

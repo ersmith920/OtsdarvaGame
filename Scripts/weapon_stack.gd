@@ -116,13 +116,13 @@ func _draw() -> void:
 		draw_rect(row, Color(status, 0.8 * appear), false, 1.5)
 		# Number tag.
 		draw_rect(Rect2(0, y, TAG_W, ROW_H), status)
-		draw_string(font, Vector2(3, y + 16), "%02d" % number, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, HudStyle.INK)
+		draw_string(HudStyle.READOUT_FONT, Vector2(4, y + 16), "%02d" % number, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, HudStyle.INK)
 		# Quadrant code and name.
 		var rarity_color := Rarity.get_color(gun.get_rarity())
 		if gun.get_rarity() >= Rarity.MYTHIC:
 			rarity_color = Rarity.rainbow()
 		draw_string(font, Vector2(TAG_W + 5, y + 15), code, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(HudStyle.ORANGE, appear))
-		draw_string(font, Vector2(TAG_W + 24, y + 15), gun.get_display_name().to_upper(), HORIZONTAL_ALIGNMENT_LEFT, 74, 12,
+		draw_string(HudStyle.TERM_BOLD, Vector2(TAG_W + 24, y + 15), gun.get_display_name().to_upper(), HORIZONTAL_ALIGNMENT_LEFT, 74, 10,
 				Color(rarity_color, appear))
 		# Magazine bar of slanted segments (reloading: it fills back up, red).
 		var bar := Rect2(122, y + 6, WIDTH - 122 - 36, ROW_H - 12)
@@ -141,8 +141,8 @@ func _draw() -> void:
 			if fmod(_time, 0.5) < 0.32:
 				draw_string(font, Vector2(WIDTH - 36, y + 15), "RELOAD", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, HudStyle.RED)
 		else:
-			draw_string(HudStyle.DATA_FONT, Vector2(WIDTH - 33, y + 14), "%02d/%02d" % [shots, mini(mag, 99)],
-					HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(status, appear))
+			draw_string(HudStyle.READOUT_FONT, Vector2(WIDTH - 34, y + 15), "%02d/%02d" % [shots, mini(mag, 99)],
+					HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(status, appear))
 	draw_set_transform_matrix(Transform2D.IDENTITY)
 
 

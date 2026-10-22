@@ -13,7 +13,7 @@
 class_name UIJuice
 extends RefCounted
 
-enum Sfx { HOVER, CLICK, OPEN, CLOSE, PICK, REWARD, JACKPOT }
+enum Sfx { HOVER, CLICK, OPEN, CLOSE, PICK, REWARD, JACKPOT, TYPE, BOOT, SHUTDOWN, DENY }
 
 ## Master volume for all UI sounds (dB).
 const VOLUME_DB := -10.0
@@ -29,6 +29,7 @@ static var _chimes_started := false
 ## Number of chimes (one per rarity) and how much louder than the other UI sounds they are.
 const CHIME_COUNT := 6
 const CHIME_VOLUME_DB := 2.0
+static var _last_type_ms := 0
 static var _last_hover_ms := 0
 static var _blur : ShaderMaterial
 static var _spark_mat : CanvasItemMaterial
@@ -246,6 +247,12 @@ static func play(kind: Sfx, pitch := 1.0) -> void:
 		if now - _last_hover_ms < 45:
 			return
 		_last_hover_ms = now
+	elif kind == Sfx.TYPE:
+		# Typed text ticks at most ~30 times a second, however fast it prints.
+		var now := Time.get_ticks_msec()
+		if now - _last_type_ms < 32:
+			return
+		_last_type_ms = now
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree == null or tree.root == null:
 		return
@@ -382,15 +389,63 @@ static func _sound(kind: Sfx) -> AudioStreamWAV:
 		return _sounds[kind]
 	var wav : AudioStreamWAV
 	match kind:
-		Sfx.HOVER: wav = _synth([[1800.0, 0.03, 0.25]])
-		Sfx.CLICK: wav = _synth([[900.0, 0.045, 0.5], [1350.0, 0.03, 0.25]])
-		Sfx.OPEN: wav = _synth([[520.0, 0.07, 0.35], [780.0, 0.09, 0.35]], true)
-		Sfx.CLOSE: wav = _synth([[780.0, 0.06, 0.3], [520.0, 0.08, 0.3]], true)
+		# Terminal bleeps: square-ish tones like an old computer's speaker.
+		Sfx.HOVER: wav = _tone([[2400.0, 2400.0, 0.018, 0.16, 0.5]])
+		Sfx.CLICK: wav = _tone([[1200.0, 1200.0, 0.03, 0.22, 0.5], [1800.0, 1800.0, 0.04, 0.2, 0.5]])
+		Sfx.OPEN: wav = _tone([[440.0, 1760.0, 0.09, 0.2, 0.5], [1760.0, 1760.0, 0.05, 0.16, 0.5], [2640.0, 2640.0, 0.06, 0.12, 0.5]])
+		Sfx.CLOSE: wav = _tone([[1760.0, 330.0, 0.12, 0.2, 0.5]])
 		Sfx.PICK: wav = _synth([[660.0, 0.06, 0.45], [990.0, 0.08, 0.45], [1320.0, 0.14, 0.4]], true)
 		Sfx.REWARD: wav = _synth([[523.0, 0.08, 0.4], [659.0, 0.08, 0.4], [784.0, 0.08, 0.4], [1047.0, 0.3, 0.45]], true)
 		Sfx.JACKPOT: wav = _synth([[523.0, 0.07, 0.4], [659.0, 0.07, 0.4], [784.0, 0.07, 0.4], [1047.0, 0.07, 0.4],
 				[1319.0, 0.07, 0.4], [1568.0, 0.55, 0.5]], true)
+		# A keystroke on the terminal: a tiny click.
+		Sfx.TYPE: wav = _tone([[3200.0, 2600.0, 0.008, 0.12, 0.9]], true)
+		# CRT power-on: a whine sweeping up over a low thump; power-off sweeps down.
+		Sfx.BOOT: wav = _tone([[60.0, 60.0, 0.05, 0.35, 0.2], [300.0, 4200.0, 0.22, 0.09, 0.5], [3000.0, 3000.0, 0.04, 0.12, 0.5], [4000.0, 4000.0, 0.05, 0.1, 0.5]])
+		Sfx.SHUTDOWN: wav = _tone([[3800.0, 200.0, 0.2, 0.12, 0.5], [55.0, 55.0, 0.06, 0.3, 0.2]])
+		Sfx.DENY: wav = _tone([[220.0, 220.0, 0.08, 0.22, 0.5], [180.0, 180.0, 0.12, 0.22, 0.5]])
 	_sounds[kind] = wav
+	return wav
+
+
+# Square-ish bleeps, one after another. segments: [start Hz, end Hz, seconds, volume, unused].
+# noise: mixes in a crackle (for keystroke clicks).
+static func _tone(segments: Array, noise := false) -> AudioStreamWAV:
+	const RATE := 22050
+	var total := 0.0
+	for seg in segments:
+		total += seg[2]
+	var frames := int((total + 0.02) * RATE)
+	var buf := PackedFloat32Array()
+	buf.resize(frames)
+	var idx := 0
+	var phase := 0.0
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 77
+	for seg in segments:
+		var count := int(seg[2] * RATE)
+		for i in count:
+			if idx >= frames:
+				break
+			var k := float(i) / maxf(count, 1)
+			var f : float = lerpf(seg[0], seg[1], k)
+			phase = fmod(phase + f / RATE, 1.0)
+			# A softened square (a few odd harmonics), so it's buzzy but not harsh.
+			var v := sin(TAU * phase) + sin(TAU * phase * 3.0) / 3.0 + sin(TAU * phase * 5.0) / 6.0
+			if noise:
+				v = v * 0.4 + rng.randf_range(-1.0, 1.0)
+			var env := minf(float(i) / (0.002 * RATE), 1.0) * minf(float(count - i) / (0.004 * RATE), 1.0)
+			buf[idx] = v * seg[3] * env
+			idx += 1
+	var data := PackedByteArray()
+	data.resize(frames * 2)
+	for i in frames:
+		data.encode_s16(i * 2, int(clampf(buf[i], -1.0, 1.0) * 26000.0))
+	var wav := AudioStreamWAV.new()
+	wav.format = AudioStreamWAV.FORMAT_16_BITS
+	wav.mix_rate = RATE
+	wav.stereo = false
+	wav.data = data
 	return wav
 
 

@@ -15,8 +15,10 @@
 # Feel (see UIJuice): the game behind blurs, the cards are dealt in, a reroll flips them,
 # cards lift, light up and glint on hover, and picking one flashes it with a burst of sparks
 # (bigger for rarer picks) before the popup closes.
-# Look: the HUD style (HudStyle): letter-spaced title over an accent rule, cards framed as
-# HUD panels in their rarity color with a soft glow, HUD command buttons.
+# Look: a terminal screen (TermFrame, HudStyle): a frame around the whole screen with a title
+# bar (scrap and options on the right) and key hints, an inverted title bar over the cards,
+# cards framed in their rarity color, terminal commands. It powers on like a CRT, the title
+# types in, and it powers off when it closes.
 class_name ChoicePopup
 extends Control
 
@@ -47,6 +49,7 @@ extends Control
 
 var _title : Label
 var _title_box : Control
+var _frame : TermFrame
 var _dim : ColorRect
 var _column : VBoxContainer
 var _closing := false
@@ -72,6 +75,10 @@ func _ready() -> void:
 	_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_dim)
 	_dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	_frame = TermFrame.new()
+	_frame.hints = "[LMB] SELECT"
+	add_child(_frame)
 
 	var center := CenterContainer.new()
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -119,6 +126,10 @@ func open(title: String, cards: Array[Control], on_pick: Callable, buttons: Arra
 	_column.scale = Vector2.ONE
 	HudStyle.set_title(_title_box, title)
 	_title_box.visible = not title.is_empty()
+	_frame.title = title if not title.is_empty() else "SELECT"
+	var scrap := GameManager.player.gold if GameManager.player != null else 0
+	_frame.status = ["OPTIONS %d" % cards.size(), "SCRAP %d" % scrap]
+	_frame.hints = "[LMB] SELECT A CARD" + ("     [LMB] " + " / ".join(buttons.map(func(b): return String(b.text).to_upper())) if not buttons.is_empty() else "")
 	for child in _buttons.get_children():
 		_buttons.remove_child(child)
 		child.queue_free()
@@ -130,7 +141,9 @@ func open(title: String, cards: Array[Control], on_pick: Callable, buttons: Arra
 	# Blur the game in, drop the title in, then the buttons after the cards.
 	(_dim.material as ShaderMaterial).set_shader_parameter(&"amount", 0.0)
 	UIJuice.fade_backdrop(_dim, 1.0, 0.2)
-	UIJuice.pop_in(_title_box, 0.0, 0.8)
+	_frame.boot()
+	TermUI.power_on(_column, 0.0, 0.18)
+	TermUI.type_tree(_title_box, 0.15, TermUI.TYPE_SPEED * 1.5)
 	for i in _buttons.get_child_count():
 		UIJuice.pop_in(_buttons.get_child(i), 0.12 + cards.size() * UIJuice.DEAL_STAGGER + i * 0.04)
 	if open_sound == null:
@@ -262,14 +275,17 @@ func _pick(index: int) -> void:
 func _close(index: int) -> void:
 	_closing = true
 	UIJuice.fade_backdrop(_dim, 0.0, 0.18)
-	UIJuice.pop_out(_column, _finish.bind(index))
-	if index < 0:
-		UIJuice.play(UIJuice.Sfx.CLOSE)
+	var fade := _frame.create_tween()
+	fade.tween_property(_frame, "modulate:a", 0.0, 0.2)
+	TermUI.power_off(_column, _finish.bind(index))
 
 
 func _finish(index: int) -> void:
 	_closing = false
 	visible = false
+	_frame.modulate.a = 1.0
+	_column.scale = Vector2.ONE
+	_column.modulate = Color.WHITE
 	GameManager.choice_open = false
 	get_tree().paused = _was_paused
 	Input.mouse_mode = _prev_mouse_mode

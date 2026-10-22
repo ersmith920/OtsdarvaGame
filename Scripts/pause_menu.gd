@@ -1,18 +1,23 @@
 # Pause menu. Escape toggles it; it really pauses the tree.
-# Blurs and tints everything behind it, shows the cursor, and has Resume / Settings / Exit.
+# Drawn as one old terminal screen (TermFrame): the game blurred and darkened behind it, an
+# inverted title bar with the mission clock, scrap and hostiles, a COMMAND window of options
+# down the left, a SYSTEM STATUS window on the right (a readout table, live oscilloscope
+# traces and a sync meter), and key hints along the bottom. Opening powers the screen on
+# like a CRT and types the text in; resuming powers it off.
+# Settings swap the COMMAND window for a CONFIG window (sensitivity, volume, back).
 extends Control
 
 @export_group("Background")
 ## Color and opacity of the layer over the blurred game. Alpha controls how strong it is.
-@export var tint_color := Color(0.0, 0.0, 0.0, 0.5)
+@export var tint_color := Color(0.02, 0.006, 0.0, 0.72)
 ## How blurry the game behind the menu is. 0 = sharp.
 @export_range(0.0, 6.0, 0.1) var blur_amount := 2.5
 
 @export_group("Buttons")
-@export var font: Font
+@export var font: Font   # unused now: buttons use HudStyle's terminal font (kept so the scene still loads)
 @export var font_size := 28
-@export var button_size := Vector2(260, 56)
-@export var button_gap := 14
+@export var button_size := Vector2(300, 44)
+@export var button_gap := 10
 
 const BLUR_SHADER := """
 shader_type canvas_item;
@@ -22,6 +27,9 @@ uniform vec4 tint : source_color = vec4(0.0, 0.0, 0.0, 0.5);
 
 void fragment() {
 	vec3 col = textureLod(screen_tex, SCREEN_UV, blur).rgb;
+	// Pushed toward amber monochrome, like the game seen on a terminal behind the text.
+	float l = dot(col, vec3(0.3, 0.55, 0.15));
+	col = mix(col, vec3(l * 1.0, l * 0.55, l * 0.2), 0.6);
 	COLOR = vec4(mix(col, tint.rgb, tint.a), 1.0);
 }
 """
@@ -32,15 +40,19 @@ const SENS_DISPLAY_MIN := 1.0
 const SENS_DISPLAY_MAX := 20.0
 const SENS_DISPLAY_STEP := 0.1
 
-const INFO_SIZE := Vector2(260, 74)
+const LEFT_X := 70.0
+const STATUS_WIDTH := 430.0
 
+var _screen: Control          # everything that powers on / off (not the blurred backdrop)
+var _frame: TermFrame
 var _main_page: VBoxContainer
 var _settings_page: VBoxContainer
-var _header: Control
-var _title: Label
-var _info: Control
-var _info_time: Label
-var _info_scrap: Label
+var _main_window: Control
+var _settings_window: Control
+var _status_window: Control
+var _rows := {}               # status row name -> its value Label
+var _meter: Control
+var _closing := false
 
 
 func _ready() -> void:
@@ -57,10 +69,20 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	visible = false
+	theme = HudStyle.menu_theme()
 
 	_build_background()
+	_screen = Control.new()
+	_screen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_screen)
+	_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_frame = TermFrame.new()
+	_frame.title = "SYSTEM PAUSED"
+	_frame.hints = "[ESC] RESUME     [LMB] SELECT"
+	_screen.add_child(_frame)
 	_build_pages()
-	HudStyle.add_menu_bloom(self)   # CRT bloom over the menu
+	_build_status()
+	HudStyle.add_menu_bloom(self)   # CRT bloom, fringe and scanlines over the screen
 	_apply_volume(GameManager.master_volume)
 
 
@@ -80,119 +102,80 @@ func _build_background() -> void:
 
 
 func _build_pages() -> void:
-	# KH2-style layout: a "SYSTEM PAUSED" header across the top left, a column of command buttons
-	# down the left side, and a mission info panel (time, scrap) bottom right.
-	var header := Control.new()
-	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(header)
-	header.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	header.offset_bottom = 90
-	header.draw.connect(func() -> void:
-		# An inverted title strip (solid green, dark text) on a thin rule across the screen.
-		var w := header.size.x
-		header.draw_rect(Rect2(0, 58, w, 1), Color(HudStyle.FRAME, 0.5))
-		if _title != null:
-			header.draw_rect(Rect2(_title.position - Vector2(14, 3), _title.size + Vector2(28, 4)), HudStyle.PHOSPHOR))
-	_header = header
-	_title = Label.new()
-	_title.text = "SYSTEM PAUSED"
-	_title.add_theme_font_override("font", HudStyle.spaced(HudStyle.MENU_FONT, 4))
-	_title.add_theme_font_size_override("font_size", 24)
-	_title.add_theme_color_override("font_color", HudStyle.INK)
-	_title.position = Vector2(150, 26)
-	_title.resized.connect(header.queue_redraw)
-	_title.position.x = 60
-	header.add_child(_title)
-
-	_main_page = _make_window()
+	_main_window = _make_window("Command", "3 OPT")
+	_main_page = _main_window.get_meta(&"body")
+	_main_page.add_theme_constant_override("separation", button_gap)
 	_main_page.add_child(_make_button("Resume", _resume))
 	_main_page.add_child(_make_button("Settings", func(): _show_settings(true)))
 	_main_page.add_child(_make_button("Exit", _on_exit_pressed))
+	var note := TermUI.label("> AWAITING INPUT", 12, HudStyle.ORANGE_DIM)
+	_main_page.add_child(note)
 
-	_settings_page = _make_window(true)
-	_settings_page.visible = false
+	_settings_window = _make_window("Config", "SYS.CFG")
+	_settings_page = _settings_window.get_meta(&"body")
+	_settings_page.add_theme_constant_override("separation", 14)
 	_add_slider_row("Mouse Sensitivity", SENS_DISPLAY_MIN, SENS_DISPLAY_MAX, SENS_DISPLAY_STEP,
-		GameManager.mouse_sensitivity * SENS_DISPLAY_SCALE, _on_sensitivity_changed, "%.1f")
+		GameManager.mouse_sensitivity * SENS_DISPLAY_SCALE, _on_sensitivity_changed, "%04.1f")
 	_add_slider_row("Master Volume", 0.0, 100.0, 1.0,
-		GameManager.master_volume * 100.0, _on_volume_changed, "%d%%")
+		GameManager.master_volume * 100.0, _on_volume_changed, "%03d%%")
 	_settings_page.add_child(_make_button("Back", func(): _show_settings(false)))
-
-	# Mission info, bottom right (like KH's time / munny box): one panel, two rows.
-	_info = Control.new()
-	_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_info)
-	_info.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_info.offset_left = -60 - INFO_SIZE.x
-	_info.offset_right = -60
-	_info.offset_top = -50 - INFO_SIZE.y
-	_info.offset_bottom = -50
-	_info.draw.connect(func() -> void:
-		var r := Rect2(Vector2.ZERO, INFO_SIZE)
-		HudStyle.draw_panel(_info, r)
-		HudStyle.draw_divider(_info, Vector2(12, r.size.y * 0.5), r.size.x - 24))
-	for i in 2:
-		var cap := HudStyle.make_caption(["TIME", "SCRAP"][i], 11)
-		cap.position = Vector2(18, 12 + 37 * i)
-		_info.add_child(cap)
-		var num := HudStyle.make_label("0", 20, HudStyle.GOLD if i == 1 else HudStyle.WHITE, true)
-		num.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		num.position = Vector2(80, 6 + 36 * i)
-		num.size = Vector2(INFO_SIZE.x - 98, 26)
-		_info.add_child(num)
-		if i == 0:
-			_info_time = num
-		else:
-			_info_scrap = num
+	_settings_window.visible = false
 
 
-# A column of buttons down the left side, centered vertically. panel: draws a HUD panel
-# behind the column (the settings page, whose rows would otherwise float).
-func _make_window(panel := false) -> VBoxContainer:
-	# Full-screen holder that keeps the window centered vertically, a fixed gap from the left.
-	var holder := MarginContainer.new()
-	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	holder.add_theme_constant_override("margin_left", 80)
-	add_child(holder)
-	holder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var frame := MarginContainer.new()
-	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	frame.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	frame.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	for side in ["left", "right", "top", "bottom"]:
-		frame.add_theme_constant_override("margin_" + side, 14)
-	frame.add_theme_constant_override("margin_right", 26)   # room for a lit button's slide
-	holder.add_child(frame)
-	if panel:
-		frame.draw.connect(func() -> void: HudStyle.draw_panel(frame, Rect2(Vector2.ZERO, frame.size)))
-	var page := VBoxContainer.new()
-	page.add_theme_constant_override("separation", button_gap)
-	frame.add_child(page)
-	page.visibility_changed.connect(func() -> void: holder.visible = page.visible)
-	return page
+# A window on the left, centered vertically.
+func _make_window(title: String, value: String) -> Control:
+	var window := HudStyle.make_window(title, value)
+	window.custom_minimum_size.x = button_size.x + 40.0
+	_screen.add_child(window)
+	window.set_anchors_preset(Control.PRESET_CENTER_LEFT)
+	window.offset_left = LEFT_X
+	window.resized.connect(func() -> void:
+		window.offset_top = -window.size.y * 0.5
+		window.offset_bottom = window.size.y * 0.5)
+	return window
 
 
-# A command button (HudStyle.make_button): left-aligned, nudges right when hovered.
+# The status window on the right: a readout table, oscilloscope traces and a sync meter.
+func _build_status() -> void:
+	_status_window = HudStyle.make_window("System Status", "LIVE", HudStyle.ORANGE)
+	_status_window.custom_minimum_size.x = STATUS_WIDTH
+	_screen.add_child(_status_window)
+	_status_window.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+	_status_window.offset_right = -LEFT_X
+	_status_window.offset_left = -LEFT_X - STATUS_WIDTH
+	_status_window.resized.connect(func() -> void:
+		_status_window.offset_top = -_status_window.size.y * 0.5
+		_status_window.offset_bottom = _status_window.size.y * 0.5)
+	var body : VBoxContainer = _status_window.get_meta(&"body")
+	body.add_theme_constant_override("separation", 6)
+	for row_name in ["Mission Time", "Scrap", "Hostiles", "Items Held", "Arms Mounted", "Reactor"]:
+		var row := TermUI.leader_row(row_name.to_upper(), "--", 14,
+				HudStyle.ORANGE, HudStyle.GOLD if row_name == "Scrap" else HudStyle.WHITE)
+		body.add_child(row)
+		_rows[row_name] = row.get_meta(&"value")
+	var gap := Control.new()
+	gap.custom_minimum_size.y = 6
+	body.add_child(gap)
+	body.add_child(TermUI.label("BIO-MONITOR  /  PILOT LINK", 12, HudStyle.ORANGE_DIM))
+	body.add_child(TermUI.make_scope(96.0))
+	var sync_row := HBoxContainer.new()
+	sync_row.add_theme_constant_override("separation", 10)
+	sync_row.add_child(TermUI.label("SYNC", 12, HudStyle.ORANGE_DIM))
+	_meter = TermUI.make_meter(28, HudStyle.GREEN, 10.0)
+	_meter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_meter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	sync_row.add_child(_meter)
+	body.add_child(sync_row)
+
+
+# A command (HudStyle.make_button): left-aligned, nudges right when hovered.
 func _make_button(text: String, on_pressed: Callable) -> Button:
-	var button := HudStyle.make_button(text, Vector2(button_size.x, minf(button_size.y, 46.0)),
-			roundi(font_size * 0.75), HudStyle.CYAN, true, HORIZONTAL_ALIGNMENT_LEFT)
-	button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	button.pressed.connect(on_pressed)
+	var button := HudStyle.make_button(text, button_size, 18, HudStyle.ORANGE, true, HORIZONTAL_ALIGNMENT_LEFT)
+	button.size_flags_horizontal = Control.SIZE_FILL
+	button.pressed.connect(func() -> void:
+		if not _closing:
+			on_pressed.call())
 	return button
-
-
-func _make_label(text: String) -> Label:
-	var l := HudStyle.make_label(text.to_upper(), roundi(font_size * 0.6), HudStyle.WHITE)
-	l.add_theme_font_override("font", HudStyle.spaced(HudStyle.LABEL_FONT, 2))
-	return l
-
-
-# A small white square for the slider grabbers.
-static func _grabber_texture() -> Texture2D:
-	var img := Image.create(10, 14, false, Image.FORMAT_RGBA8)
-	img.fill(HudStyle.WHITE)
-	return ImageTexture.create_from_image(img)
-
-
 
 
 # ---------- Input ----------
@@ -203,7 +186,9 @@ func _input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 	if visible:
-		if _settings_page.visible:
+		if _closing:
+			return
+		if _settings_window.visible:
 			_show_settings(false)   # Escape in settings goes back one step
 		else:
 			_resume()
@@ -217,101 +202,152 @@ func _input(event: InputEvent) -> void:
 		_pause()
 
 
+func _process(_delta: float) -> void:
+	if visible:
+		_update_status()
+
+
 # ---------- Pause / resume ----------
 
 func _pause() -> void:
-	_show_settings(false)
+	_closing = false
+	_show_settings(false, false)
 	get_parent().move_child(self, -1)   # over every HUD element
 	visible = true
-	var secs := int(GameManager.levelTime)
-	@warning_ignore("integer_division")
-	_info_time.text = "%02d:%02d" % [secs / 60, secs % 60]
-	_info_scrap.text = str(GameManager.player.gold) if GameManager.player != null else "0"
-	# Commands deal in from the left one after another; header and info slide in.
-	for i in _main_page.get_child_count():
-		var b : Control = _main_page.get_child(i)
-		b.set_meta(&"lit", 0.0)
-		b.get_child(0).queue_redraw()
-		b.modulate.a = 0.0
-		var t := UIJuice.tween_of(b)
-		t.tween_interval(0.05 * i)
-		t.tween_property(b, "modulate:a", 1.0, 0.12)
-		t.parallel().tween_property(b, "position:x", 0.0, 0.25).from(-40.0).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	for c : Control in [_header, _info]:
-		c.modulate.a = 0.0
-		UIJuice.tween_of(c).tween_property(c, "modulate:a", 1.0, 0.18)
-	_title.pivot_offset = Vector2(0, 30)
-	UIJuice.pop_in(_title, 0.0, 0.7)
-	UIJuice.play(UIJuice.Sfx.OPEN)
+	_update_status()
+	# The screen powers on, the frame traces itself, then the text types in.
+	TermUI.power_on(_screen)
+	_frame.boot(0.12)
+	for w : Control in [_main_window, _status_window]:
+		w.modulate.a = 0.0
+	var t := create_tween()
+	t.tween_interval(0.22)
+	t.tween_callback(func() -> void:
+		_main_window.modulate.a = 1.0
+		TermUI.type_tree(_main_window, 0.0))
+	t.tween_interval(0.12)
+	t.tween_callback(func() -> void:
+		_status_window.modulate.a = 1.0
+		TermUI.type_tree(_status_window, 0.0, TermUI.TYPE_SPEED * 2.0, 0.015))
+	for b in _main_page.get_children():
+		if b is Button:
+			b.set_meta(&"lit", 0.0)
+			b.get_child(0).queue_redraw()
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
 func _resume() -> void:
-	UIJuice.play(UIJuice.Sfx.CLOSE)
-	visible = false
+	if _closing:
+		return
+	_closing = true
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	TermUI.power_off(_screen, func() -> void:
+		visible = false
+		_closing = false
+		_screen.scale = Vector2.ONE
+		_screen.modulate = Color.WHITE)
 
 
-func _show_settings(show: bool) -> void:
-	_main_page.visible = not show
-	_settings_page.visible = show
-	if _title != null:
-		_title.text = "SYSTEM CONFIG" if show else "SYSTEM PAUSED"
+func _show_settings(show: bool, animate := true) -> void:
+	_main_window.visible = not show
+	_settings_window.visible = show
+	_frame.title = "SYSTEM CONFIG" if show else "SYSTEM PAUSED"
+	_frame.hints = "[ESC] BACK     [LMB] SELECT     [DRAG] ADJUST" if show else "[ESC] RESUME     [LMB] SELECT"
+	if animate and visible:
+		var w := _settings_window if show else _main_window
+		TermUI.type_tree(w, 0.0)
+		UIJuice.play(UIJuice.Sfx.OPEN if show else UIJuice.Sfx.CLOSE, 1.2)
 
 
 func _on_exit_pressed() -> void:
 	get_tree().quit()
 
 
+# Live numbers in the title bar and the status window.
+func _update_status() -> void:
+	var secs := int(GameManager.levelTime)
+	@warning_ignore("integer_division")
+	var clock := "%02d:%02d" % [secs / 60, secs % 60]
+	var player := GameManager.player
+	var scrap := player.gold if player != null else 0
+	var hostiles := EnemyManager.get_total_count()
+	var items := 0
+	var guns := 0
+	var slots := 0
+	if player != null:
+		for item in player.inventory:
+			items += player.inventory[item]
+		slots = player.gun_slots.size()
+		for slot in player.gun_slots:
+			if slot.get_child_count() > 0 and slot.get_child(0) is Gun:
+				guns += 1
+	_frame.status = ["T+" + clock, "SCRAP %d" % scrap, "HOSTILE %d" % hostiles]
+	var reactor := 412.0 + 6.0 * sin(Time.get_ticks_msec() / 900.0)
+	var values := {"Mission Time": clock, "Scrap": str(scrap), "Hostiles": "%04d" % hostiles,
+			"Items Held": "%03d" % items, "Arms Mounted": "%d/%d" % [guns, slots], "Reactor": "%.1fK" % reactor}
+	for key in values:
+		var l : Label = _rows[key]
+		if l.visible_characters == -1 or l.text == "--":
+			l.text = values[key]
+	_meter.set_meta(&"value", 0.88 + 0.08 * sin(Time.get_ticks_msec() / 700.0))
+	_meter.queue_redraw()
+
+
 # ---------- Settings ----------
-# One settings row: name, slider, live value text.
+# One settings row: name over a segmented slider with its live value.
 func _add_slider_row(label_text: String, min_v: float, max_v: float, step: float,
 		value: float, on_change: Callable, format: String) -> void:
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 16)
-	_settings_page.add_child(row)
-
-	var name_label := _make_label(label_text)
-	name_label.custom_minimum_size = Vector2(260, 0)
-	row.add_child(name_label)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 4)
+	_settings_page.add_child(box)
+	var head := HBoxContainer.new()
+	box.add_child(head)
+	var name_label := TermUI.label(label_text.to_upper(), 13, HudStyle.ORANGE, true)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(name_label)
+	var value_label := TermUI.label("", 16, HudStyle.WHITE)
+	value_label.add_theme_font_override("font", HudStyle.READOUT_FONT)
+	value_label.set_meta(TermUI.NO_TYPE, true)
+	head.add_child(value_label)
 
 	var slider := HSlider.new()
 	slider.min_value = min_v
 	slider.max_value = max_v
 	slider.step = step
-	slider.custom_minimum_size = Vector2(260, 0)
-	slider.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	slider.custom_minimum_size = Vector2(button_size.x, 18)
 	slider.focus_mode = Control.FOCUS_NONE
-	# Thin track, accent fill, small square grabber.
-	var track := StyleBoxFlat.new()
-	track.bg_color = Color(0.0, 0.01, 0.03, 0.8)
-	track.content_margin_top = 2
-	track.content_margin_bottom = 2
-	var fill := StyleBoxFlat.new()
-	fill.bg_color = HudStyle.CYAN
-	fill.content_margin_top = 2
-	fill.content_margin_bottom = 2
-	slider.add_theme_stylebox_override("slider", track)
-	slider.add_theme_stylebox_override("grabber_area", fill)
-	slider.add_theme_stylebox_override("grabber_area_highlight", fill)
-	var grab := _grabber_texture()
-	slider.add_theme_icon_override("grabber", grab)
-	slider.add_theme_icon_override("grabber_highlight", grab)
-	row.add_child(slider)
-
-	var value_label := _make_label("")
-	value_label.custom_minimum_size = Vector2(110, 0)
-	value_label.clip_text = true   # width stays fixed no matter what the text is
-	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	row.add_child(value_label)
+	# The look is drawn by a child: a row of segments, lit up to the value.
+	for key in ["slider", "grabber_area", "grabber_area_highlight"]:
+		slider.add_theme_stylebox_override(key, StyleBoxEmpty.new())
+	var blank := ImageTexture.create_from_image(Image.create(14, 18, false, Image.FORMAT_RGBA8))
+	slider.add_theme_icon_override("grabber", blank)
+	slider.add_theme_icon_override("grabber_highlight", blank)
+	var bar := Control.new()
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.show_behind_parent = true
+	slider.add_child(bar)
+	bar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bar.draw.connect(func() -> void:
+		var r := Rect2(Vector2.ZERO, bar.size)
+		var k := inverse_lerp(slider.min_value, slider.max_value, slider.value)
+		var n := 30
+		var w := r.size.x / n
+		for i in n:
+			var on := (i + 0.5) / n <= k
+			bar.draw_rect(Rect2(i * w + 1.0, 3.0, w - 3.0, r.size.y - 6.0), HudStyle.ORANGE if on else Color(HudStyle.ORANGE, 0.14))
+		var x := r.size.x * k
+		bar.draw_rect(Rect2(x - 2.0, 0, 4.0, r.size.y), HudStyle.WHITE))
+	box.add_child(slider)
 
 	var update_text := func(v: float) -> void:
 		value_label.text = format % v
+		bar.queue_redraw()
 	slider.value_changed.connect(func(v: float) -> void:
 		on_change.call(v)
-		update_text.call(v))
+		update_text.call(v)
+		UIJuice.play(UIJuice.Sfx.TYPE, 0.8 + 0.6 * inverse_lerp(min_v, max_v, v)))
 	slider.set_value_no_signal(value)
 	update_text.call(value)
 
