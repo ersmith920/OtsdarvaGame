@@ -242,15 +242,16 @@ class _Ring extends Control:
 
 ## Plays a UI sound. Hover ticks are rate-limited so sweeping over a row isn't noisy.
 static func play(kind: Sfx, pitch := 1.0) -> void:
+	var custom := custom_sounds()   # your sounds, volumes and limits (Sounds/ui_sounds.tres)
 	if kind == Sfx.HOVER:
 		var now := Time.get_ticks_msec()
-		if now - _last_hover_ms < 45:
+		if now - _last_hover_ms < (custom.hover_cooldown_ms if custom != null else 45):
 			return
 		_last_hover_ms = now
 	elif kind == Sfx.TYPE:
 		# Typed text ticks at most ~30 times a second, however fast it prints.
 		var now := Time.get_ticks_msec()
-		if now - _last_type_ms < 32:
+		if now - _last_type_ms < (custom.typing_cooldown_ms if custom != null else 32):
 			return
 		_last_type_ms = now
 	var tree := Engine.get_main_loop() as SceneTree
@@ -260,14 +261,16 @@ static func play(kind: Sfx, pitch := 1.0) -> void:
 	audio.stream = _sound(kind)
 	audio.volume_db = VOLUME_DB
 	audio.pitch_scale = pitch * randf_range(0.97, 1.03)
-	# Your own hover / click sounds (Sounds/ui_sounds.tres) replace the synth ones.
-	var custom := custom_sounds()
 	if custom != null:
-		var stream : AudioStream = custom.hover if kind == Sfx.HOVER else (custom.click if kind == Sfx.CLICK else null)
-		if stream != null:
-			audio.stream = stream
-			audio.volume_db = custom.hover_volume_db if kind == Sfx.HOVER else custom.click_volume_db
+		var slot := custom.slot(kind)
+		if slot[0] != null:
+			# Your own file: played at its own loudness plus the slot's volume.
+			audio.stream = slot[0]
+			audio.volume_db = slot[1]
 			audio.pitch_scale = pitch * randf_range(1.0 - custom.pitch_variation, 1.0 + custom.pitch_variation)
+		else:
+			# The built-in sound, made louder or quieter by the slot's volume (0 = unchanged).
+			audio.volume_db = VOLUME_DB + slot[1]
 	audio.process_mode = Node.PROCESS_MODE_ALWAYS
 	tree.root.add_child(audio)
 	audio.play()
