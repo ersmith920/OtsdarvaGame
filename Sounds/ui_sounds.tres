@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UiSounds" format=3 uid="uid://cl573xjrherff"]
+
+[ext_resource type="AudioStream" uid="uid://t62t05via1fe" path="res://Sounds/mouseClick.wav" id="1_5dhad"]
+[ext_resource type="Script" uid="uid://c52a3goy5ka6l" path="res://Scripts/ui_sounds.gd" id="1_uisnd"]
+[ext_resource type="AudioStream" uid="uid://5n674xtph0y6" path="res://Sounds/mouseHover.wav" id="2_eifju"]
+
+[resource]
+script = ExtResource("1_uisnd")
+hover = ExtResource("2_eifju")
+hover_volume_db = -2.0
+click = ExtResource("1_5dhad")
+click_volume_db = 10.0
+pitch_variation = 0.05

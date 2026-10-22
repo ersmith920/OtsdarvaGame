@@ -28,10 +28,10 @@
 [ext_resource type="AudioStream" uid="uid://ji1lfawrb06k" path="res://Sounds/hitSound3D.wav" id="25_jm5j8"]
 [ext_resource type="Texture2D" uid="uid://c4ouwq3a62pco" path="res://Images/gold2.png" id="25_qtqh7"]
 [ext_resource type="Script" uid="uid://boby5oihnxo8k" path="res://Scripts/choice_popup.gd" id="26_choice"]
-[ext_resource type="Script" path="res://Scripts/hud_display.gd" id="27_hudfx"]
-[ext_resource type="Script" path="res://Scripts/weapon_stack.gd" id="28_wstack"]
-[ext_resource type="Script" path="res://Scripts/lock_reticle.gd" id="29_reticle"]
-[ext_resource type="Script" path="res://Scripts/screen_filter.gd" id="30_filter"]
+[ext_resource type="Script" uid="uid://dt2eys82582j1" path="res://Scripts/hud_display.gd" id="27_hudfx"]
+[ext_resource type="Script" uid="uid://c4ibcnnqycwfy" path="res://Scripts/weapon_stack.gd" id="28_wstack"]
+[ext_resource type="Script" uid="uid://c1fodhfonxi4p" path="res://Scripts/lock_reticle.gd" id="29_reticle"]
+[ext_resource type="Script" uid="uid://c8ablxv2fw5jo" path="res://Scripts/screen_filter.gd" id="30_filter"]
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_jfb0n"]
 
@@ -128,21 +128,21 @@ offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("9_5tmop")
 
-[node name="ScreenFilter" type="ColorRect" parent="HUD"]
+[node name="ScreenFilter" type="ColorRect" parent="HUD" unique_id=1413021597]
 mouse_filter = 2
 script = ExtResource("30_filter")
 
-[node name="AimDisplay" type="TextureRect" parent="HUD"]
+[node name="AimDisplay" type="TextureRect" parent="HUD" unique_id=1349484664]
 mouse_filter = 2
 script = ExtResource("27_hudfx")
 curve = 0.0
-wrap = 0.0
 fringe = 0.3
 scanlines = 0.1
+wrap = 0.0
 viewport_name = "AimViewport"
 sway = false
 
-[node name="AimViewport" type="SubViewport" parent="HUD"]
+[node name="AimViewport" type="SubViewport" parent="HUD" unique_id=1557527884]
 transparent_bg = true
 gui_disable_input = true
 render_target_update_mode = 4
@@ -173,16 +173,16 @@ offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("16_u1c27")
 
-[node name="HudDisplay" type="TextureRect" parent="HUD"]
+[node name="HudDisplay" type="TextureRect" parent="HUD" unique_id=217413842]
 mouse_filter = 2
 script = ExtResource("27_hudfx")
 
-[node name="HudViewport" type="SubViewport" parent="HUD"]
+[node name="HudViewport" type="SubViewport" parent="HUD" unique_id=724644049]
 transparent_bg = true
 gui_disable_input = true
 render_target_update_mode = 4
 
-[node name="WeaponStack" type="Control" parent="HUD/HudViewport"]
+[node name="WeaponStack" type="Control" parent="HUD/HudViewport" unique_id=650925663]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -198,13 +198,6 @@ anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("8_dw050")
-
-[node name="TabMenu" type="Control" parent="HUD" unique_id=1147392042]
-layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-script = ExtResource("9_b26j0")
 
 [node name="Timer" type="Label" parent="HUD/HudViewport" unique_id=1142248390]
 offset_right = 40.0
@@ -230,6 +223,20 @@ name_font_size = 18
 description_font_size = 14
 box_color = Color(0.05882353, 0.05882353, 0.05882353, 0.5411765)
 
+[node name="Gold" type="Label" parent="HUD/HudViewport" unique_id=48988924]
+offset_right = 40.0
+offset_bottom = 15.0
+script = ExtResource("24_7hik5")
+font = ExtResource("11_606se")
+icon_texture = ExtResource("25_qtqh7")
+
+[node name="TabMenu" type="Control" parent="HUD" unique_id=1147392042]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("9_b26j0")
+
 [node name="PauseMenu" type="Control" parent="HUD" unique_id=2072073045]
 layout_mode = 3
 anchors_preset = 0
@@ -237,13 +244,6 @@ offset_right = 40.0
 offset_bottom = 40.0
 script = ExtResource("17_op7ga")
 font = ExtResource("11_606se")
-
-[node name="Gold" type="Label" parent="HUD/HudViewport" unique_id=48988924]
-offset_right = 40.0
-offset_bottom = 15.0
-script = ExtResource("24_7hik5")
-font = ExtResource("11_606se")
-icon_texture = ExtResource("25_qtqh7")
 
 [node name="ChoicePopup" type="Control" parent="HUD" unique_id=1938274651]
 layout_mode = 3

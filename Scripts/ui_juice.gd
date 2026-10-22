@@ -260,10 +260,33 @@ static func play(kind: Sfx, pitch := 1.0) -> void:
 	audio.stream = _sound(kind)
 	audio.volume_db = VOLUME_DB
 	audio.pitch_scale = pitch * randf_range(0.97, 1.03)
+	# Your own hover / click sounds (Sounds/ui_sounds.tres) replace the synth ones.
+	var custom := custom_sounds()
+	if custom != null:
+		var stream : AudioStream = custom.hover if kind == Sfx.HOVER else (custom.click if kind == Sfx.CLICK else null)
+		if stream != null:
+			audio.stream = stream
+			audio.volume_db = custom.hover_volume_db if kind == Sfx.HOVER else custom.click_volume_db
+			audio.pitch_scale = pitch * randf_range(1.0 - custom.pitch_variation, 1.0 + custom.pitch_variation)
 	audio.process_mode = Node.PROCESS_MODE_ALWAYS
 	tree.root.add_child(audio)
 	audio.play()
 	audio.finished.connect(audio.queue_free)
+
+
+## Where your own menu sounds are set (see ui_sounds.gd).
+const CUSTOM_SOUNDS_PATH := "res://Sounds/ui_sounds.tres"
+static var _custom : UiSounds
+static var _custom_checked := false
+
+
+## The UiSounds resource with your own menu sounds, or null if there isn't one.
+static func custom_sounds() -> UiSounds:
+	if not _custom_checked:
+		_custom_checked = true
+		if ResourceLoader.exists(CUSTOM_SOUNDS_PATH):
+			_custom = load(CUSTOM_SOUNDS_PATH) as UiSounds
+	return _custom
 
 
 ## The item-get chime for a rarity (Rarity.COMMON .. MYTHIC): a quick, bright bell
